@@ -1,0 +1,15 @@
+{% extends 'base.html' %}{% block footer %}{% endblock %}{% block title %}Sign In — Nexora{% endblock %}
+{% block content %}
+<div class="auth-page"><div class="ap-orb1"></div><div class="ap-orb2"></div>
+<div class="auth-card">
+  <div class="auth-logo"><div class="auth-lm">⬡</div><span class="auth-lt">Nexora</span></div>
+  <h1 class="auth-h">Welcome back</h1><p class="auth-p">Sign in to your account</p>
+  <form method="post" novalidate>{% csrf_token %}
+    <div class="fg"><label>Email Address</label><input type="email" name="username" placeholder="you@email.com" required autofocus>{% if form.username.errors %}<div class="field-err">{{ form.username.errors.0 }}</div>{% endif %}</div>
+    <div class="fg"><label>Password</label><input type="password" name="password" placeholder="Your password" required>{% if form.password.errors %}<div class="field-err">{{ form.password.errors.0 }}</div>{% endif %}</div>
+    {% if form.non_field_errors %}<div class="field-err" style="margin-bottom:14px">{{ form.non_field_errors.0 }}</div>{% endif %}
+    <button type="submit" class="btn btn-primary btn-full btn-lg">Sign In <i class="bi bi-arrow-right-short"></i></button>
+  </form>
+  <div class="auth-foot">No account? <a href="{% url 'register' %}">Sign up as Customer</a> &nbsp;·&nbsp; <a href="{% url 'register_provider' %}">Join as Provider</a></div>
+</div></div>
+{% endblock %}

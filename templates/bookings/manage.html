@@ -1,0 +1,23 @@
+{% extends 'dashboard/base.html' %}{% block title %}Manage Bookings{% endblock %}{% block page_title %}Manage Bookings{% endblock %}{% block p_books %}active{% endblock %}
+{% block dash_content %}
+<div class="ph"><div><h1 class="ph-title">Manage Bookings</h1></div>
+<div class="ph-actions">{% for val,lbl in STATUS %}<a href="?status={{ val }}" class="btn btn-ghost btn-xs {% if status == val %}btn-outline{% endif %}">{{ lbl }}</a>{% endfor %}<a href="?" class="btn btn-ghost btn-xs {% if not status %}btn-outline{% endif %}">All</a></div></div>
+<div class="card"><div class="tbl-wrap"><table class="nx-tbl">
+<thead><tr><th>Ref</th><th>Customer</th><th>Service</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody>{% for b in blist %}
+<tr><td><span class="mono">{{ b.ref }}</span></td><td>{{ b.customer.display }}</td><td>{{ b.service.title|truncatechars:22 }}</td><td>{{ b.date }}</td><td>₦{{ b.amount|floatformat:0 }}</td><td><span class="badge s-{{ b.status }}">{{ b.get_status_display }}</span></td>
+<td><div style="display:flex;gap:5px;flex-wrap:wrap">
+<a href="{% url 'booking_detail' pk=b.pk %}" class="btn btn-ghost btn-xs">View</a>
+{% if b.status == 'pending' %}
+<form method="post" action="{% url 'accept_booking' pk=b.pk %}">{% csrf_token %}<button class="btn btn-green btn-xs">Accept</button></form>
+<button class="btn btn-ghost btn-xs" style="color:var(--red2)" onclick="document.getElementById('rej{{ b.pk }}').style.display='block'" >Reject</button>
+{% elif b.status == 'confirmed' %}
+<form method="post" action="{% url 'mark_in_progress' pk=b.pk %}">{% csrf_token %}<button class="btn btn-primary btn-xs">In Progress</button></form>
+{% elif b.status == 'in_progress' %}
+<form method="post" action="{% url 'mark_completed' pk=b.pk %}">{% csrf_token %}<button class="btn btn-green btn-xs">Complete</button></form>
+{% endif %}
+</div>
+<div id="rej{{ b.pk }}" style="display:none;margin-top:8px"><form method="post" action="{% url 'reject_booking' pk=b.pk %}" style="display:flex;gap:5px"><input type="text" name="reason" placeholder="Reason..." style="font-size:12px;padding:6px 10px"><button class="btn btn-red btn-xs">Reject</button></form></div>
+</td></tr>
+{% empty %}<tr><td colspan="7" style="text-align:center;padding:44px"><div class="empty"><span class="empty-ico">📅</span><div class="empty-t">No bookings</div></div></td></tr>{% endfor %}
+</tbody></table></div></div>{% endblock %}

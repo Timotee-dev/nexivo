@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Nexora — Book Any Service in Nigeria{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div><div class="hero-grid"></div>
+  <div class="hero-orb1"></div><div class="hero-orb2"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">🇳🇬 Nigeria's #1 Service Platform</div>
+      <h1 class="hero-h1">Find & Book<br><span class="grad">Any Service,</span><br>Anywhere.</h1>
+      <p class="hero-p">Connect with thousands of verified professionals across Nigeria. Beauty, health, home services and more — booked online, paid securely.</p>
+      <form action="{% url 'services' %}" method="get" class="hero-search">
+        <i class="bi bi-search"></i>
+        <input type="text" name="q" placeholder="Search services, providers, locations...">
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+      <div class="hero-stats">
+        <div><div class="hs-val">50K+</div><div class="hs-lbl">Bookings Made</div></div>
+        <div class="hs-sep"></div>
+        <div><div class="hs-val">5,000+</div><div class="hs-lbl">Providers</div></div>
+        <div class="hs-sep"></div>
+        <div><div class="hs-val">98%</div><div class="hs-lbl">Satisfaction</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="hero-floats">
+        <div class="float-card"><div class="fc-em">✂️</div><div><div class="fc-t">Hair Styling</div><div class="fc-s">from ₦5,000</div></div><span class="fc-pip">⭐ 4.9</span></div>
+        <div class="float-card"><div class="fc-em">🏠</div><div><div class="fc-t">Deep Cleaning</div><div class="fc-s">from ₦15,000</div></div><span class="fc-pip">✅ Verified</span></div>
+        <div class="float-card"><div class="fc-em">💆</div><div><div class="fc-t">Massage Therapy</div><div class="fc-s">from ₦20,000</div></div><span class="fc-pip">🔥 Hot</span></div>
+        <div class="float-card"><div class="fc-em">📸</div><div><div class="fc-t">Photography</div><div class="fc-s">from ₦40,000</div></div><span class="fc-pip">120 reviews</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="section" style="padding-top:48px">
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-ey">Browse by Category</div><h2 class="sec-h">What do you need?</h2></div>
+    <div class="cat-grid">
+      {% for c in cats %}
+      <a href="{% url 'services' %}?cat={{ c.slug }}" class="cat-chip"><span class="cat-em">{{ c.emoji }}</span><span class="cat-name">{{ c.name }}</span></a>
+      {% empty %}<p style="color:var(--t4)">No categories yet.</p>
+      {% endfor %}
+      <a href="{% url 'services' %}" class="cat-chip"><span class="cat-em">🔍</span><span class="cat-name">View All</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED SERVICES -->
+<section class="section" style="background:var(--ink2)">
+  <div class="wrap">
+    <div class="sec-row">
+      <div><div class="sec-ey">Featured</div><h2 class="sec-h">Popular Services</h2></div>
+      <a href="{% url 'services' %}" class="btn btn-outline">View All <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="svcs-grid">
+      {% for svc in featured %}
+      <a href="{% url 'service_detail' pk=svc.pk %}" class="svc-card">
+        <div class="svc-img">
+          {% if svc.image %}<img src="{{ svc.image.url }}" alt="{{ svc.title }}">
+          {% else %}<div class="svc-ph">{{ svc.category.emoji|default:'⚡' }}</div>{% endif %}
+          {% if svc.category %}<span class="svc-cat-pip">{{ svc.category.name }}</span>{% endif %}
+        </div>
+        <div class="svc-body">
+          <div class="svc-prov"><div class="svc-pav">{{ svc.pp.initials }}</div>{{ svc.pp.business_name }}{% if svc.pp.is_verified %}&nbsp;<i class="bi bi-patch-check-fill" style="color:var(--v3);font-size:11px"></i>{% endif %}</div>
+          <div class="svc-title">{{ svc.title }}</div>
+          <div class="svc-desc">{{ svc.description|truncatechars:85 }}</div>
+          <div class="svc-foot">
+            <div class="svc-rating"><i class="bi bi-star-fill"></i>{{ svc.pp.rating|default:"New" }} <span style="color:var(--t5);font-size:11px">({{ svc.pp.total_reviews }})</span></div>
+            <div class="svc-price">₦{{ svc.price|floatformat:0 }}</div>
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--t4)">
+        <p>No services yet. <a href="{% url 'register_provider' %}" style="color:var(--v3)">Become the first provider →</a></p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head" style="text-align:center"><div class="sec-ey">Simple Process</div><h2 class="sec-h">How Nexora Works</h2><p class="sec-p" style="margin:0 auto">Four easy steps from discovery to completed service.</p></div>
+    <div class="how-grid">
+      <div class="how-step"><div class="how-num">01</div><div class="how-ico"><i class="bi bi-search"></i></div><h4>Find a Service</h4><p>Browse hundreds of services across categories. Filter by price, rating and location.</p></div>
+      <div class="how-step"><div class="how-num">02</div><div class="how-ico"><i class="bi bi-calendar2-check"></i></div><h4>Book Online</h4><p>Pick your date and time. Submit the booking and await provider confirmation.</p></div>
+      <div class="how-step"><div class="how-num">03</div><div class="how-ico"><i class="bi bi-credit-card-2-front"></i></div><h4>Pay Securely</h4><p>Complete payment online via Paystack. Safe, encrypted, instant confirmation.</p></div>
+      <div class="how-step"><div class="how-num">04</div><div class="how-ico"><i class="bi bi-star-fill"></i></div><h4>Enjoy & Review</h4><p>Receive your service and leave a review to help the community.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOP PROVIDERS -->
+{% if top %}
+<section class="section" style="background:var(--ink2)">
+  <div class="wrap">
+    <div class="sec-head" style="text-align:center"><div class="sec-ey">Top Rated</div><h2 class="sec-h">Verified Providers</h2></div>
+    <div class="prov-grid">
+      {% for pp in top %}
+      <div class="prov-card">
+        <div class="pav">{{ pp.initials }}</div>
+        <div class="pname">{{ pp.business_name }}</div>
+        <div class="prating"><i class="bi bi-star-fill"></i> {{ pp.rating }} ({{ pp.total_reviews }})</div>
+        {% if pp.is_verified %}<div class="pverified"><i class="bi bi-patch-check-fill"></i> Verified</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- CTA -->
+<section class="section">
+  <div class="wrap">
+    <div class="cta-box">
+      <div style="display:grid;grid-template-columns:1fr auto;gap:40px;align-items:center">
+        <div>
+          <div class="sec-ey">For Professionals</div>
+          <h2 class="cta-h">Start Earning on Nexora Today</h2>
+          <p class="cta-p">Join thousands of skilled professionals. List your services, set your own prices, and receive bookings from clients all over Nigeria.</p>
+          <div class="cta-btns">
+            <a href="{% url 'register_provider' %}" class="btn btn-primary btn-lg">Create Provider Account <i class="bi bi-arrow-right"></i></a>
+            <a href="{% url 'services' %}" class="btn btn-ghost btn-lg">Browse Services</a>
+          </div>
+        </div>
+        <div style="font-size:7rem;opacity:.12;user-select:none">💼</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

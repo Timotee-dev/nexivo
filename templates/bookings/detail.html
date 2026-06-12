@@ -1,0 +1,43 @@
+{% extends 'base.html' %}{% block title %}Booking {{ b.ref }}{% endblock %}
+{% block content %}<div style="max-width:800px;margin:48px auto;padding:0 20px">
+<div class="bkcard">
+<div class="bkcard-top">
+<div><div class="bkref">{{ b.ref }}</div><h2 style="font-family:var(--font-d);font-size:1.4rem;margin-top:6px">{{ b.service.title }}</h2><p style="color:var(--t3);font-size:13px;margin-top:3px">Created {{ b.created_at|date:"F j, Y" }}</p></div>
+<span class="badge s-{{ b.status }}" style="font-size:13px;padding:7px 14px">{{ b.get_status_display }}</span>
+</div>
+<div class="bkcard-body">
+<div class="det-grid">
+<div class="det-box"><div class="det-lbl">Service Details</div>
+<div class="det-row"><span>Service</span><strong>{{ b.service.title }}</strong></div>
+<div class="det-row"><span>Provider</span><strong>{{ b.provider.provider_profile.business_name }}</strong></div>
+<div class="det-row"><span>Duration</span><strong>{{ b.service.duration }} min</strong></div>
+</div>
+<div class="det-box"><div class="det-lbl">Schedule</div>
+<div class="det-row"><span>Date</span><strong>{{ b.date|date:"F j, Y" }}</strong></div>
+<div class="det-row"><span>Time</span><strong>{{ b.time|time:"g:i A" }}</strong></div>
+</div>
+<div class="det-box"><div class="det-lbl">Payment</div>
+<div class="det-row"><span>Amount</span><strong>₦{{ b.amount|floatformat:0 }}</strong></div>
+{% if payment %}<div class="det-row"><span>Status</span><span class="badge s-{{ payment.status }}">{{ payment.get_status_display }}</span></div>
+<div class="det-row"><span>Reference</span><span class="mono">{{ payment.reference }}</span></div>
+{% else %}<div class="det-row"><span>Status</span><span class="badge bx">Not Paid</span></div>{% endif %}
+</div>
+{% if b.notes %}<div class="det-box"><div class="det-lbl">Notes</div><p style="font-size:14px;color:var(--t2)">{{ b.notes }}</p></div>{% endif %}
+</div>
+{% if b.reject_reason %}<div style="background:var(--redl);border:1px solid rgba(220,38,38,.25);border-radius:var(--r);padding:14px;margin-bottom:18px;font-size:14px;color:var(--red2)"><strong>Rejection Reason:</strong> {{ b.reject_reason }}</div>{% endif %}
+<div class="bk-actions">
+{% if request.user == b.customer %}
+  {% if b.status == 'awaiting_payment' %}<a href="{% url 'pay' pk=b.pk %}" class="btn btn-green"><i class="bi bi-credit-card"></i> Pay ₦{{ b.amount|floatformat:0 }}</a>{% endif %}
+  {% if b.status == 'pending' or b.status == 'awaiting_payment' %}<form method="post" action="{% url 'cancel_booking' pk=b.pk %}">{% csrf_token %}<button type="submit" class="btn btn-red" data-confirm="Cancel this booking?"><i class="bi bi-x-circle"></i> Cancel</button></form>{% endif %}
+  {% if b.status == 'completed' and not review %}<a href="{% url 'leave_review' pk=b.pk %}" class="btn btn-gold"><i class="bi bi-star"></i> Leave Review</a>{% endif %}
+  {% if payment and payment.status == 'success' %}<a href="{% url 'receipt' ref=payment.reference %}" class="btn btn-ghost"><i class="bi bi-receipt"></i> Receipt</a>{% endif %}
+{% endif %}
+{% if request.user == b.provider %}
+  {% if b.status == 'pending' %}<form method="post" action="{% url 'accept_booking' pk=b.pk %}">{% csrf_token %}<button type="submit" class="btn btn-green"><i class="bi bi-check-lg"></i> Accept</button></form>{% endif %}
+  {% if b.status == 'confirmed' %}<form method="post" action="{% url 'mark_in_progress' pk=b.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">Mark In Progress</button></form>{% endif %}
+  {% if b.status == 'confirmed' or b.status == 'in_progress' %}<form method="post" action="{% url 'mark_completed' pk=b.pk %}">{% csrf_token %}<button type="submit" class="btn btn-green">Mark Completed</button></form>{% endif %}
+{% endif %}
+<a href="javascript:history.back()" class="btn btn-ghost" style="margin-left:auto">Back</a>
+</div>
+{% if review %}<div style="margin-top:20px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:16px"><h6 style="font-size:13px;font-weight:700;margin-bottom:9px"><i class="bi bi-star-fill" style="color:#fbbf24"></i> Your Review</h6><div class="rrow-stars">{% for i in "12345" %}<i class="rstar bi bi-star-fill {% if forloop.counter > review.rating %}e{% endif %}"></i>{% endfor %}</div><p style="font-size:14px;color:var(--t2);margin-top:8px">{{ review.comment }}</p></div>{% endif %}
+</div></div></div>{% endblock %}

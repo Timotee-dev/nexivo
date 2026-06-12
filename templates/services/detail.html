@@ -1,0 +1,36 @@
+{% extends 'base.html' %}{% block title %}{{ svc.title }} — Nexora{% endblock %}
+{% block content %}
+<div class="wrap" style="padding-top:48px;padding-bottom:48px">
+<div style="display:grid;grid-template-columns:1fr 340px;gap:36px;align-items:start">
+<div>
+<div class="svc-hero">{% if svc.image %}<img src="{{ svc.image.url }}" alt="{{ svc.title }}">{% else %}<div class="svc-hero-ph">{{ svc.category.emoji|default:'⚡' }}</div>{% endif %}
+<div class="svc-hero-overlay">{% if svc.category %}<span class="badge bv" style="margin-bottom:8px;display:inline-flex">{{ svc.category.name }}</span>{% endif %}
+<div class="svc-hero-title">{{ svc.title }}</div>
+<div class="svc-hero-meta"><span><i class="bi bi-clock"></i> {{ svc.duration }} min</span><span><i class="bi bi-star-fill" style="color:#fbbf24"></i> {{ svc.pp.rating|default:'New' }} ({{ svc.pp.total_reviews }} reviews)</span></div>
+</div></div>
+<div class="svc-sec"><div class="svc-sec-label">Service Provider</div>
+<div class="prov-ic"><div class="prov-ic-av">{{ svc.pp.initials }}</div>
+<div><div class="prov-ic-name">{{ svc.pp.business_name }}{% if svc.pp.is_verified %}&nbsp;<i class="bi bi-patch-check-fill" style="color:var(--v3)"></i>{% endif %}</div>
+<div class="prov-ic-meta"><i class="bi bi-star-fill" style="color:#fbbf24"></i> {{ svc.pp.rating }} · {{ svc.pp.total_reviews }} reviews{% if svc.pp.city %} &nbsp;·&nbsp; <i class="bi bi-geo-alt"></i> {{ svc.pp.city }}{% endif %}</div></div>
+{% if user.is_authenticated and user.is_customer %}<form method="post" action="{% url 'toggle_save' pk=svc.provider.pk %}" style="margin-left:auto">{% csrf_token %}<button class="btn btn-ghost btn-sm"><i class="bi bi-heart{% if is_saved %}-fill" style="color:#f43f5e{% endif %}"></i> {% if is_saved %}Saved{% else %}Save{% endif %}</button></form>{% endif %}
+</div></div>
+<div class="svc-sec"><div class="svc-sec-label">About This Service</div><p style="color:var(--t2);line-height:1.8;font-size:15px">{{ svc.description }}</p></div>
+{% if svc.tags %}<div class="svc-sec"><div class="svc-sec-label">Tags</div><div style="display:flex;flex-wrap:wrap;gap:7px">{% for t in svc.tag_list %}<span class="tag">{{ t }}</span>{% endfor %}</div></div>{% endif %}
+<div class="svc-sec"><div class="svc-sec-label">Reviews ({{ reviews|length }})</div>
+{% for rv in reviews %}<div class="rrow"><div class="rrow-h"><div class="rrow-av">{{ rv.customer.initials }}</div><div><div class="rrow-name">{{ rv.customer.display }}</div><div class="rrow-stars">{% for i in "12345" %}<i class="rstar bi bi-star-fill {% if forloop.counter > rv.rating %}e{% endif %}"></i>{% endfor %}</div></div><div class="rrow-date">{{ rv.created_at|date:"M d, Y" }}</div></div><div class="rrow-txt">{{ rv.comment }}</div></div>
+{% empty %}<p style="color:var(--t5);font-size:14px">No reviews yet. Be the first to book!</p>{% endfor %}
+</div>
+{% if others %}<div class="svc-sec"><div class="svc-sec-label">More from {{ svc.pp.business_name }}</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+{% for o in others %}<a href="{% url 'service_detail' pk=o.pk %}" style="display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-decoration:none;color:var(--t1);transition:all .2s" onmouseover="this.style.borderColor='var(--v)'" onmouseout="this.style.borderColor='var(--border)'"><div style="width:34px;height:34px;border-radius:9px;background:var(--vl);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--v3);flex-shrink:0">{{ o.title|first|upper }}</div><div><div style="font-weight:600;font-size:13px">{{ o.title|truncatechars:28 }}</div><div style="color:var(--v3);font-size:12px;font-weight:700">₦{{ o.price|floatformat:0 }}</div></div></a>{% endfor %}
+</div></div>{% endif %}
+</div>
+<div>
+<div class="bwid">
+<div class="bwid-price"><div class="bwid-main">₦{{ svc.price|floatformat:0 }}</div><div class="bwid-per">per session</div></div>
+{% if user.is_authenticated and user.is_customer %}<a href="{% url 'create_booking' pk=svc.pk %}" class="btn btn-primary btn-full btn-lg"><i class="bi bi-calendar-check"></i> Book Now</a>
+{% elif user.is_authenticated %}<div style="background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:13px;font-size:13px;color:var(--t3);text-align:center">Only customers can book.</div>
+{% else %}<a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary btn-full btn-lg">Login to Book</a><a href="{% url 'register' %}" class="btn btn-ghost btn-full" style="margin-top:8px">Create Free Account</a>{% endif %}
+<div class="bwid-feats"><div class="bwid-f"><i class="bi bi-clock"></i><span>{{ svc.duration }} minute session</span></div><div class="bwid-f"><i class="bi bi-shield-check"></i><span>Secure Paystack payment</span></div><div class="bwid-f"><i class="bi bi-arrow-counterclockwise"></i><span>Cancel before confirmation</span></div><div class="bwid-f"><i class="bi bi-star"></i><span>{{ svc.pp.rating }} provider rating</span></div></div>
+</div></div>
+</div></div>{% endblock %}

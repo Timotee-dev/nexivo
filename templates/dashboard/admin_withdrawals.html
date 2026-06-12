@@ -1,0 +1,9 @@
+{% extends 'dashboard/base.html' %}{% block title %}Withdrawals{% endblock %}{% block page_title %}Withdrawal Requests{% endblock %}{% block a_wd %}active{% endblock %}
+{% block dash_content %}
+<div class="ph"><div><h1 class="ph-title">Withdrawal Requests</h1></div></div>
+<div class="card"><div class="tbl-wrap"><table class="nx-tbl">
+<thead><tr><th>Provider</th><th>Bank</th><th>Account No.</th><th>Account Name</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+<tbody>{% for wd in wds %}<tr><td><strong>{{ wd.provider.provider_profile.business_name }}</strong></td><td>{{ wd.bank_name }}</td><td class="mono">{{ wd.account_number }}</td><td>{{ wd.account_name }}</td><td><strong>₦{{ wd.amount|floatformat:0 }}</strong></td><td><span class="badge s-{{ wd.status }}">{{ wd.get_status_display }}</span></td><td style="font-size:12px;color:var(--t4)">{{ wd.created_at|date:"M d, Y" }}</td>
+<td>{% if wd.status == 'pending' %}<div style="display:flex;gap:5px"><a href="{% url 'approve_wd' pk=wd.pk %}" class="btn btn-green btn-xs">Approve</a><a href="{% url 'reject_wd' pk=wd.pk %}" class="btn btn-ghost btn-xs" style="color:var(--red2)">Reject</a></div>{% else %}<span style="color:var(--t5)">—</span>{% endif %}</td>
+</tr>{% empty %}<tr><td colspan="8" style="text-align:center;color:var(--t4);padding:32px">No withdrawal requests</td></tr>{% endfor %}
+</tbody></table></div></div>{% endblock %}

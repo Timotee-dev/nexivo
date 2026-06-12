@@ -1,0 +1,85 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Dashboard — Nexora{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="{% static 'css/nx.css' %}">
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="noise"></div>
+<div class="dash-layout">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-top">
+    <a href="{% url 'home' %}" class="logo"><div class="logo-mark" style="width:32px;height:32px;font-size:15px">⬡</div><span class="logo-text" style="font-size:1.05rem">Nex<em>ora</em></span></a>
+    <button class="sb-close" id="sbclose"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="sb-user">
+    <div class="sb-ui">
+      <div class="sb-av">{% if request.user.avatar %}<img src="{{ request.user.avatar.url }}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">{% else %}{{ request.user.initials }}{% endif %}</div>
+      <div><div class="sb-name">{{ request.user.display }}</div><div class="sb-role">{{ request.user.get_role_display }}</div></div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    {% if request.user.is_platform_admin %}
+      <div class="sb-sec">Overview</div>
+      <a href="{% url 'admin_dash' %}" class="sb-link {% block a_home %}{% endblock %}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+      <div class="sb-sec">Manage</div>
+      <a href="{% url 'admin_users' %}" class="sb-link {% block a_usr %}{% endblock %}"><i class="bi bi-people-fill"></i>Users</a>
+      <a href="{% url 'admin_providers' %}" class="sb-link {% block a_prov %}{% endblock %}"><i class="bi bi-person-badge-fill"></i>Providers</a>
+      <a href="{% url 'admin_bookings' %}" class="sb-link {% block a_bk %}{% endblock %}"><i class="bi bi-calendar3"></i>Bookings</a>
+      <a href="{% url 'admin_withdrawals' %}" class="sb-link {% block a_wd %}{% endblock %}"><i class="bi bi-cash-stack"></i>Withdrawals{% if pending_wds %}<span class="sb-pip">{{ pending_wds }}</span>{% endif %}</a>
+      <a href="/admin/" class="sb-link"><i class="bi bi-shield-shaded"></i>Django Admin</a>
+    {% elif request.user.is_provider %}
+      <div class="sb-sec">Overview</div>
+      <a href="{% url 'provider_dash' %}" class="sb-link {% block p_home %}{% endblock %}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+      <div class="sb-sec">Services</div>
+      <a href="{% url 'my_services' %}" class="sb-link {% block p_svcs %}{% endblock %}"><i class="bi bi-briefcase-fill"></i>My Services</a>
+      <a href="{% url 'service_create' %}" class="sb-link {% block p_new %}{% endblock %}"><i class="bi bi-plus-circle-fill"></i>Add Service</a>
+      <div class="sb-sec">Bookings</div>
+      <a href="{% url 'manage_bookings' %}" class="sb-link {% block p_books %}{% endblock %}"><i class="bi bi-calendar-check-fill"></i>Manage Bookings</a>
+      <div class="sb-sec">Finance</div>
+      <a href="{% url 'withdrawals' %}" class="sb-link {% block p_wd %}{% endblock %}"><i class="bi bi-cash-coin"></i>Withdrawals</a>
+    {% else %}
+      <div class="sb-sec">Overview</div>
+      <a href="{% url 'customer_dash' %}" class="sb-link {% block c_home %}{% endblock %}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+      <div class="sb-sec">Bookings</div>
+      <a href="{% url 'my_bookings' %}" class="sb-link {% block c_books %}{% endblock %}"><i class="bi bi-calendar-check-fill"></i>My Bookings</a>
+      <a href="{% url 'services' %}" class="sb-link"><i class="bi bi-search"></i>Browse Services</a>
+    {% endif %}
+    <div class="sb-sec">Account</div>
+    <a href="{% url 'profile' %}" class="sb-link {% block s_prof %}{% endblock %}"><i class="bi bi-person-circle"></i>Profile</a>
+    <a href="{% url 'notifications' %}" class="sb-link {% block s_notif %}{% endblock %}"><i class="bi bi-bell-fill"></i>Notifications{% if unread_count %}<span class="sb-pip">{{ unread_count }}</span>{% endif %}</a>
+    <a href="{% url 'logout' %}" class="sb-link" style="color:var(--red2)"><i class="bi bi-box-arrow-right"></i>Logout</a>
+  </nav>
+</aside>
+
+<div class="dash-main">
+  <div class="dash-topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="sb-tog" id="sbtog"><i class="bi bi-list"></i></button>
+      <div class="bread">Nexora / <span class="cur">{% block page_title %}Dashboard{% endblock %}</span></div>
+    </div>
+  </div>
+  {% if messages %}
+  <div style="padding:16px 24px 0">
+  {% for m in messages %}
+  <div class="toast {% if 'error' in m.tags %}error{% elif 'warning' in m.tags %}warning{% elif 'success' in m.tags %}success{% else %}info{% endif %}" data-ms="5500" style="position:relative;top:0;right:0;animation:none;transform:none;margin-bottom:8px;pointer-events:all;max-width:100%">
+    <i class="toast-icon bi bi-{% if 'success' in m.tags %}check-circle-fill{% elif 'error' in m.tags %}x-circle-fill{% else %}info-circle-fill{% endif %}"></i>
+    <span class="toast-msg">{{ m }}</span>
+    <button class="toast-x"><i class="bi bi-x"></i></button>
+  </div>
+  {% endfor %}
+  </div>
+  {% endif %}
+  <div class="dash-page">{% block dash_content %}{% endblock %}</div>
+</div>
+</div>
+
+<script src="{% static 'js/nx.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body></html>

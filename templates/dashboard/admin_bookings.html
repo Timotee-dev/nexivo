@@ -1,0 +1,9 @@
+{% extends 'dashboard/base.html' %}{% block title %}Bookings{% endblock %}{% block page_title %}All Bookings{% endblock %}{% block a_bk %}active{% endblock %}
+{% block dash_content %}
+<div class="ph"><div><h1 class="ph-title">All Bookings</h1></div>
+<div class="ph-actions">{% for val,lbl in STATUS %}<a href="?status={{ val }}" class="btn btn-ghost btn-xs {% if status == val %}btn-outline{% endif %}">{{ lbl }}</a>{% endfor %}<a href="?" class="btn btn-ghost btn-xs {% if not status %}btn-outline{% endif %}">All</a></div></div>
+<div class="card"><div class="tbl-wrap"><table class="nx-tbl">
+<thead><tr><th>Reference</th><th>Service</th><th>Customer</th><th>Provider</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+<tbody>{% for b in blist %}<tr><td><span class="mono">{{ b.ref }}</span></td><td>{{ b.service.title|truncatechars:22 }}</td><td>{{ b.customer.display }}</td><td>{{ b.provider.provider_profile.business_name }}</td><td>{{ b.date }}</td><td>₦{{ b.amount|floatformat:0 }}</td><td><span class="badge s-{{ b.status }}">{{ b.get_status_display }}</span></td></tr>
+{% empty %}<tr><td colspan="7" style="text-align:center;color:var(--t4);padding:32px">No bookings</td></tr>{% endfor %}
+</tbody></table></div></div>{% endblock %}

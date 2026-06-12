@@ -1,0 +1,14 @@
+{% extends 'dashboard/base.html' %}{% block title %}Notifications{% endblock %}{% block page_title %}Notifications{% endblock %}{% block s_notif %}active{% endblock %}
+{% block dash_content %}
+<div class="ph"><div><h1 class="ph-title">Notifications</h1></div>
+<div class="ph-actions"><form method="post" action="{% url 'notif_all_read' %}">{% csrf_token %}<button class="btn btn-ghost btn-sm">Mark All Read</button></form></div></div>
+<div class="card" style="max-width:700px">
+{% for n in notifs %}
+<div class="notif-page-item{% if not n.is_read %} unread{% endif %}">
+<div class="npi-ic"><i class="bi bi-bell-fill"></i></div>
+<div style="flex:1"><div class="npi-t">{{ n.title }}</div><div class="npi-b">{{ n.body }}</div><div class="npi-time">{{ n.created_at|timesince }} ago</div></div>
+{% if not n.is_read %}<div class="npi-dot"></div>{% endif %}
+</div>
+{% empty %}<div class="empty"><span class="empty-ico">🔔</span><div class="empty-t">All caught up!</div><div class="empty-s">No notifications yet.</div></div>
+{% endfor %}
+</div>{% endblock %}

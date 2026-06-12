@@ -1,0 +1,14 @@
+{% extends 'dashboard/base.html' %}{% block title %}{{ action }}{% endblock %}{% block page_title %}{{ action }}{% endblock %}{% block p_new %}active{% endblock %}
+{% block dash_content %}
+<div class="ph"><div><h1 class="ph-title">{{ action }}</h1></div></div>
+<div style="max-width:680px"><div class="card"><div class="card-header"><span class="card-title"><i class="bi bi-briefcase"></i>{{ action }}</span></div><div class="card-body">
+<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+<div class="fg"><label>Category</label>{{ form.category }}</div>
+<div class="fg"><label>Service Title</label>{{ form.title }}</div>
+<div class="fg"><label>Description</label>{{ form.description }}</div>
+<div class="fg2"><div class="fg"><label>Price (₦)</label>{{ form.price }}</div><div class="fg"><label>Duration (minutes)</label>{{ form.duration }}</div></div>
+<div class="fg"><label>Image (optional)</label>{{ form.image }}</div>
+<div class="fg"><label>Tags (comma separated)</label>{{ form.tags }}</div>
+<div class="fg"><label>Active</label>{{ form.is_active }}</div>
+<div style="display:flex;gap:12px"><button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> {{ action }}</button><a href="{% url 'my_services' %}" class="btn btn-ghost">Cancel</a></div>
+</form></div></div></div>{% endblock %}
