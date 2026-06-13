@@ -1,29 +1,38 @@
-{% extends 'dashboard/base.html' %}{% block title %}Profile{% endblock %}{% block page_title %}Profile{% endblock %}{% block s_prof %}active{% endblock %}
+{% extends 'dashboard/base.html' %}
+{% block title %}Profile — Nexivo{% endblock %}
+{% block page_title %}Profile{% endblock %}
+{% block s_profile %}active{% endblock %}
 {% block dash_content %}
-<div class="ph"><div><h1 class="ph-title">Profile Settings</h1><p class="ph-sub">Update your information</p></div></div>
-<div style="max-width:700px"><div class="card">
-<div class="card-header"><span class="card-title"><i class="bi bi-person-circle"></i>Edit Profile</span></div>
-<div class="card-body">
-<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
-{% if request.user.is_provider %}
-<div class="fg2"><div class="fg"><label>First Name</label>{{ form.first_name }}</div><div class="fg"><label>Last Name</label>{{ form.last_name }}</div></div>
-<div class="fg"><label>Business Name</label>{{ form.business_name }}</div>
-<div class="fg"><label>Tagline</label>{{ form.tagline }}</div>
-<div class="fg"><label>Description</label>{{ form.description }}</div>
-<div class="fg2"><div class="fg"><label>City</label>{{ form.city }}</div><div class="fg"><label>State</label>{{ form.state }}</div></div>
-<div class="fg"><label>Address</label>{{ form.address }}</div>
-<div style="background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px">
-<div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--t4);font-weight:700;margin-bottom:14px">Bank Details (for withdrawals)</div>
-<div class="fg2"><div class="fg"><label>Bank Name</label>{{ form.bank_name }}</div><div class="fg"><label>Account Number</label>{{ form.account_number }}</div></div>
-<div class="fg"><label>Account Name</label>{{ form.account_name }}</div>
+<div class="page-hd"><div class="page-hd-left"><h1>Profile Settings</h1><p>Update your personal information</p></div></div>
+<div style="max-width:680px">
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-person-circle"></i> Edit Profile</span></div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+        {% if request.user.is_provider %}
+          <div class="field-row"><div class="field"><label>First Name</label>{{ form.first_name }}</div><div class="field"><label>Last Name</label>{{ form.last_name }}</div></div>
+          <div class="field"><label>Business Name</label>{{ form.business_name }}</div>
+          <div class="field"><label>Tagline</label>{{ form.tagline }}</div>
+          <div class="field"><label>Description</label>{{ form.description }}</div>
+          <div class="field-row"><div class="field"><label>City</label>{{ form.city }}</div><div class="field"><label>State</label>{{ form.state }}</div></div>
+          <div class="field"><label>Address</label>{{ form.address }}</div>
+          <div class="card" style="margin-bottom:18px;background:var(--gray-20)">
+            <div class="card-header"><span class="card-title"><i class="bi bi-bank"></i> Bank Details (for withdrawals)</span></div>
+            <div class="card-body">
+              <div class="field-row"><div class="field"><label>Bank Name</label>{{ form.bank_name }}</div><div class="field"><label>Account Number</label>{{ form.account_number }}</div></div>
+              <div class="field"><label>Account Name</label>{{ form.account_name }}</div>
+            </div>
+          </div>
+        {% else %}
+          <div class="field-row"><div class="field"><label>First Name</label>{{ form.first_name }}</div><div class="field"><label>Last Name</label>{{ form.last_name }}</div></div>
+          <div class="field"><label>Phone</label>{{ form.phone }}</div>
+          <div class="field"><label>City</label>{{ form.city }}</div>
+          <div class="field"><label>Bio</label>{{ form.bio }}</div>
+          <div class="field"><label>Avatar</label>{{ form.avatar }}</div>
+        {% endif %}
+        <button type="submit" class="btn btn-gold"><i class="bi bi-check-lg"></i> Save Changes</button>
+      </form>
+    </div>
+  </div>
 </div>
-{% else %}
-<div class="fg2"><div class="fg"><label>First Name</label>{{ form.first_name }}</div><div class="fg"><label>Last Name</label>{{ form.last_name }}</div></div>
-<div class="fg"><label>Phone</label>{{ form.phone }}</div>
-<div class="fg"><label>City</label>{{ form.city }}</div>
-<div class="fg"><label>Bio</label>{{ form.bio }}</div>
-<div class="fg"><label>Avatar</label>{{ form.avatar }}</div>
-{% endif %}
-<button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Changes</button>
-</form></div></div></div>
 {% endblock %}

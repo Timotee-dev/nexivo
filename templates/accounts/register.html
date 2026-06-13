@@ -1,27 +1,38 @@
-{% extends 'base.html' %}{% block footer %}{% endblock %}{% block title %}Create Account — Nexora{% endblock %}
+{% extends 'base.html' %}{% block footer %}{% endblock %}
+{% block title %}Create Account — Nexivo{% endblock %}
 {% block content %}
-<div class="auth-page"><div class="ap-orb1"></div><div class="ap-orb2"></div>
-<div class="auth-card" style="max-width:510px">
-  <div class="auth-logo"><div class="auth-lm">⬡</div><span class="auth-lt">Nexora</span></div>
-  <h1 class="auth-h">Create Account</h1>
-  <p class="auth-p">{% if role == 'Provider' %}Start earning by listing your services{% else %}Book services in minutes{% endif %}</p>
-  <form method="post" novalidate>{% csrf_token %}
-    {% if role == 'Provider' %}
-    <div class="fg"><label>Business Name</label>{{ form.business_name }}{% if form.business_name.errors %}<div class="field-err">{{ form.business_name.errors.0 }}</div>{% endif %}</div>
-    {% endif %}
-    <div class="fg2">
-      <div class="fg"><label>First Name</label>{{ form.first_name }}{% if form.first_name.errors %}<div class="field-err">{{ form.first_name.errors.0 }}</div>{% endif %}</div>
-      <div class="fg"><label>Last Name</label>{{ form.last_name }}{% if form.last_name.errors %}<div class="field-err">{{ form.last_name.errors.0 }}</div>{% endif %}</div>
+<div class="auth-page">
+  <div class="auth-glow-1"></div>
+  <div class="auth-glow-2"></div>
+  <div class="auth-card" style="max-width:490px">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">N</div>
+      <span class="auth-logo-name">Nexi<span>vo</span></span>
     </div>
-    <div class="fg"><label>Email</label>{{ form.email }}{% if form.email.errors %}<div class="field-err">{{ form.email.errors.0 }}</div>{% endif %}</div>
-    <div class="fg"><label>Phone</label>{{ form.phone }}</div>
-    <div class="fg2">
-      <div class="fg"><label>Password</label>{{ form.password1 }}{% if form.password1.errors %}<div class="field-err">{{ form.password1.errors.0 }}</div>{% endif %}</div>
-      <div class="fg"><label>Confirm</label>{{ form.password2 }}{% if form.password2.errors %}<div class="field-err">{{ form.password2.errors.0 }}</div>{% endif %}</div>
+    <h1 class="auth-title">Create Account</h1>
+    <p class="auth-subtitle">{% if role == 'Provider' %}Start earning by listing your services{% else %}Book services in minutes{% endif %}</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if role == 'Provider' %}
+      <div class="field"><label>Business Name</label>{{ form.business_name }}{% if form.business_name.errors %}<div class="field-error">{{ form.business_name.errors.0 }}</div>{% endif %}</div>
+      {% endif %}
+      <div class="field-row">
+        <div class="field"><label>First Name</label>{{ form.first_name }}{% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors.0 }}</div>{% endif %}</div>
+        <div class="field"><label>Last Name</label>{{ form.last_name }}{% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors.0 }}</div>{% endif %}</div>
+      </div>
+      <div class="field"><label>Email</label>{{ form.email }}{% if form.email.errors %}<div class="field-error">{{ form.email.errors.0 }}</div>{% endif %}</div>
+      <div class="field"><label>Phone</label>{{ form.phone }}</div>
+      <div class="field-row">
+        <div class="field"><label>Password</label>{{ form.password1 }}{% if form.password1.errors %}<div class="field-error">{{ form.password1.errors.0 }}</div>{% endif %}</div>
+        <div class="field"><label>Confirm</label>{{ form.password2 }}{% if form.password2.errors %}<div class="field-error">{{ form.password2.errors.0 }}</div>{% endif %}</div>
+      </div>
+      {% if form.non_field_errors %}<div class="field-error" style="margin-bottom:12px">{{ form.non_field_errors.0 }}</div>{% endif %}
+      <button type="submit" class="btn btn-gold btn-full btn-lg">Create {{ role }} Account <i class="bi bi-arrow-right-short"></i></button>
+    </form>
+    <div class="auth-footer-text">
+      Have an account? <a href="{% url 'login' %}">Sign in</a> &nbsp;·&nbsp;
+      {% if role == 'Provider' %}<a href="{% url 'register' %}">Register as Customer</a>{% else %}<a href="{% url 'register_provider' %}">Register as Provider</a>{% endif %}
     </div>
-    {% if form.non_field_errors %}<div class="field-err" style="margin-bottom:14px">{{ form.non_field_errors.0 }}</div>{% endif %}
-    <button type="submit" class="btn btn-primary btn-full btn-lg">Create {{ role }} Account <i class="bi bi-arrow-right-short"></i></button>
-  </form>
-  <div class="auth-foot">Have an account? <a href="{% url 'login' %}">Sign in</a> &nbsp;·&nbsp; {% if role == 'Provider' %}<a href="{% url 'register' %}">Register as Customer</a>{% else %}<a href="{% url 'register_provider' %}">Register as Provider</a>{% endif %}</div>
-</div></div>
+  </div>
+</div>
 {% endblock %}

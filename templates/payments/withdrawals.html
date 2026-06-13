@@ -1,26 +1,28 @@
-{% extends 'dashboard/base.html' %}{% block title %}Withdrawals{% endblock %}{% block page_title %}Withdrawals{% endblock %}{% block p_wd %}active{% endblock %}
+{% extends 'dashboard/base.html' %}
+{% block title %}Withdrawals{% endblock %}{% block page_title %}Withdrawals{% endblock %}{% block p_wds %}active{% endblock %}
 {% block dash_content %}
-<div class="ph"><div><h1 class="ph-title">Withdrawal Requests</h1><p class="ph-sub">Request payouts from your balance</p></div></div>
-<div style="display:grid;grid-template-columns:1fr 2fr;gap:22px;align-items:start">
-<div>
-<div class="bal-box" style="margin-bottom:16px"><div class="bal-lbl">Available Balance</div><div class="bal-amt">₦{{ pp.available_balance|floatformat:0 }}</div><div class="bal-total">Total Earned: ₦{{ pp.total_earnings|floatformat:0 }}</div></div>
-<div class="card"><div class="card-header"><span class="card-title"><i class="bi bi-arrow-up-circle"></i>Request Payout</span></div>
-<div class="card-body">
-{% if pp.bank_name and pp.account_number %}
-<div style="background:var(--surf2);border-radius:var(--r);padding:12px;margin-bottom:16px;font-size:13px"><div style="color:var(--t4);font-size:11px;margin-bottom:4px">BANK ACCOUNT</div><div style="font-weight:700">{{ pp.bank_name }}</div><div style="color:var(--t3)">{{ pp.account_number }} — {{ pp.account_name }}</div></div>
-<form method="post">{% csrf_token %}
-<div class="fg"><label>Amount (₦)</label><input type="number" name="amount" placeholder="Enter amount" min="1000" max="{{ pp.available_balance }}" step="100" required style="text-align:center;font-size:1.2rem;font-weight:700"></div>
-<button type="submit" class="btn btn-green btn-full"><i class="bi bi-arrow-up-circle"></i> Request Withdrawal</button>
-</form>
-{% else %}<div style="text-align:center;padding:16px;color:var(--t4);font-size:13px"><p>Add bank details in <a href="{% url 'profile' %}" style="color:var(--v3)">Profile</a> first.</p></div>{% endif %}
-</div></div>
+<div class="page-hd"><div class="page-hd-left"><h1>Withdrawal Requests</h1><p>Request payouts from your balance</p></div></div>
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:start">
+  <div>
+    <div class="balance-box" style="margin-bottom:14px"><div class="balance-label">Available Balance</div><div class="balance-amount">₦{{ pp.available_balance|floatformat:0 }}</div><div class="balance-total">Total Earned: ₦{{ pp.total_earnings|floatformat:0 }}</div></div>
+    <div class="card"><div class="card-header"><span class="card-title"><i class="bi bi-arrow-up-circle"></i> Request Payout</span></div>
+    <div class="card-body">
+      {% if pp.bank_name and pp.account_number %}
+      <div style="background:var(--gray-20);border-radius:var(--radius-sm);padding:12px;margin-bottom:15px;font-size:13px"><div class="text-upper" style="margin-bottom:4px;color:var(--text-4)">Bank Account</div><div style="font-weight:700">{{ pp.bank_name }}</div><div class="text-muted">{{ pp.account_number }} — {{ pp.account_name }}</div></div>
+      <form method="post">{% csrf_token %}
+        <div class="field"><label>Amount (₦)</label><input type="number" name="amount" placeholder="Enter amount" min="1000" max="{{ pp.available_balance }}" step="100" required style="text-align:center;font-size:1.1rem;font-weight:700"></div>
+        <button type="submit" class="btn btn-success btn-full"><i class="bi bi-arrow-up-circle"></i> Request Withdrawal</button>
+      </form>
+      {% else %}
+      <p class="text-muted text-sm">Please add your bank details in <a href="{% url 'profile' %}" style="color:var(--gold)">Profile</a> before requesting a withdrawal.</p>
+      {% endif %}
+    </div></div>
+  </div>
+  <div class="card"><div class="card-header"><span class="card-title"><i class="bi bi-clock-history"></i> Withdrawal History</span></div>
+  <div class="card-body" style="padding:0 20px">
+    {% for wd in wds %}
+    <div class="wd-row"><div class="wd-info"><div class="wd-bank">{{ wd.bank_name }}</div><div class="wd-acct">{{ wd.account_number }} · {{ wd.created_at|date:"M d, Y" }}</div></div><div class="wd-right"><div class="wd-amount">₦{{ wd.amount|floatformat:0 }}</div><span class="badge s-{{ wd.status }}">{{ wd.get_status_display }}</span></div></div>
+    {% empty %}<div class="empty-state"><span class="empty-state-icon">💸</span><div class="empty-state-title">No requests yet</div></div>{% endfor %}
+  </div></div>
 </div>
-<div class="card"><div class="card-header"><span class="card-title"><i class="bi bi-clock-history"></i>Withdrawal History</span></div>
-<div class="card-body" style="padding:0">
-{% for wd in wds %}
-<div class="wrow" style="padding:14px 20px"><div class="wrow-info"><div class="wrow-bank">{{ wd.bank_name }}</div><div class="wrow-acct">{{ wd.account_number }} · {{ wd.created_at|date:"M d, Y" }}</div></div>
-<div class="wrow-r"><div class="wrow-amt">₦{{ wd.amount|floatformat:0 }}</div><span class="badge s-{{ wd.status }}">{{ wd.get_status_display }}</span></div>
-</div>
-{% empty %}<div class="empty"><span class="empty-ico">💸</span><div class="empty-t">No requests yet</div></div>{% endfor %}
-</div></div>
-</div>{% endblock %}
+{% endblock %}

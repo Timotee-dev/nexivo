@@ -1,35 +1,30 @@
-{% extends 'base.html' %}{% block title %}Receipt {{ payment.reference }}{% endblock %}
-{% block content %}<div style="max-width:600px;margin:60px auto;padding:0 20px">
-<div class="receipt">
-<div class="receipt-top">
-<div class="logo"><div class="logo-mark" style="width:32px;height:32px;font-size:14px">⬡</div><span class="logo-text" style="font-size:1rem">Nex<em>ora</em></span></div>
-<div style="text-align:right"><div style="font-size:11px;color:var(--t4);text-transform:uppercase;letter-spacing:.06em">PAYMENT RECEIPT</div><div style="font-family:monospace;color:var(--t3);font-size:12px;margin-top:3px">{{ payment.reference }}</div></div>
+{% extends 'base.html' %}
+{% block title %}Receipt {{ payment.reference }}{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:48px;padding-bottom:48px">
+  <div class="receipt-card">
+    <div class="receipt-header">
+      <div class="nav-brand"><div class="nav-brand-icon" style="width:30px;height:30px;font-size:14px">N</div><span class="nav-brand-name" style="font-size:1rem">Nexi<span>vo</span></span></div>
+      <div style="text-align:right"><div class="text-upper" style="color:var(--text-4)">Payment Receipt</div><div class="mono" style="margin-top:3px">{{ payment.reference }}</div></div>
+    </div>
+    {% if payment.status == 'success' %}
+    <div class="receipt-success-bar"><i class="bi bi-check-circle-fill"></i><div><div class="receipt-success-title">Payment Successful</div><div class="text-muted text-xs" style="margin-top:2px">{{ payment.paid_at|date:"F j, Y g:i A" }}</div></div></div>
+    {% endif %}
+    <div class="receipt-body">
+      <div style="margin-bottom:16px"><div class="receipt-row"><span>Customer</span><strong>{{ b.customer.display }}</strong></div><div class="receipt-row"><span>Email</span><strong>{{ b.customer.email }}</strong></div></div>
+      <div style="height:1px;background:var(--border);margin-bottom:16px"></div>
+      <div style="margin-bottom:16px"><div class="receipt-row"><span>Service</span><strong>{{ b.service.title }}</strong></div><div class="receipt-row"><span>Provider</span><strong>{{ b.provider.provider_profile.business_name }}</strong></div><div class="receipt-row"><span>Date</span><strong>{{ b.date|date:"F j, Y" }}</strong></div><div class="receipt-row"><span>Time</span><strong>{{ b.time|time:"g:i A" }}</strong></div></div>
+      <div style="height:1px;background:var(--border);margin-bottom:16px"></div>
+      <div class="receipt-row"><span>Subtotal</span><strong>₦{{ b.amount|floatformat:0 }}</strong></div>
+      <div class="receipt-row" style="color:var(--text-4)"><span>Platform Fee ({{ pct }}%)</span><span>₦{{ payment.commission|floatformat:0 }}</span></div>
+      <div class="receipt-row receipt-total"><span>Total Charged</span><strong style="color:var(--gold)">₦{{ payment.amount|floatformat:0 }}</strong></div>
+    </div>
+    <div class="receipt-footer">Thank you for using Nexivo · support@nexivo.ng · Booking #{{ b.pk }}</div>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:center;margin-top:20px">
+    <button onclick="window.print()" class="btn btn-ghost"><i class="bi bi-printer"></i> Print</button>
+    <a href="{% url 'booking_detail' pk=b.pk %}" class="btn btn-gold"><i class="bi bi-calendar-check"></i> View Booking</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-ghost">Dashboard</a>
+  </div>
 </div>
-{% if payment.status == 'success' %}
-<div class="receipt-ok"><i class="bi bi-check-circle-fill"></i><div><div class="receipt-ok-t">Payment Successful</div><div style="font-size:12px;color:var(--t3);margin-top:2px">{{ payment.paid_at|date:"F j, Y g:i A" }}</div></div></div>
-{% endif %}
-<div class="receipt-body">
-<div class="receipt-section" style="margin-bottom:16px">
-<div class="rec-row"><span>Customer</span><strong>{{ b.customer.display }}</strong></div>
-<div class="rec-row"><span>Email</span><strong>{{ b.customer.email }}</strong></div>
-</div>
-<div style="height:1px;background:var(--border);margin-bottom:16px"></div>
-<div style="margin-bottom:16px">
-<div class="rec-row"><span>Service</span><strong>{{ b.service.title }}</strong></div>
-<div class="rec-row"><span>Provider</span><strong>{{ b.provider.provider_profile.business_name }}</strong></div>
-<div class="rec-row"><span>Date</span><strong>{{ b.date|date:"F j, Y" }}</strong></div>
-<div class="rec-row"><span>Time</span><strong>{{ b.time|time:"g:i A" }}</strong></div>
-</div>
-<div style="height:1px;background:var(--border);margin-bottom:16px"></div>
-<div class="rec-row"><span>Subtotal</span><strong>₦{{ b.amount|floatformat:0 }}</strong></div>
-<div class="rec-row" style="color:var(--t4)"><span>Platform Fee ({{ pct }}%)</span><span>₦{{ payment.commission|floatformat:0 }}</span></div>
-<div class="rec-row rec-total"><span>Total Charged</span><strong style="color:var(--v3)">₦{{ payment.amount|floatformat:0 }}</strong></div>
-</div>
-<div class="receipt-foot">Thank you for using Nexora. For support: support@nexora.ng &nbsp;·&nbsp; Booking ID: {{ b.pk }}</div>
-</div>
-<div style="display:flex;gap:12px;justify-content:center;margin-top:22px">
-<button onclick="window.print()" class="btn btn-ghost"><i class="bi bi-printer"></i> Print</button>
-<a href="{% url 'booking_detail' pk=b.pk %}" class="btn btn-primary"><i class="bi bi-calendar-check"></i> View Booking</a>
-<a href="{% url 'dashboard' %}" class="btn btn-ghost">Dashboard</a>
-</div>
-</div>{% endblock %}
+{% endblock %}

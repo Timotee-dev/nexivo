@@ -1,46 +1,67 @@
-{% extends 'base.html' %}{% block title %}Browse Services — Nexora{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Browse Services — Nexivo{% endblock %}
 {% block content %}
-<div class="wrap" style="padding-top:48px;padding-bottom:48px">
-<div style="display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:start">
-<div>
-<div class="filter-box">
-<div class="filter-lbl">Categories</div>
-<div style="display:flex;flex-direction:column;gap:3px">
-<a href="?{% if q %}q={{ q }}&{% endif %}" class="filter-item {% if not cat %}active{% endif %}"><i class="bi bi-grid-3x3-gap"></i> All Services</a>
-{% for c in cats %}<a href="?{% if q %}q={{ q }}&{% endif %}cat={{ c.slug }}" class="filter-item {% if cat == c.slug %}active{% endif %}">{{ c.emoji }} {{ c.name }}</a>{% endfor %}
+<div class="container" style="padding-top:44px;padding-bottom:44px">
+  <div style="display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start">
+    <div>
+      <div class="filter-sidebar">
+        <div class="filter-sidebar-label">Categories</div>
+        <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:16px">
+          <a href="?{% if q %}q={{ q }}&{% endif %}" class="filter-link {% if not cat %}active{% endif %}"><i class="bi bi-grid-3x3-gap"></i> All Services</a>
+          {% for c in cats %}
+          <a href="?{% if q %}q={{ q }}&{% endif %}cat={{ c.slug }}" class="filter-link {% if cat == c.slug %}active{% endif %}">{{ c.emoji }} {{ c.name }}</a>
+          {% endfor %}
+        </div>
+        <div class="filter-sidebar-label">Sort By</div>
+        <form method="get">
+          {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+          {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
+          <select name="sort" onchange="this.form.submit()">
+            <option value="-created_at" {% if sort == '-created_at' %}selected{% endif %}>Newest First</option>
+            <option value="price"       {% if sort == 'price' %}selected{% endif %}>Price: Low → High</option>
+            <option value="-price"      {% if sort == '-price' %}selected{% endif %}>Price: High → Low</option>
+          </select>
+        </form>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1 style="font-size:1.6rem;font-weight:800">{% if q %}Results for "{{ q }}"{% else %}All Services{% endif %}</h1>
+          <p class="text-muted text-sm" style="margin-top:3px">{{ services.paginator.count }} service{{ services.paginator.count|pluralize }} found</p>
+        </div>
+        <form action="{% url 'services' %}" method="get" style="display:flex;gap:8px">
+          <input type="text" name="q" value="{{ q }}" placeholder="Search..." style="width:180px">
+          {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
+          <button class="btn btn-gold btn-sm">Search</button>
+        </form>
+      </div>
+      <div class="grid-auto">
+        {% for svc in services %}
+        <a href="{% url 'service_detail' pk=svc.pk %}" class="svc-card">
+          <div class="svc-card-img">
+            {% if svc.image %}<img src="{{ svc.image.url }}" alt="{{ svc.title }}">{% else %}<div class="svc-card-placeholder">{{ svc.category.emoji|default:'⚡' }}</div>{% endif %}
+            {% if svc.category %}<span class="svc-card-cat">{{ svc.category.name }}</span>{% endif %}
+          </div>
+          <div class="svc-card-body">
+            <div class="svc-card-provider"><div class="svc-card-provider-av">{{ svc.pp.initials }}</div>{{ svc.pp.business_name }}{% if svc.pp.is_verified %}<i class="bi bi-patch-check-fill" style="color:var(--teal);font-size:11px"></i>{% endif %}</div>
+            <div class="svc-card-title">{{ svc.title }}</div>
+            <div class="svc-card-desc">{{ svc.description|truncatechars:80 }}</div>
+            <div class="svc-card-foot"><div class="svc-card-rating"><i class="bi bi-star-fill"></i> {{ svc.pp.rating|default:"New" }}</div><div class="svc-card-price">₦{{ svc.price|floatformat:0 }}</div></div>
+          </div>
+        </a>
+        {% empty %}
+        <div style="grid-column:1/-1" class="empty-state"><span class="empty-state-icon">🔍</span><div class="empty-state-title">No services found</div><div class="empty-state-text">Try a different search or category.</div></div>
+        {% endfor %}
+      </div>
+      {% if services.has_other_pages %}
+      <div style="display:flex;justify-content:center;gap:8px;margin-top:28px;align-items:center">
+        {% if services.has_previous %}<a href="?page={{ services.previous_page_number }}&q={{ q }}&cat={{ cat }}" class="btn btn-ghost btn-sm">← Prev</a>{% endif %}
+        <span class="text-muted text-sm">Page {{ services.number }} of {{ services.paginator.num_pages }}</span>
+        {% if services.has_next %}<a href="?page={{ services.next_page_number }}&q={{ q }}&cat={{ cat }}" class="btn btn-ghost btn-sm">Next →</a>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
 </div>
-<div class="filter-lbl" style="margin-top:20px">Sort By</div>
-<form method="get">{% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}{% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
-<select name="sort" onchange="this.form.submit()">
-<option value="-created_at" {% if sort == '-created_at' %}selected{% endif %}>Newest</option>
-<option value="price" {% if sort == 'price' %}selected{% endif %}>Price ↑</option>
-<option value="-price" {% if sort == '-price' %}selected{% endif %}>Price ↓</option>
-</select></form>
-</div></div>
-<div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:12px">
-<div><h1 style="font-family:var(--font-d);font-size:1.7rem;font-weight:800">{% if q %}Results for "{{ q }}"{% else %}All Services{% endif %}</h1>
-<p style="color:var(--t4);font-size:13px;margin-top:3px">{{ services.paginator.count }} service{{ services.paginator.count|pluralize }} found</p></div>
-<form action="{% url 'services' %}" method="get" style="display:flex;gap:8px">
-<input type="text" name="q" value="{{ q }}" placeholder="Search..." style="width:190px">
-{% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
-<button class="btn btn-primary btn-sm">Search</button></form>
-</div>
-<div class="svcs-grid">
-{% for svc in services %}
-<a href="{% url 'service_detail' pk=svc.pk %}" class="svc-card">
-<div class="svc-img">{% if svc.image %}<img src="{{ svc.image.url }}" alt="{{ svc.title }}">{% else %}<div class="svc-ph">{{ svc.category.emoji|default:'⚡' }}</div>{% endif %}
-{% if svc.category %}<span class="svc-cat-pip">{{ svc.category.name }}</span>{% endif %}</div>
-<div class="svc-body">
-<div class="svc-prov"><div class="svc-pav">{{ svc.pp.initials }}</div>{{ svc.pp.business_name }}{% if svc.pp.is_verified %}&nbsp;<i class="bi bi-patch-check-fill" style="color:var(--v3);font-size:11px"></i>{% endif %}</div>
-<div class="svc-title">{{ svc.title }}</div><div class="svc-desc">{{ svc.description|truncatechars:80 }}</div>
-<div class="svc-foot"><div class="svc-rating"><i class="bi bi-star-fill"></i>{{ svc.pp.rating|default:"New" }}</div><div class="svc-price">₦{{ svc.price|floatformat:0 }}</div></div>
-</div></a>
-{% empty %}<div style="grid-column:1/-1" class="empty"><span class="empty-ico">🔍</span><div class="empty-t">No services found</div><div class="empty-s">Try a different search.</div></div>{% endfor %}
-</div>
-{% if services.has_other_pages %}<div style="display:flex;justify-content:center;gap:8px;margin-top:28px">
-{% if services.has_previous %}<a href="?page={{ services.previous_page_number }}&q={{ q }}&cat={{ cat }}" class="btn btn-ghost btn-sm">← Prev</a>{% endif %}
-<span style="display:flex;align-items:center;padding:0 14px;color:var(--t4);font-size:13px">Page {{ services.number }} of {{ services.paginator.num_pages }}</span>
-{% if services.has_next %}<a href="?page={{ services.next_page_number }}&q={{ q }}&cat={{ cat }}" class="btn btn-ghost btn-sm">Next →</a>{% endif %}
-</div>{% endif %}
-</div></div></div>{% endblock %}
+{% endblock %}

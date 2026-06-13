@@ -1,17 +1,21 @@
-{% extends 'base.html' %}{% block footer %}{% endblock %}{% block title %}Pay for Booking{% endblock %}
-{% block content %}<div style="max-width:520px;margin:60px auto;padding:0 20px">
-<div class="pay-card">
-<div style="text-align:center;margin-bottom:24px"><div style="font-size:3rem;margin-bottom:8px">💳</div><h2 style="font-family:var(--font-d);font-size:1.5rem">Complete Payment</h2><p style="color:var(--t3);font-size:14px;margin-top:4px">Secure payment via Paystack</p></div>
-<div class="pay-sum">
-<div class="pay-row"><span>Service</span><strong>{{ b.service.title }}</strong></div>
-<div class="pay-row"><span>Provider</span><strong>{{ b.provider.provider_profile.business_name }}</strong></div>
-<div class="pay-row"><span>Date</span><strong>{{ b.date|date:"F j, Y" }} {{ b.time|time:"g:i A" }}</strong></div>
-<div class="pay-row"><span>Reference</span><span class="mono">{{ ref }}</span></div>
-<div class="pay-row"><span>Total</span><strong style="color:var(--v3);font-size:1.1rem">₦{{ b.amount|floatformat:0 }}</strong></div>
+{% extends 'base.html' %}{% block footer %}{% endblock %}
+{% block title %}Complete Payment{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:52px;padding-bottom:52px;display:flex;justify-content:center">
+  <div class="pay-card">
+    <div style="text-align:center;margin-bottom:22px"><div style="font-size:3rem;margin-bottom:8px">💳</div><h2 style="font-size:1.4rem;font-weight:800">Complete Payment</h2><p class="text-muted text-sm" style="margin-top:4px">Secured by Paystack</p></div>
+    <div class="pay-summary">
+      <div class="pay-summary-row"><span>Service</span><strong>{{ b.service.title }}</strong></div>
+      <div class="pay-summary-row"><span>Provider</span><strong>{{ b.provider.provider_profile.business_name }}</strong></div>
+      <div class="pay-summary-row"><span>Date</span><strong>{{ b.date|date:"F j, Y" }} {{ b.time|time:"g:i A" }}</strong></div>
+      <div class="pay-summary-row"><span>Reference</span><span class="mono">{{ ref }}</span></div>
+      <div class="pay-summary-row"><span>Total</span><strong style="color:var(--gold);font-size:1.1rem">₦{{ b.amount|floatformat:0 }}</strong></div>
+    </div>
+    {% if 'demo' in pk_key or 'test' in pk_key %}
+    <div class="demo-banner"><i class="bi bi-info-circle-fill"></i><span><strong>Demo Mode:</strong> Click below to simulate a successful payment without a real Paystack key.</span></div>
+    {% endif %}
+    <a href="{% url 'verify_payment' ref=ref %}" class="btn btn-success btn-full btn-lg"><i class="bi bi-lock-fill"></i> {% if 'demo' in pk_key or 'test' in pk_key %}Simulate Payment{% else %}Pay with Paystack{% endif %}</a>
+    <p class="text-center text-muted text-xs" style="margin-top:13px"><i class="bi bi-shield-lock-fill"></i> 256-bit SSL encryption</p>
+  </div>
 </div>
-{% if 'demo' in pk_key or 'test' in pk_key %}
-<div class="demo-note"><i class="bi bi-info-circle-fill" style="flex-shrink:0;margin-top:1px"></i><span><strong>Demo Mode:</strong> This is a simulated payment. Click the button below to auto-verify and confirm your booking without a real Paystack key.</span></div>
-{% endif %}
-<a href="{% url 'verify_payment' ref=ref %}" class="btn btn-green btn-full btn-lg"><i class="bi bi-lock-fill"></i> {% if 'demo' in pk_key or 'test' in pk_key %}Simulate Payment{% else %}Pay with Paystack{% endif %}</a>
-<div style="text-align:center;margin-top:16px;font-size:12px;color:var(--t5)"><i class="bi bi-shield-lock-fill"></i> Secured by 256-bit SSL encryption</div>
-</div></div>{% endblock %}
+{% endblock %}
