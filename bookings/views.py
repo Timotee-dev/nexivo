@@ -11,6 +11,15 @@ from accounts.views import notify
 logger = logging.getLogger(__name__)
 
 
+def _get_or_create_provider_profile(provider):
+    from accounts.models import ProviderProfile
+    pp, created = ProviderProfile.objects.get_or_create(
+        user=provider,
+        defaults={'business_name': provider.display()}
+    )
+    return pp
+
+
 @login_required
 def create_booking(request, pk):
     svc = get_object_or_404(Service, pk=pk, is_active=True)
@@ -19,12 +28,8 @@ def create_booking(request, pk):
         messages.error(request, 'Only customers can book services.')
         return redirect('service_detail', pk=pk)
 
-    # Make sure provider has a profile
-    try:
-        _ = svc.provider.provider_profile
-    except Exception:
-        messages.error(request, 'This service is temporarily unavailable. Please try another.')
-        return redirect('services')
+    # Ensure provider profile exists
+    _get_or_create_provider_profile(svc.provider)
 
     form = BookingForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
@@ -34,18 +39,18 @@ def create_booking(request, pk):
             b.provider = svc.provider
             b.service = svc
             b.amount = svc.price
+            b.status = 'awaiting_payment'
             b.save()
             try:
                 notify(
                     svc.provider,
                     'New Booking 📅',
-                    f'{request.user.display()} wants to book "{svc.title}" on {b.date}.',
+                    f'{request.user.display()} booked "{svc.title}" on {b.date}. Payment pending.',
                     'booking'
                 )
             except Exception as e:
-                logger.warning('Could not send booking notification: %s', e)
-            messages.success(request, 'Booking request sent! Waiting for provider confirmation.')
-            return redirect('booking_detail', pk=b.pk)
+                logger.warning('Notification error: %s', e)
+            return redirect('pay', pk=b.pk)
         except Exception as e:
             logger.exception('Error creating booking')
             messages.error(request, 'Something went wrong. Please try again.')
@@ -102,12 +107,12 @@ def accept_booking(request, pk):
         notify(
             b.customer,
             'Booking Accepted! 🎉',
-            f'Your booking for "{b.service.title}" has been accepted. Please make payment.',
+            f'Your booking for "{b.service.title}" has been accepted. Please complete payment.',
             'payment'
         )
     except Exception as e:
         logger.warning('Notification error: %s', e)
-    messages.success(request, 'Booking accepted! Customer has been notified to pay.')
+    messages.success(request, 'Booking accepted! Customer notified to pay.')
     return redirect('manage_bookings')
 
 
@@ -160,7 +165,7 @@ def mark_completed(request, pk):
     b.status = 'completed'
     b.save()
     try:
-        pp = b.provider.provider_profile
+        pp = _get_or_create_provider_profile(b.provider)
         pp.total_earnings += b.provider_earnings
         pp.available_balance += b.provider_earnings
         pp.save(update_fields=['total_earnings', 'available_balance'])
@@ -217,7 +222,8 @@ def leave_review(request, pk):
             r.service = b.service
             r.save()
             try:
-                b.provider.provider_profile.refresh_rating()
+                pp = _get_or_create_provider_profile(b.provider)
+                pp.refresh_rating()
             except Exception as e:
                 logger.warning('Could not refresh rating: %s', e)
             messages.success(request, 'Review submitted! Thank you.')
