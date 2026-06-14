@@ -34,6 +34,7 @@ class ProviderProfile(models.Model):
     bank_name = models.CharField(max_length=100, blank=True)
     account_number = models.CharField(max_length=20, blank=True)
     account_name = models.CharField(max_length=200, blank=True)
+    paystack_subaccount_code = models.CharField(max_length=100, blank=True)
     total_earnings = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     available_balance = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)

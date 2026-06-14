@@ -1,0 +1,51 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Bank Account Setup{% endblock %}{% block page_title %}Bank Account{% endblock %}{% block p_wds %}active{% endblock %}
+{% block dash_content %}
+<div class="page-hd"><div class="page-hd-left"><h1>Bank Account Setup</h1><p>Connect your bank account to receive payments directly</p></div></div>
+
+<div style="max-width:560px">
+  {% if pp.account_number and pp.account_name %}
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-header"><span class="card-title"><i class="bi bi-check-circle-fill" style="color:var(--green)"></i> Connected Account</span></div>
+    <div class="card-body">
+      <div style="background:var(--gray-20);border-radius:var(--radius-sm);padding:14px">
+        <div class="text-upper" style="margin-bottom:4px;color:var(--text-4)">Account Holder</div>
+        <div style="font-weight:700;font-size:15px">{{ pp.account_name }}</div>
+        <div class="text-muted" style="margin-top:4px">Account: {{ pp.account_number }}</div>
+      </div>
+      {% if pp.paystack_subaccount_code %}
+      <div style="margin-top:10px;font-size:13px;color:var(--green)"><i class="bi bi-check-circle"></i> Ready to receive split payments</div>
+      {% else %}
+      <div style="margin-top:10px;font-size:13px;color:var(--gold)"><i class="bi bi-info-circle"></i> Subaccount will be created on first payment</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-bank"></i> {% if pp.account_number %}Update{% else %}Add{% endif %} Bank Account</span></div>
+    <div class="card-body">
+      <form method="post" novalidate>{% csrf_token %}
+        <div class="field">
+          <label>Bank</label>
+          <select name="bank_code" required>
+            <option value="">Select your bank...</option>
+            {% for bank in banks %}
+            <option value="{{ bank.code }}">{{ bank.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Account Number</label>
+          <input type="text" name="account_number" placeholder="10-digit account number" maxlength="10" pattern="[0-9]{10}" required>
+        </div>
+        <button type="submit" class="btn btn-gold btn-full"><i class="bi bi-shield-check"></i> Verify & Connect Account</button>
+      </form>
+      <div class="alert-bar" style="margin-top:18px;margin-bottom:0">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>When customers pay, your earnings (₦{{ 100|add:"-10" }}% of each booking) go straight to this account via Paystack. Our {{ pp.user.is_platform_admin|yesno:",,"|default:"" }}10% commission is deducted automatically.</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

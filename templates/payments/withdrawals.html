@@ -1,28 +1,56 @@
 {% extends 'dashboard/base.html' %}
-{% block title %}Withdrawals{% endblock %}{% block page_title %}Withdrawals{% endblock %}{% block p_wds %}active{% endblock %}
+{% block title %}Earnings & Payouts{% endblock %}{% block page_title %}Earnings{% endblock %}{% block p_wds %}active{% endblock %}
 {% block dash_content %}
-<div class="page-hd"><div class="page-hd-left"><h1>Withdrawal Requests</h1><p>Request payouts from your balance</p></div></div>
-<div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;align-items:start">
-  <div>
-    <div class="balance-box" style="margin-bottom:14px"><div class="balance-label">Available Balance</div><div class="balance-amount">₦{{ pp.available_balance|floatformat:0 }}</div><div class="balance-total">Total Earned: ₦{{ pp.total_earnings|floatformat:0 }}</div></div>
-    <div class="card"><div class="card-header"><span class="card-title"><i class="bi bi-arrow-up-circle"></i> Request Payout</span></div>
-    <div class="card-body">
-      {% if pp.bank_name and pp.account_number %}
-      <div style="background:var(--gray-20);border-radius:var(--radius-sm);padding:12px;margin-bottom:15px;font-size:13px"><div class="text-upper" style="margin-bottom:4px;color:var(--text-4)">Bank Account</div><div style="font-weight:700">{{ pp.bank_name }}</div><div class="text-muted">{{ pp.account_number }} — {{ pp.account_name }}</div></div>
-      <form method="post">{% csrf_token %}
-        <div class="field"><label>Amount (₦)</label><input type="number" name="amount" placeholder="Enter amount" min="1000" max="{{ pp.available_balance }}" step="100" required style="text-align:center;font-size:1.1rem;font-weight:700"></div>
-        <button type="submit" class="btn btn-success btn-full"><i class="bi bi-arrow-up-circle"></i> Request Withdrawal</button>
-      </form>
-      {% else %}
-      <p class="text-muted text-sm">Please add your bank details in <a href="{% url 'profile' %}" style="color:var(--gold)">Profile</a> before requesting a withdrawal.</p>
-      {% endif %}
-    </div></div>
-  </div>
-  <div class="card"><div class="card-header"><span class="card-title"><i class="bi bi-clock-history"></i> Withdrawal History</span></div>
+<div class="page-hd">
+  <div class="page-hd-left"><h1>Earnings & Payouts</h1><p>Payments are sent directly to your bank account by Paystack</p></div>
+  <div class="page-hd-right"><a href="{% url 'bank_setup' %}" class="btn btn-gold btn-sm"><i class="bi bi-bank"></i> {% if has_subaccount %}Update Bank{% else %}Connect Bank{% endif %}</a></div>
+</div>
+
+{% if not pp.account_number %}
+<div class="alert-bar">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <span>You haven't connected a bank account yet. <a href="{% url 'bank_setup' %}">Connect now</a> to start receiving payments directly.</span>
+</div>
+{% elif not has_subaccount %}
+<div class="alert-bar">
+  <i class="bi bi-info-circle-fill"></i>
+  <span>Account connected: <strong>{{ pp.account_name }}</strong> ({{ pp.account_number }}). Your payout split will activate on your next sale.</span>
+</div>
+{% else %}
+<div class="alert-bar" style="background:var(--green-bg);border-color:rgba(34,197,94,.2);color:var(--green)">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>Connected: <strong>{{ pp.account_name }}</strong> ({{ pp.account_number }}). Earnings are paid directly to this account by Paystack.</span>
+</div>
+{% endif %}
+
+<div class="balance-box" style="margin-bottom:18px;max-width:320px">
+  <div class="balance-label">Total Earned (Lifetime)</div>
+  <div class="balance-amount">₦{{ pp.total_earnings|floatformat:0 }}</div>
+  <div class="balance-total">Net of platform commission</div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="card-title"><i class="bi bi-clock-history"></i> Payment History</span></div>
   <div class="card-body" style="padding:0 20px">
-    {% for wd in wds %}
-    <div class="wd-row"><div class="wd-info"><div class="wd-bank">{{ wd.bank_name }}</div><div class="wd-acct">{{ wd.account_number }} · {{ wd.created_at|date:"M d, Y" }}</div></div><div class="wd-right"><div class="wd-amount">₦{{ wd.amount|floatformat:0 }}</div><span class="badge s-{{ wd.status }}">{{ wd.get_status_display }}</span></div></div>
-    {% empty %}<div class="empty-state"><span class="empty-state-icon">💸</span><div class="empty-state-title">No requests yet</div></div>{% endfor %}
-  </div></div>
+    {% for p in payments %}
+    <div class="list-row">
+      <div class="list-row-icon">{{ p.booking.service.title|first|upper }}</div>
+      <div class="list-row-info">
+        <div class="list-row-title">{{ p.booking.service.title }}</div>
+        <div class="list-row-meta"><i class="bi bi-calendar3"></i> {{ p.paid_at|date:"M d, Y" }} · {{ p.booking.customer.display }}</div>
+      </div>
+      <div class="list-row-right">
+        <div class="list-row-amount">₦{{ p.provider_payout|floatformat:0 }}</div>
+        <span class="badge badge-green">Paid to bank</span>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <span class="empty-state-icon">💸</span>
+      <div class="empty-state-title">No payments yet</div>
+      <div class="empty-state-text">Once customers pay for bookings, your earnings will appear here.</div>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

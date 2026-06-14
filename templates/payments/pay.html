@@ -1,5 +1,5 @@
 {% extends 'base.html' %}{% block footer %}{% endblock %}
-{% block title %}Complete Payment — Nexivo{% endblock %}
+{% block title %}Complete Payment — Nexora{% endblock %}
 {% block content %}
 <div class="container" style="padding-top:52px;padding-bottom:52px;display:flex;justify-content:center">
   <div class="pay-card">
@@ -10,82 +10,30 @@
       <p class="text-muted text-sm" style="margin-top:4px">Secured by Paystack · 256-bit SSL</p>
     </div>
 
-    <!-- Order summary -->
     <div class="pay-summary">
       <div class="pay-summary-row"><span>Service</span><strong>{{ b.service.title }}</strong></div>
       <div class="pay-summary-row"><span>Provider</span><strong>{{ b.provider.provider_profile.business_name }}</strong></div>
       <div class="pay-summary-row"><span>Date</span><strong>{{ b.date|date:"F j, Y" }} at {{ b.time|time:"g:i A" }}</strong></div>
-      <div class="pay-summary-row"><span>Booking Ref</span><span class="mono">{{ b.ref }}</span></div>
+      <div class="pay-summary-row"><span>Reference</span><span class="mono">{{ ref }}</span></div>
       <div class="pay-summary-row"><span>Total</span><strong style="color:var(--gold);font-size:1.1rem">₦{{ b.amount|floatformat:0 }}</strong></div>
     </div>
 
     {% if is_demo %}
-    <!-- Demo mode notice -->
     <div class="demo-banner">
       <i class="bi bi-info-circle-fill"></i>
-      <span><strong>Demo Mode:</strong> No real Paystack key is configured. Click the button below to simulate a successful payment for testing purposes.</span>
+      <span><strong>Demo Mode:</strong> No live Paystack key configured. Click below to simulate payment for testing.</span>
     </div>
     <a href="{% url 'verify_payment' ref=ref %}" class="btn btn-success btn-full btn-lg">
-      <i class="bi bi-play-circle-fill"></i> Simulate Payment (Demo)
+      <i class="bi bi-play-circle-fill"></i> Simulate Payment
     </a>
-
     {% else %}
-    <!-- Real Paystack inline payment -->
-    <div id="pay-btn-wrap">
-      <button
-        id="pay-btn"
-        type="button"
-        class="btn btn-success btn-full btn-lg"
-        onclick="payWithPaystack()"
-      >
-        <i class="bi bi-lock-fill"></i> Pay ₦{{ b.amount|floatformat:0 }} Securely
-      </button>
-    </div>
-
-    <div id="pay-loading" style="display:none;text-align:center;padding:16px">
-      <div class="spin-icon" style="width:24px;height:24px;border-width:3px;margin:0 auto 10px"></div>
-      <p class="text-muted text-sm">Verifying your payment, please wait...</p>
-    </div>
-
-    <!-- Hidden form to submit after Paystack callback -->
-    <form id="verify-form" method="get" action="{% url 'verify_payment' ref=ref %}" style="display:none">
-    </form>
-
-    <script src="https://js.paystack.co/v2/inline.js"></script>
-    <script>
-    function payWithPaystack() {
-      var handler = PaystackPop.setup({
-        key: '{{ pk_key }}',
-        email: '{{ customer_email }}',
-        amount: {{ amount_kobo }},
-        currency: 'NGN',
-        ref: '{{ ref }}',
-        metadata: {
-          booking_ref: '{{ b.ref }}',
-          customer_name: '{{ b.customer.get_full_name }}',
-          service: '{{ b.service.title }}',
-        },
-        onClose: function () {
-          // User closed the popup without paying
-          var wrap = document.getElementById('pay-btn-wrap');
-          if (wrap) wrap.style.display = 'block';
-        },
-        callback: function (response) {
-          // Payment completed — verify on server
-          document.getElementById('pay-btn-wrap').style.display = 'none';
-          document.getElementById('pay-loading').style.display = 'block';
-          // Redirect to verify endpoint
-          window.location.href = '{% url "verify_payment" ref=ref %}';
-        }
-      });
-      handler.openIframe();
-    }
-    </script>
+    <p style="font-size:13px;color:var(--text-3);text-align:center;margin-bottom:14px">
+      You'll be redirected to Paystack to pay with card, bank transfer, USSD, or any bank of your choice.
+    </p>
     {% endif %}
 
     <p class="text-center text-muted text-xs" style="margin-top:14px">
-      <i class="bi bi-shield-lock-fill"></i>
-      Your payment is protected by Paystack's secure payment infrastructure.
+      <i class="bi bi-shield-lock-fill"></i> Your payment is protected by Paystack.
     </p>
 
     <div style="text-align:center;margin-top:14px">
