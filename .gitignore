@@ -1,35 +1,7 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-build/
-*.egg
-
-# Django
-db.sqlite3
-*.sqlite3
-/media/
-/staticfiles/
-local_settings.py
-
-# Environment
-.env
-.env.*
-!.env.example
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-
-# Testing
-htmlcov/
-.coverage
-coverage.xml
-.pytest_cache/
-
-# Docker
-*.pid
+venv/  
+__pycache__/  
+*.pyc  
+db.sqlite3  
+.env  
+media/  
+staticfiles/ 
