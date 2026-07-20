@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block meta_description %}Nexivo — Premium event booking platform{% endblock %}">
+  <title>{% block title %}Nexivo{% endblock %} — Premium Events</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/static/css/nexivo.css">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav__inner">
+    <a href="/" class="nav__logo">Nexiv<span>o</span></a>
+
+    <div class="nav__links">
+      <a href="/events/" class="nav__link">Explore</a>
+      <a href="/events/?event_type=virtual" class="nav__link">Virtual</a>
+      <a href="/events/?event_type=physical" class="nav__link">In-Person</a>
+      <a href="/events/create/" class="nav__link">Host an Event</a>
+    </div>
+
+    <div class="nav__actions">
+      <button id="theme-toggle" class="btn btn--ghost btn--sm" aria-label="Toggle theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+
+      <!-- Logged-out state -->
+      <div id="auth-links" class="flex gap-8">
+        <a href="/auth/login/" class="btn btn--outline btn--sm">Sign In</a>
+        <a href="/auth/register/" class="btn btn--primary btn--sm">Get Started</a>
+      </div>
+
+      <!-- Logged-in state (hidden until JS runs) -->
+      <div id="user-menu" class="flex gap-8 hidden">
+        <a href="/dashboard/" class="btn btn--ghost btn--sm">Dashboard</a>
+        <button id="logout-btn" class="btn btn--outline btn--sm">Sign Out</button>
+        <span class="text-sub fw-600" id="user-menu-name"></span>
+      </div>
+
+      <button class="nav__menu-btn btn btn--ghost" aria-label="Menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<!-- ── Footer ─────────────────────────────────────────────────────────── -->
+<footer style="border-top:1px solid var(--border);padding:48px 0;margin-top:64px">
+  <div class="container">
+    <div class="grid-4" style="margin-bottom:40px">
+      <div>
+        <div class="nav__logo" style="margin-bottom:16px">Nexiv<span style="color:var(--gold)">o</span></div>
+        <p class="text-sub" style="font-size:.875rem;line-height:1.7">
+          The premium marketplace for discovering and booking world-class events in Nigeria and beyond.
+        </p>
+      </div>
+      <div>
+        <p class="fw-600" style="margin-bottom:12px">Discover</p>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:.875rem">
+          <a href="/events/?event_type=physical" class="text-sub">In-Person Events</a>
+          <a href="/events/?event_type=virtual" class="text-sub">Virtual Events</a>
+          <a href="/events/?is_featured=true" class="text-sub">Featured</a>
+          <a href="/events/trending/" class="text-sub">Trending</a>
+        </div>
+      </div>
+      <div>
+        <p class="fw-600" style="margin-bottom:12px">Organise</p>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:.875rem">
+          <a href="/events/create/" class="text-sub">Create an Event</a>
+          <a href="/dashboard/host/" class="text-sub">Host Dashboard</a>
+          <a href="/dashboard/verification/" class="text-sub">Verify Identity</a>
+        </div>
+      </div>
+      <div>
+        <p class="fw-600" style="margin-bottom:12px">Support</p>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:.875rem">
+          <a href="/help/" class="text-sub">Help Centre</a>
+          <a href="/contact/" class="text-sub">Contact Us</a>
+          <a href="/terms/" class="text-sub">Terms of Service</a>
+          <a href="/privacy/" class="text-sub">Privacy Policy</a>
+        </div>
+      </div>
+    </div>
+    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:24px">
+      <p class="text-muted" style="font-size:.8125rem">© 2026 Nexivo. All rights reserved.</p>
+      <p class="text-muted" style="font-size:.8125rem">Secure payments by Paystack · Flutterwave · Stripe</p>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/static/js/nexivo.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}My Tickets{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_customer_sidebar.html" with active="tickets" %}
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">My Tickets</h1>
+    <p class="text-muted" style="margin-bottom:28px">Your upcoming and past event tickets</p>
+    <div id="my-tickets"><div class="spinner" style="margin:40px auto"></div></div>
+  </main>
+</div>
+
+<!-- Transfer Modal -->
+<div class="modal-backdrop" id="transfer-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('transfer-modal')">×</button>
+    <h2 class="modal__title">Transfer Ticket</h2>
+    <p class="modal__sub">Send this ticket to another person. They have 48 hours to accept.</p>
+    <input type="hidden" id="transfer-ticket-code">
+    <div class="form-group">
+      <label class="form-label">Recipient Email *</label>
+      <input class="form-input" type="email" id="transfer-to-email" placeholder="friend@example.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message (optional)</label>
+      <input class="form-input" id="transfer-message" placeholder="Enjoy the show!">
+    </div>
+    <button class="btn btn--primary btn--full" onclick="submitTransfer()">Send Ticket</button>
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal-backdrop" id="qr-modal">
+  <div class="modal" style="position:relative;text-align:center">
+    <button class="modal__close" onclick="Modal.close('qr-modal')">×</button>
+    <h2 class="modal__title" id="qr-modal-title">Your Ticket</h2>
+    <p class="text-muted" id="qr-modal-code" style="margin-bottom:20px;font-family:monospace"></p>
+    <img id="qr-modal-img" style="width:200px;height:200px;margin:0 auto;border-radius:8px;display:block">
+    <p class="text-muted" style="font-size:.8125rem;margin-top:16px">Show this QR code at the entrance</p>
+  </div>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  await loadTickets();
+});
+
+async function loadTickets() {
+  const el = document.getElementById('my-tickets');
+  el.innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+
+  try {
+    const data = await Api.get('/tickets/mine/');
+    const tickets = data.results || [];
+
+    if (!tickets.length) {
+      el.innerHTML = `
+        <div style="text-align:center;padding:56px 20px;color:var(--muted)">
+          <div style="font-size:3rem;margin-bottom:12px">🎫</div>
+          <h3 style="font-size:1.125rem;color:var(--text);margin-bottom:6px">No tickets yet</h3>
+          <p>Book an event to get your first ticket</p>
+          <a href="/events/" class="btn btn--gold" style="margin-top:16px;display:inline-flex">Browse Events</a>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = tickets.map(t => {
+      const event = t.event || {};
+      const booking = t.booking_item?.booking || {};
+      const isUsed = t.status === 'used';
+      const isPast = event.start_datetime && new Date(event.start_datetime) < new Date();
+
+      return `
+        <div style="background:var(--bg);border:1.5px solid ${isUsed ? 'var(--border)' : 'var(--gold)'};border-radius:var(--radius-lg);padding:24px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;opacity:${isUsed ? '.6' : '1'}">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <span style="font-size:1.0625rem;font-weight:700">${event.title || 'Event'}</span>
+              <span style="padding:2px 10px;border-radius:40px;font-size:.75rem;font-weight:600;background:${isUsed ? 'var(--surface-2)' : isPast ? 'var(--surface-2)' : '#e8f5e9'};color:${isUsed ? 'var(--muted)' : isPast ? 'var(--muted)' : 'var(--success)'}">
+                ${isUsed ? 'Used' : isPast ? 'Past' : 'Valid'}
+              </span>
+            </div>
+            <div style="color:var(--muted);font-size:.875rem;margin-bottom:6px">
+              ${event.start_datetime ? '📅 ' + new Date(event.start_datetime).toLocaleDateString('en-NG', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) : ''}
+              ${event.city ? ' &nbsp;📍 ' + (event.venue_name || event.city) : ''}
+            </div>
+            <div style="color:var(--muted);font-size:.875rem;margin-bottom:12px">
+              ${t.ticket_type?.name || ''} &nbsp;·&nbsp;
+              <span style="font-family:monospace;background:var(--surface-2);padding:2px 8px;border-radius:4px;font-size:.8125rem">${t.ticket_code}</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${t.qr_image ? `
+                <button class="btn btn--gold btn--sm" onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')">
+                  📱 Show QR Code
+                </button>` : ''}
+              ${t.pdf_file ? `
+                <a href="${t.pdf_file}" download class="btn btn--outline btn--sm">
+                  ⬇ Download PDF
+                </a>` : ''}
+              ${!isUsed && !isPast ? `
+                <button class="btn btn--outline btn--sm" onclick="openTransfer('${t.ticket_code}')">
+                  ↗ Transfer
+                </button>` : ''}
+            </div>
+          </div>
+          <div>
+            ${t.qr_image ? `
+              <img src="${t.qr_image}"
+                   style="width:90px;height:90px;border-radius:8px;cursor:pointer;border:2px solid var(--border)"
+                   onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')"
+                   alt="QR Code">` :
+              `<div style="width:90px;height:90px;background:var(--surface-2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);text-align:center;padding:8px">QR<br>generating…</div>`
+            }
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (e) {
+    el.innerHTML = '<p style="color:var(--muted)">Could not load tickets. Please refresh.</p>';
+  }
+}
+
+function showQR(code, qrUrl, eventTitle) {
+  document.getElementById('qr-modal-title').textContent = eventTitle || 'Your Ticket';
+  document.getElementById('qr-modal-code').textContent = code;
+  document.getElementById('qr-modal-img').src = qrUrl;
+  Modal.open('qr-modal');
+}
+
+function openTransfer(code) {
+  document.getElementById('transfer-ticket-code').value = code;
+  document.getElementById('transfer-to-email').value = '';
+  document.getElementById('transfer-message').value = '';
+  Modal.open('transfer-modal');
+}
+
+async function submitTransfer() {
+  const code = document.getElementById('transfer-ticket-code').value;
+  const toEmail = document.getElementById('transfer-to-email').value.trim();
+  if (!toEmail) { Toast.error('Enter a recipient email'); return; }
+  try {
+    await Api.post(`/tickets/${code}/transfer/`, {
+      to_email: toEmail,
+      message: document.getElementById('transfer-message').value
+    });
+    Toast.success('Ticket transfer sent!');
+    Modal.close('transfer-modal');
+  } catch(err) {
+    Toast.error(err?.detail || 'Transfer failed. Please try again.');
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+<aside class="sidebar">
+  <div class="sidebar__section">
+    <p class="sidebar__label">My Nexivo</p>
+    <a href="/dashboard/customer/" class="sidebar__link {% if active == 'overview' %}sidebar__link--active{% endif %}">🏠 Overview</a>
+    <a href="/dashboard/my-tickets/" class="sidebar__link {% if active == 'tickets' %}sidebar__link--active{% endif %}">🎫 My Tickets</a>
+    <a href="/dashboard/bookings/" class="sidebar__link {% if active == 'bookings' %}sidebar__link--active{% endif %}">📋 Bookings</a>
+    <a href="/dashboard/favorites/" class="sidebar__link {% if active == 'favorites' %}sidebar__link--active{% endif %}">❤️ Saved Events</a>
+    <a href="/dashboard/following/" class="sidebar__link {% if active == 'following' %}sidebar__link--active{% endif %}">👥 Following</a>
+  </div>
+  <div class="sidebar__section">
+    <p class="sidebar__label">Account</p>
+    <a href="/dashboard/notifications/" class="sidebar__link {% if active == 'notifications' %}sidebar__link--active{% endif %}">🔔 Notifications</a>
+    <a href="/dashboard/my-profile/" class="sidebar__link {% if active == 'profile' %}sidebar__link--active{% endif %}">👤 Profile</a>
+  </div>
+</aside>

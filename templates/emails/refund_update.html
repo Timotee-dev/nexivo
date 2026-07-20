@@ -1,0 +1,15 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 class="h1">Refund Update</h1>
+<p class="sub">Hi {{ customer_name }}, here's an update on your refund request for <strong>{{ event_title }}</strong>.</p>
+<table class="detail-table">
+  <tr><td>Booking Ref</td><td>{{ booking_reference }}</td></tr>
+  <tr><td>Refund Amount</td><td>₦{{ refund_amount }}</td></tr>
+  <tr><td>Status</td><td>{{ refund_status }}</td></tr>
+  {% if rejection_reason %}<tr><td>Reason</td><td>{{ rejection_reason }}</td></tr>{% endif %}
+</table>
+{% if refund_status == 'processing' %}
+<p class="sub" style="margin-top:16px">Your refund is being processed and should appear in your account within 3-7 business days depending on your bank.</p>
+{% endif %}
+<a href="{{ frontend_url }}/dashboard/customer/" class="btn">View My Account</a>
+{% endblock %}

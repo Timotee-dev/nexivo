@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Ticket Scanner — {{ event.title }}{% endblock %}
+{% block content %}
+<div id="scanner-page">
+  <input type="hidden" id="scanner-event-id" value="{{ event.id }}">
+  <div class="container--narrow" style="padding-top:40px">
+    <div class="flex-between" style="margin-bottom:24px">
+      <div>
+        <h1 class="font-display" style="font-size:1.75rem">Check-In Scanner</h1>
+        <p class="text-muted">{{ event.title }}</p>
+      </div>
+      <div class="flex gap-16">
+        <div class="text-center"><div class="stat-card__value" id="scan-checkedin">—</div><p class="text-muted" style="font-size:.75rem">Checked In</p></div>
+        <div class="text-center"><div class="stat-card__value" id="scan-total">—</div><p class="text-muted" style="font-size:.75rem">Total Sold</p></div>
+      </div>
+    </div>
+
+    <div class="scanner-container">
+      <div class="scanner-frame">
+        <div class="scanner-frame__line"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+          <p style="color:rgba(255,255,255,.5);font-size:.875rem">Scan QR or type code below</p>
+        </div>
+      </div>
+      <div id="scan-result"></div>
+    </div>
+
+    <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:24px;margin-top:24px">
+      <p class="fw-600" style="margin-bottom:12px">Manual Entry</p>
+      <div class="flex gap-10">
+        <input type="text" class="form-input" id="manual-scan-input" placeholder="Type or paste ticket code…" style="flex:1" autocomplete="off">
+        <button class="btn btn--gold" id="manual-scan-btn">Scan</button>
+      </div>
+    </div>
+
+    <div style="margin-top:24px">
+      <p class="fw-600 mb-16">Recent Scans</p>
+      <div id="scan-history" class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Code</th><th>Holder</th><th>Result</th><th>Time</th></tr></thead>
+          <tbody id="scan-history-body"><tr><td colspan="4" class="text-center text-muted">Scans will appear here</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

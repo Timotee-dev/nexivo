@@ -1,0 +1,14 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 class="h1">🎫 You've Received a Ticket!</h1>
+<p class="sub"><strong>{{ from_name }}</strong> has sent you a ticket for <strong>{{ event_title }}</strong>.</p>
+{% if message %}<div style="background:#F8F8F8;border-left:3px solid #C9A84C;padding:14px 16px;border-radius:0 6px 6px 0;margin:20px 0;font-style:italic;color:#555">"{{ message }}"</div>{% endif %}
+<table class="detail-table">
+  <tr><td>Event</td><td>{{ event_title }}</td></tr>
+  <tr><td>Date</td><td>{{ event_date }}</td></tr>
+  <tr><td>Ticket Type</td><td>{{ ticket_type }}</td></tr>
+  <tr><td>Transfer Code</td><td>{{ transfer_code }}</td></tr>
+</table>
+<p class="sub" style="margin-top:16px">This offer expires in 48 hours. Sign in to Nexivo to accept it — or create an account if you don't have one yet.</p>
+<a href="{{ frontend_url }}/auth/login/" class="btn">Accept Ticket</a>
+{% endblock %}

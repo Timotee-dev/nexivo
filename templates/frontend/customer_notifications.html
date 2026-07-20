@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_customer_sidebar.html" with active="notifications" %}
+  <main class="dashboard__main">
+    <div class="flex-between" style="margin-bottom:28px">
+      <h1 class="font-display" style="font-size:1.75rem">Notifications</h1>
+      <button class="btn btn--outline btn--sm" onclick="markAllRead()">Mark all as read</button>
+    </div>
+    <div id="notifications-list"><div class="spinner" style="margin:40px auto"></div></div>
+  </main>
+</div>
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  loadNotifications();
+});
+
+async function loadNotifications() {
+  const list = document.getElementById('notifications-list');
+  try {
+    const data = await Api.get('/notifications/mine/');
+    if (!data.results?.length) {
+      list.innerHTML = '<p class="text-muted text-center" style="padding:40px">No notifications yet.</p>';
+      return;
+    }
+    list.innerHTML = data.results.map(n => `
+      <div onclick="markRead('${n.id}', this)"
+           style="display:flex;gap:14px;padding:16px;border-bottom:1px solid var(--border);cursor:pointer;background:${!n.read_at ? 'var(--surface-2)' : 'transparent'};transition:background .2s">
+        <div style="flex-shrink:0;width:8px;height:8px;border-radius:50%;background:${!n.read_at ? 'var(--gold)' : 'transparent'};margin-top:7px"></div>
+        <div style="flex:1">
+          <p class="fw-600" style="margin-bottom:2px">${n.subject || n.event_type.replace(/_/g,' ')}</p>
+          <p class="text-sub" style="font-size:.875rem">${n.body}</p>
+          <p class="text-muted" style="font-size:.75rem;margin-top:4px">${new Date(n.created_at).toLocaleString()}</p>
+        </div>
+      </div>`).join('');
+  } catch { Toast.error('Failed to load notifications.'); }
+}
+
+async function markRead(id, el) {
+  try {
+    await Api.post(`/notifications/${id}/read/`);
+    el.style.background = 'transparent';
+    el.querySelector('div').style.background = 'transparent';
+  } catch {}
+}
+
+async function markAllRead() {
+  try {
+    await Api.post('/notifications/mark-all-read/');
+    Toast.success('All notifications marked as read.');
+    loadNotifications();
+  } catch { Toast.error('Failed.'); }
+}
+</script>
+{% endblock %}

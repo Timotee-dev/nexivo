@@ -1,0 +1,40 @@
+# Core
+django>=5.0,<7.0
+djangorestframework>=3.15
+djangorestframework-simplejwt>=5.3
+django-filter>=24.0
+django-cors-headers>=4.3
+django-extensions>=3.2
+whitenoise>=6.7
+dj-database-url>=2.1
+psycopg2-binary>=2.9
+
+# Security
+django-axes>=6.4
+cryptography>=42.0
+google-auth>=2.29
+PyJWT>=2.8
+
+# Payments
+stripe>=9.0
+requests>=2.31
+
+# Queue & Cache
+celery>=5.3
+django-celery-beat>=2.6
+redis>=5.0
+
+# File handling & generation
+Pillow>=10.3
+qrcode>=7.4
+reportlab>=4.1
+
+# API docs
+drf-spectacular>=0.27
+
+# Production server
+gunicorn>=22.0
+
+# Utilities
+python-decouple>=3.8
+requests-oauthlib>=1.3

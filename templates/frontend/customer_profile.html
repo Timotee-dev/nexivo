@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_customer_sidebar.html" with active="profile" %}
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:28px">My Profile</h1>
+    <div style="max-width:520px">
+      <div class="chart-card">
+        <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:20px">Personal Information</h2>
+        <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="p-first"></div>
+        <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="p-last"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="p-email" disabled style="opacity:.6"></div>
+        <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="p-phone" placeholder="+2348012345678"></div>
+        <button class="btn btn--primary" onclick="saveProfile()">Save Changes</button>
+      </div>
+      <div class="chart-card mt-24">
+        <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:16px">Change Password</h2>
+        <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" id="pw-old"></div>
+        <div class="form-group"><label class="form-label">New Password</label><input class="form-input" type="password" id="pw-new"></div>
+        <button class="btn btn--outline" onclick="changePassword()">Update Password</button>
+      </div>
+      <div class="chart-card mt-24">
+        <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:12px">Notification Preferences</h2>
+        <div style="display:flex;flex-direction:column;gap:12px" id="prefs-container">
+          <div class="spinner" style="margin:12px auto"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/static/js/auth.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  try {
+    const [me, prefs] = await Promise.all([Api.get('/auth/me/'), Api.get('/notifications/preferences/')]);
+    document.getElementById('p-first').value = me.first_name || '';
+    document.getElementById('p-last').value = me.last_name || '';
+    document.getElementById('p-email').value = me.email || '';
+    document.getElementById('p-phone').value = me.phone_number || '';
+
+    const container = document.getElementById('prefs-container');
+    container.innerHTML = [
+      ['email_enabled', 'Email Notifications', prefs.email_enabled],
+      ['whatsapp_enabled', 'WhatsApp Notifications', prefs.whatsapp_enabled],
+      ['marketing_emails_enabled', 'Marketing Emails', prefs.marketing_emails_enabled],
+    ].map(([field, label, val]) => `
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <span style="font-size:.9375rem">${label}</span>
+        <input type="checkbox" id="pref-${field}" ${val ? 'checked' : ''}
+               onchange="savePref('${field}', this.checked)" style="width:18px;height:18px;cursor:pointer">
+      </label>`).join('');
+  } catch {}
+});
+
+async function saveProfile() {
+  try {
+    await Api.patch('/auth/me/', {
+      first_name: document.getElementById('p-first').value,
+      last_name: document.getElementById('p-last').value,
+      phone_number: document.getElementById('p-phone').value,
+    });
+    Toast.success('Profile saved.');
+  } catch(err) { Toast.error(err?.detail || 'Failed.'); }
+}
+
+async function changePassword() {
+  try {
+    await Api.post('/auth/change-password/', {
+      old_password: document.getElementById('pw-old').value,
+      new_password: document.getElementById('pw-new').value,
+    });
+    Toast.success('Password updated.');
+    document.getElementById('pw-old').value = '';
+    document.getElementById('pw-new').value = '';
+  } catch(err) { Toast.error(err?.errors?.old_password?.[0] || err?.detail || 'Failed.'); }
+}
+
+async function savePref(field, value) {
+  try {
+    await Api.patch('/notifications/preferences/', { [field]: value });
+    Toast.success('Preference saved.');
+  } catch { Toast.error('Failed to save preference.'); }
+}
+</script>
+{% endblock %}

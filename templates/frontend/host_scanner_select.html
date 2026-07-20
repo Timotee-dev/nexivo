@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}QR Scanner{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="scanner" %}
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">QR Scanner</h1>
+    <p class="text-muted" style="margin-bottom:28px">Select an event to open its check-in scanner</p>
+    <div class="grid-3" id="scanner-events-grid">
+      <div class="spinner" style="margin:40px auto"></div>
+    </div>
+  </main>
+</div>
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  const grid = document.getElementById('scanner-events-grid');
+  try {
+    const data = await Api.get('/events/mine/?status=published');
+    if (!data.results?.length) {
+      grid.innerHTML = '<p class="text-muted">No published events. <a href="/events/create/" class="text-gold">Create an event →</a></p>';
+      return;
+    }
+    grid.innerHTML = data.results.map(e => `
+      <a href="/dashboard/scanner/${e.id}/" class="card" style="display:block;text-decoration:none">
+        <div class="card__body">
+          <h3 class="card__title" style="margin-bottom:8px">${e.title}</h3>
+          <p class="text-muted" style="font-size:.875rem">${new Date(e.start_datetime).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'})}</p>
+          <div class="flex-between mt-16">
+            <span class="badge badge--green">Published</span>
+            <span class="badge badge--gold">${e.tickets_sold_count} sold</span>
+          </div>
+        </div>
+        <div class="card__footer">
+          <span class="btn btn--gold btn--sm" style="width:100%;justify-content:center">Open Scanner →</span>
+        </div>
+      </a>`).join('');
+  } catch { Toast.error('Failed to load events.'); }
+});
+</script>
+{% endblock %}

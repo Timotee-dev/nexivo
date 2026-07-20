@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Identity Verification{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="verification" %}
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">Identity Verification</h1>
+    <p class="text-muted" style="margin-bottom:32px">NIN verification is required before you can sell paid tickets.</p>
+
+    <div style="max-width:520px">
+      <div id="verification-status-card" class="chart-card" style="margin-bottom:24px">
+        <div class="spinner" style="margin:20px auto"></div>
+      </div>
+
+      <div class="chart-card" id="nin-form-card">
+        <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:16px">Submit Your NIN</h2>
+        <p class="text-sub" style="margin-bottom:20px;font-size:.9375rem">
+          Your National Identification Number (NIN) is the 11-digit number on your NIN slip or NIMC card.
+          It will be verified against the NIMC database and stored encrypted.
+        </p>
+        <div class="form-group">
+          <label class="form-label">NIN (11 digits) *</label>
+          <input class="form-input" id="nin-input" maxlength="11" pattern="[0-9]{11}"
+                 placeholder="e.g. 12345678901" style="font-family:var(--font-mono);letter-spacing:.1em">
+          <p class="form-hint">Your NIN is stored encrypted and never shared with third parties.</p>
+        </div>
+        <button class="btn btn--gold" id="nin-submit-btn" onclick="submitNIN()">Submit for Verification</button>
+      </div>
+
+      <div class="chart-card mt-24" style="background:var(--surface-2)">
+        <h3 style="font-weight:600;margin-bottom:12px">Why is NIN required?</h3>
+        <p class="text-sub" style="font-size:.9rem;line-height:1.8">
+          Nigerian regulations require event platforms to verify the identity of hosts who collect money from ticket sales.
+          NIN verification protects your customers and ensures Nexivo complies with CBN and NITDA guidelines.
+          Free events do not require NIN verification.
+        </p>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  try {
+    const hp = await Api.get('/auth/host-profile/');
+    const card = document.getElementById('verification-status-card');
+    const formCard = document.getElementById('nin-form-card');
+    const statusMap = {
+      unverified: { badge: 'grey', label: 'Not Submitted', msg: 'Submit your NIN below to start the verification process.' },
+      pending:    { badge: 'gold', label: 'Under Review', msg: 'Your NIN has been submitted and is being verified. This usually takes 1–2 business days.' },
+      verified:   { badge: 'green', label: 'Verified ✓', msg: 'Your identity is verified. You can now sell paid tickets.' },
+      rejected:   { badge: 'red', label: 'Rejected', msg: 'Your NIN verification was rejected. Please check the reason below and resubmit.' },
+    };
+    const s = statusMap[hp.nin_verification_status] || statusMap.unverified;
+    card.innerHTML = `
+      <div class="flex-between">
+        <div>
+          <p class="text-muted" style="font-size:.8125rem;margin-bottom:4px">Verification Status</p>
+          <span class="badge badge--${s.badge}" style="font-size:.9375rem;padding:6px 14px">${s.label}</span>
+        </div>
+        ${hp.nin_verified ? '<span style="font-size:2rem">🎉</span>' : ''}
+      </div>
+      <p class="text-sub mt-16" style="font-size:.9375rem">${s.msg}</p>`;
+
+    if (hp.nin_verification_status === 'verified' || hp.nin_verification_status === 'pending') {
+      formCard.classList.add('hidden');
+    }
+  } catch {}
+});
+
+async function submitNIN() {
+  const nin = document.getElementById('nin-input').value.trim();
+  if (nin.length !== 11 || !/^\d+$/.test(nin)) {
+    Toast.error('NIN must be exactly 11 digits.');
+    return;
+  }
+  const btn = document.getElementById('nin-submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    await Api.post('/auth/host-profile/verify-nin/', { nin_number: nin });
+    Toast.success('NIN submitted for verification. We\'ll notify you once it\'s reviewed.');
+    setTimeout(() => location.reload(), 2000);
+  } catch(err) {
+    Toast.error(err?.detail || 'Submission failed. Please try again.');
+    btn.disabled = false; btn.textContent = 'Submit for Verification';
+  }
+}
+</script>
+{% endblock %}

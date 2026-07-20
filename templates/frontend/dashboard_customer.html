@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}My Account{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_customer_sidebar.html" with active="overview" %}
+
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">My Tickets</h1>
+    <p class="text-muted" style="margin-bottom:32px">Your upcoming and past event tickets</p>
+    <div id="my-tickets">
+      <div class="spinner" style="margin:40px auto"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Transfer modal -->
+<div class="modal-backdrop" id="transfer-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('transfer-modal')">×</button>
+    <h2 class="modal__title">Transfer Ticket</h2>
+    <p class="modal__sub">Send this ticket to another person's email address</p>
+    <input type="hidden" id="transfer-ticket-code">
+    <div class="form-group">
+      <label class="form-label">Recipient Email</label>
+      <input class="form-input" type="email" id="transfer-to-email" placeholder="recipient@example.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message (optional)</label>
+      <input class="form-input" id="transfer-message" placeholder="Enjoy the show!">
+    </div>
+    <button class="btn btn--primary btn--full" onclick="submitTransfer()">Send Ticket</button>
+  </div>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+<script>
+async function submitTransfer() {
+  const code = document.getElementById('transfer-ticket-code').value;
+  const toEmail = document.getElementById('transfer-to-email').value;
+  const message = document.getElementById('transfer-message').value;
+  if (!toEmail) { Toast.error('Please enter a recipient email'); return; }
+  try {
+    await Api.post(`/tickets/${code}/transfer/`, { to_email: toEmail, message });
+    Toast.success('Ticket transfer initiated!');
+    Modal.close('transfer-modal');
+  } catch(err) {
+    Toast.error(err?.detail || 'Transfer failed. Please try again.');
+  }
+}
+</script>
+{% endblock %}

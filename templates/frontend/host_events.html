@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}My Events{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="events" %}
+  <main class="dashboard__main">
+    <div class="flex-between" style="margin-bottom:28px">
+      <div>
+        <h1 class="font-display" style="font-size:1.75rem">My Events</h1>
+        <p class="text-muted">Manage all your events</p>
+      </div>
+      <a href="/events/create/" class="btn btn--gold">+ New Event</a>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="flex gap-8" style="margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0">
+      {% for status, label in statuses %}
+      <button class="btn btn--ghost btn--sm status-tab {% if forloop.first %}active-tab{% endif %}"
+              data-status="{{ status }}"
+              style="border-bottom:2px solid {% if forloop.first %}var(--gold){% else %}transparent{% endif %};border-radius:0;padding-bottom:12px">
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Tickets Sold</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="events-tbody">
+          <tr><td colspan="6" class="text-center text-muted" style="padding:32px">
+            <div class="spinner" style="margin:0 auto"></div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flex gap-16 mt-24" id="pagination" style="justify-content:center"></div>
+  </main>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  Auth.requireAuth();
+  let currentStatus = '';
+  let currentPage = 1;
+
+  async function loadEvents() {
+    const params = new URLSearchParams({ page: currentPage });
+    if (currentStatus) params.set('status', currentStatus);
+    const tbody = document.getElementById('events-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner" style="margin:8px auto"></div></td></tr>';
+
+    try {
+      const data = await Api.get(`/events/mine/?${params}`);
+      if (!data.results.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:32px">
+          No events found. <a href="/events/create/" class="text-gold">Create your first event →</a>
+        </td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.results.map(e => `
+        <tr>
+          <td>
+            <strong>${e.title}</strong>
+            ${e.is_featured ? '<span class="badge badge--gold" style="margin-left:6px">Featured</span>' : ''}
+          </td>
+          <td><span class="badge badge--grey">${e.event_type}</span></td>
+          <td style="font-size:.875rem">${new Date(e.start_datetime).toLocaleDateString('en-NG', {day:'numeric',month:'short',year:'numeric'})}</td>
+          <td><span class="badge badge--${statusBadge(e.status)}">${e.status}</span></td>
+          <td>${e.tickets_sold_count}</td>
+          <td>
+            <div class="flex gap-8">
+              <a href="/events/${e.slug}/" class="btn btn--ghost btn--sm" target="_blank">View</a>
+              ${e.status === 'draft'
+                ? `<button class="btn btn--gold btn--sm" onclick="publishEvent('${e.slug}', this)">Publish</button>`
+                : `<a href="/api/v1/analytics/event/${e.id}/export/csv/" class="btn btn--outline btn--sm" download>Export CSV</a>`}
+              <a href="/dashboard/scanner/?event=${e.id}" class="btn btn--outline btn--sm">Scan</a>
+            </div>
+          </td>
+        </tr>`).join('');
+
+      // Pagination
+      const pag = document.getElementById('pagination');
+      pag.innerHTML = '';
+      if (data.previous) {
+        const b = document.createElement('button');
+        b.className = 'btn btn--outline btn--sm';
+        b.textContent = '← Previous';
+        b.onclick = () => { currentPage--; loadEvents(); };
+        pag.appendChild(b);
+      }
+      if (data.next) {
+        const b = document.createElement('button');
+        b.className = 'btn btn--primary btn--sm';
+        b.textContent = 'Next →';
+        b.onclick = () => { currentPage++; loadEvents(); };
+        pag.appendChild(b);
+      }
+    } catch { Toast.error('Failed to load events.'); }
+  }
+
+  // Status tabs
+  document.querySelectorAll('.status-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.status-tab').forEach(t => {
+        t.style.borderBottomColor = 'transparent';
+        t.classList.remove('active-tab');
+      });
+      tab.style.borderBottomColor = 'var(--gold)';
+      tab.classList.add('active-tab');
+      currentStatus = tab.dataset.status;
+      currentPage = 1;
+      loadEvents();
+    });
+  });
+
+  loadEvents();
+});
+</script>
+{% endblock %}

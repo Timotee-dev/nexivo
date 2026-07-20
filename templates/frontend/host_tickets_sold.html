@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Tickets Sold{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="tickets" %}
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">Tickets Sold</h1>
+    <p class="text-muted" style="margin-bottom:28px">All confirmed attendees across your events</p>
+
+    <div class="form-group" style="max-width:320px;margin-bottom:24px">
+      <select class="form-select" id="event-filter">
+        <option value="">All Events</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Booking Ref</th><th>Attendee</th><th>Event</th><th>Ticket Type</th><th>Qty</th><th>Total Paid</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody id="tickets-tbody"><tr><td colspan="8" class="text-center"><div class="spinner" style="margin:24px auto"></div></td></tr></tbody>
+      </table>
+    </div>
+    <div class="flex gap-16 mt-24" id="pagination" style="justify-content:center"></div>
+  </main>
+</div>
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  let selectedEvent = '';
+  let page = 1;
+
+  // Populate event filter
+  try {
+    const data = await Api.get('/events/mine/');
+    const sel = document.getElementById('event-filter');
+    data.results.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id; opt.textContent = e.title;
+      sel.appendChild(opt);
+    });
+  } catch {}
+
+  document.getElementById('event-filter').addEventListener('change', e => {
+    selectedEvent = e.target.value; page = 1; load();
+  });
+
+  async function load() {
+    const tbody = document.getElementById('tickets-tbody');
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="spinner" style="margin:8px auto"></div></td></tr>';
+    try {
+      const url = selectedEvent
+        ? `/bookings/event/${selectedEvent}/?page=${page}`
+        : `/bookings/admin/all/?page=${page}`;
+      // Hosts use the event-specific endpoint; fallback to mine
+      const params = selectedEvent ? `/api/v1/bookings/event/${selectedEvent}/?page=${page}` : `/api/v1/bookings/mine/?page=${page}`;
+      const data = await Api.get(params.replace('/api/v1', ''));
+      if (!data.results.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="padding:32px">No bookings yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.results.map(b => `
+        <tr>
+          <td><code style="font-size:.8125rem">${b.booking_reference}</code></td>
+          <td>${b.customer_name}<br><small class="text-muted">${b.customer_email}</small></td>
+          <td style="font-size:.875rem">${b.event?.title || '—'}</td>
+          <td style="font-size:.875rem">${b.items?.map(i => i.ticket_type_name).join(', ') || '—'}</td>
+          <td>${b.ticket_count}</td>
+          <td>₦${Number(b.total_amount).toLocaleString()}</td>
+          <td><span class="badge badge--${b.status === 'confirmed' ? 'green' : b.status === 'cancelled' ? 'red' : 'grey'}">${b.status}</span></td>
+          <td style="font-size:.8125rem">${b.confirmed_at ? new Date(b.confirmed_at).toLocaleDateString() : '—'}</td>
+        </tr>`).join('');
+    } catch { Toast.error('Failed to load bookings.'); }
+  }
+  load();
+});
+</script>
+{% endblock %}

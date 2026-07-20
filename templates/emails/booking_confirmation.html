@@ -1,0 +1,23 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 class="h1">🎉 Booking Confirmed!</h1>
+<p class="sub">Hi {{ customer_name }}, your booking for <strong>{{ event_title }}</strong> is confirmed. Your tickets are attached below.</p>
+<table class="detail-table">
+  <tr><td>Booking Ref</td><td>{{ booking_reference }}</td></tr>
+  <tr><td>Event</td><td>{{ event_title }}</td></tr>
+  <tr><td>Date</td><td>{{ event_date }}</td></tr>
+  <tr><td>Location</td><td>{{ event_location }}</td></tr>
+  <tr><td>Tickets</td><td>{{ ticket_count }}</td></tr>
+  <tr><td>Total Paid</td><td>₦{{ total_amount }}</td></tr>
+</table>
+<hr class="divider">
+{% for ticket in tickets %}
+<div class="ticket-box">
+  <p style="color:#777;font-size:.875rem;margin:0">{{ ticket.ticket_type_name }}</p>
+  <div class="code">{{ ticket.ticket_code }}</div>
+  {% if ticket.qr_url %}<br><img src="{{ ticket.qr_url }}" width="100" height="100" alt="QR Code">{% endif %}
+  <p style="color:#999;font-size:.8125rem;margin:8px 0 0">Scan this QR code at the entrance. Valid for one entry only.</p>
+</div>
+{% endfor %}
+<a href="{{ frontend_url }}/dashboard/customer/" class="btn" style="margin-top:16px">View My Tickets</a>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Coupons{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="coupons" %}
+  <main class="dashboard__main">
+    <div class="flex-between" style="margin-bottom:28px">
+      <div>
+        <h1 class="font-display" style="font-size:1.75rem;margin-bottom:4px">Coupons</h1>
+        <p class="text-muted">Discount codes for your events</p>
+      </div>
+      <button class="btn btn--gold" onclick="Modal.open('new-coupon-modal')">+ New Coupon</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Code</th><th>Event</th><th>Discount</th><th>Used / Limit</th><th>Valid Until</th><th>Status</th><th></th></tr></thead>
+        <tbody id="coupons-tbody"><tr><td colspan="7" class="text-center"><div class="spinner" style="margin:24px auto"></div></td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="new-coupon-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('new-coupon-modal')">×</button>
+    <h2 class="modal__title">New Coupon</h2>
+    <div class="form-group"><label class="form-label">Code</label><input class="form-input" id="c-code" placeholder="Leave blank to auto-generate"></div>
+    <div class="grid-2" style="gap:16px">
+      <div class="form-group">
+        <label class="form-label">Discount Type</label>
+        <select class="form-select" id="c-type">
+          <option value="percentage">Percentage (%)</option>
+          <option value="fixed">Fixed Amount (₦)</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Value</label><input class="form-input" type="number" id="c-value" placeholder="e.g. 20 for 20%"></div>
+    </div>
+    <div class="grid-2" style="gap:16px">
+      <div class="form-group"><label class="form-label">Max Uses</label><input class="form-input" type="number" id="c-max-uses" placeholder="Leave blank = unlimited"></div>
+      <div class="form-group"><label class="form-label">Min Order (₦)</label><input class="form-input" type="number" id="c-min-order" placeholder="0"></div>
+    </div>
+    <div class="grid-2" style="gap:16px">
+      <div class="form-group"><label class="form-label">Valid From</label><input class="form-input" type="datetime-local" id="c-from"></div>
+      <div class="form-group"><label class="form-label">Valid Until</label><input class="form-input" type="datetime-local" id="c-until"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Restrict to Event</label>
+      <select class="form-select" id="c-event"><option value="">All my events</option></select>
+    </div>
+    <button class="btn btn--gold btn--full" onclick="createCoupon()">Create Coupon</button>
+  </div>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+
+  // Load events for restrict dropdown
+  try {
+    const data = await Api.get('/events/mine/');
+    const sel = document.getElementById('c-event');
+    data.results.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id; opt.textContent = e.title;
+      sel.appendChild(opt);
+    });
+  } catch {}
+
+  loadCoupons();
+});
+
+async function loadCoupons() {
+  const tbody = document.getElementById('coupons-tbody');
+  try {
+    const data = await Api.get('/coupons/');
+    if (!data.results?.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:32px">No coupons yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.results.map(c => `
+      <tr>
+        <td><code class="font-mono fw-600">${c.code}</code></td>
+        <td style="font-size:.875rem">${c.event || 'All events'}</td>
+        <td>${c.discount_type === 'percentage' ? c.discount_value + '%' : '₦' + Number(c.discount_value).toLocaleString()}</td>
+        <td>${c.times_used} / ${c.max_uses || '∞'}</td>
+        <td style="font-size:.8125rem">${c.valid_until ? new Date(c.valid_until).toLocaleDateString() : '—'}</td>
+        <td><span class="badge badge--${c.is_active ? 'green' : 'grey'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td><button class="btn btn--ghost btn--sm" onclick="deleteCoupon('${c.id}', this)">Delete</button></td>
+      </tr>`).join('');
+  } catch { Toast.error('Failed to load coupons.'); }
+}
+
+async function createCoupon() {
+  const body = {
+    discount_type: document.getElementById('c-type').value,
+    discount_value: document.getElementById('c-value').value,
+  };
+  const code = document.getElementById('c-code').value;
+  if (code) body.code = code;
+  const maxUses = document.getElementById('c-max-uses').value;
+  if (maxUses) body.max_uses = parseInt(maxUses);
+  const minOrder = document.getElementById('c-min-order').value;
+  if (minOrder) body.min_order_amount = minOrder;
+  const from = document.getElementById('c-from').value;
+  if (from) body.valid_from = from;
+  const until = document.getElementById('c-until').value;
+  if (until) body.valid_until = until;
+  const event = document.getElementById('c-event').value;
+  if (event) body.event = event;
+
+  try {
+    await Api.post('/coupons/', body);
+    Toast.success('Coupon created!');
+    Modal.close('new-coupon-modal');
+    loadCoupons();
+  } catch(err) { Toast.error(err?.detail || 'Failed to create coupon.'); }
+}
+
+async function deleteCoupon(id, btn) {
+  if (!confirm('Delete this coupon?')) return;
+  btn.disabled = true;
+  try {
+    await Api.delete(`/coupons/${id}/`);
+    Toast.success('Coupon deleted.');
+    loadCoupons();
+  } catch { Toast.error('Failed to delete.'); btn.disabled = false; }
+}
+</script>
+{% endblock %}

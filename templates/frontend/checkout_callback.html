@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Processing…{% endblock %}
+{% block content %}
+<div style="min-height:80vh;display:flex;align-items:center;justify-content:center">
+  <div class="text-center">
+    <div class="spinner" style="margin:0 auto 24px"></div>
+    <h2 class="font-display" style="font-size:1.5rem" id="callback-title">Confirming your booking…</h2>
+    <p class="text-muted mt-8" id="callback-sub">Please wait while we verify your payment.</p>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(location.search);
+  const status = params.get('status');
+  const reference = params.get('reference');
+  const titleEl = document.getElementById('callback-title');
+  const subEl = document.getElementById('callback-sub');
+
+  if (!reference) {
+    titleEl.textContent = 'Something went wrong';
+    subEl.textContent = 'No payment reference found. Please check your bookings.';
+    setTimeout(() => location.href = '/dashboard/customer/', 3000);
+    return;
+  }
+  try {
+    const data = await Api.post('/payments/verify/', { reference });
+    if (data.status === 'successful') {
+      titleEl.textContent = '🎉 Booking Confirmed!';
+      subEl.textContent = 'Your tickets are ready. Redirecting…';
+      setTimeout(() => location.href = '/dashboard/customer/', 2500);
+    } else {
+      titleEl.textContent = 'Payment not completed';
+      subEl.textContent = `Status: ${data.status}. If you were charged, contact support.`;
+      setTimeout(() => location.href = '/dashboard/customer/', 4000);
+    }
+  } catch {
+    titleEl.textContent = 'Verification failed';
+    subEl.textContent = 'Could not verify payment. Please check your bookings or contact support.';
+    setTimeout(() => location.href = '/dashboard/customer/', 4000);
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Discover Events{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero__eyebrow">Nigeria's Premium Event Platform</div>
+  <h1 class="hero__title">Experiences worth <em>showing up for</em></h1>
+  <p class="hero__sub">Discover, book, and attend the events that matter — concerts, conferences, workshops, and more.</p>
+  <div class="hero__actions">
+    <a href="/events/" class="btn btn--gold btn--lg">Browse Events</a>
+    <a href="/auth/register/?role=host" class="btn btn--outline btn--lg" style="border-color:rgba(255,255,255,.4);color:#fff">Host an Event</a>
+  </div>
+  <div class="hero__search">
+    <input type="text" placeholder="Search events, artists, venues…" id="hero-search" autocomplete="off"
+           onkeydown="if(event.key==='Enter') window.location='/events/?search='+this.value">
+    <button class="btn btn--gold" onclick="window.location='/events/?search='+document.getElementById('hero-search').value">Search</button>
+  </div>
+</section>
+
+<div class="filter-bar">
+  <div class="filter-bar__inner" id="category-chips">
+    <span class="filter-chip filter-chip--active" data-category="">All</span>
+  </div>
+</div>
+
+<div class="container">
+  <section class="section">
+    <div class="section__header">
+      <h2 class="section__title section__title--serif">Featured Events</h2>
+      <a href="/events/?is_featured=true" class="btn btn--ghost btn--sm">View all →</a>
+    </div>
+    <div class="grid-3" id="featured-grid"><div class="spinner" style="margin:40px auto"></div></div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="section__header">
+      <h2 class="section__title">Trending this week</h2>
+      <a href="/events/" class="btn btn--ghost btn--sm">All events →</a>
+    </div>
+    <div class="grid-4" id="trending-grid"><div class="spinner" style="margin:40px auto"></div></div>
+  </section>
+
+  <section class="section" style="background:var(--surface-2);border-radius:var(--radius-lg);padding:56px 48px;margin-bottom:64px">
+    <div class="grid-2" style="align-items:center;gap:56px">
+      <div>
+        <p style="font-size:.875rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:16px">For Event Organisers</p>
+        <h2 class="font-display" style="font-size:2rem;margin-bottom:16px">Sell tickets in minutes</h2>
+        <p class="text-sub" style="margin-bottom:28px;line-height:1.8">Create your event, set ticket tiers, and start selling. Nexivo handles payments and automatically transfers your earnings. 95% of revenue goes directly to you.</p>
+        <div class="flex gap-16" style="flex-wrap:wrap">
+          <div><span style="font-size:1.75rem;font-weight:700;font-family:var(--font-display)">95%</span><p class="text-muted" style="font-size:.875rem">Earnings to you</p></div>
+          <div><span style="font-size:1.75rem;font-weight:700;font-family:var(--font-display)">3</span><p class="text-muted" style="font-size:.875rem">Payment gateways</p></div>
+          <div><span style="font-size:1.75rem;font-weight:700;font-family:var(--font-display)">∞</span><p class="text-muted" style="font-size:.875rem">Ticket types</p></div>
+        </div>
+        <a href="/auth/register/?role=host" class="btn btn--primary btn--lg" style="margin-top:28px">Start Hosting →</a>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:32px;border:1px solid var(--border)">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          {% for label in steps %}
+          <div style="display:flex;align-items:center;gap:14px">
+            <span style="width:32px;height:32px;border-radius:50%;background:var(--gold);color:#111;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.875rem;flex-shrink:0">{{ forloop.counter }}</span>
+            <span class="text-sub" style="font-size:.9375rem">{{ label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="/static/js/events.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load categories into chips
+  try {
+    const cats = await Api.get('/events/categories/', true);
+    const bar = document.getElementById('category-chips');
+    cats.results.forEach(c => {
+      const chip = document.createElement('span');
+      chip.className = 'filter-chip';
+      chip.dataset.category = c.slug;
+      chip.textContent = c.name;
+      chip.addEventListener('click', () => {
+        window.location.href = `/events/?category=${c.slug}`;
+      });
+      bar.appendChild(chip);
+    });
+  } catch {}
+
+  // Load featured
+  try {
+    const data = await Api.get('/events/featured/?page_size=3', true);
+    const grid = document.getElementById('featured-grid');
+    if (!data.results.length) {
+      grid.innerHTML = '<p class="text-muted">No featured events right now.</p>';
+    } else {
+      grid.innerHTML = data.results.map(renderCard).join('');
+    }
+  } catch { document.getElementById('featured-grid').innerHTML = ''; }
+
+  // Load trending
+  try {
+    const data = await Api.get('/events/trending/?page_size=4', true);
+    document.getElementById('trending-grid').innerHTML = data.results.map(renderCard).join('');
+  } catch { document.getElementById('trending-grid').innerHTML = ''; }
+
+  function renderCard(event) {
+    const price = event.min_price != null
+      ? (parseFloat(event.min_price) === 0 ? 'Free' : `From ₦${Number(event.min_price).toLocaleString()}`)
+      : 'Free';
+    const date = new Date(event.start_datetime).toLocaleDateString('en-NG', {day:'numeric',month:'short',year:'numeric'});
+    return `<a href="/events/${event.slug}/" class="card" style="display:block">
+      <div class="card__media"><img src="${event.banner_image||'/static/img/event-placeholder.svg'}" alt="${event.title}" loading="lazy"></div>
+      <div class="card__body">
+        ${event.is_featured ? '<span class="card__badge card__badge--featured">Featured</span>' : ''}
+        <h3 class="card__title">${event.title}</h3>
+        <div class="card__meta"><span>📅 ${date}</span>${event.city?`<span>📍 ${event.city}</span>`:''}</div>
+        <div class="card__price">${price}</div>
+      </div></a>`;
+  }
+});
+</script>
+{% endblock %}

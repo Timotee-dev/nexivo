@@ -1,0 +1,133 @@
+# Nexivo — Render deployment configuration
+# Deploy with: render blueprint sync
+
+services:
+  # ── Web (Django + Gunicorn) ──────────────────────────────────────────
+  - type: web
+    name: nexivo-web
+    runtime: docker
+    repo: https://github.com/Timotee-dev/nexivo
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - key: DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FIELD_ENCRYPTION_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexivo-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: nexivo-redis
+          type: redis
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: nexivo.onrender.com
+      - key: RENDER_EXTERNAL_HOSTNAME
+        fromService:
+          name: nexivo-web
+          type: web
+          property: host
+      - key: FRONTEND_URL
+        value: https://nexivo.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://nexivo.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://nexivo.onrender.com
+      # Payments — fill these in the Render dashboard
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: FLUTTERWAVE_SECRET_KEY
+        sync: false
+      - key: FLUTTERWAVE_PUBLIC_KEY
+        sync: false
+      - key: FLUTTERWAVE_ENCRYPTION_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # OAuth
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: APPLE_OAUTH_CLIENT_ID
+        sync: false
+      # Email
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: Nexivo <noreply@nexivo.com>
+      # Notifications
+      - key: WHATSAPP_API_URL
+        sync: false
+      - key: WHATSAPP_API_TOKEN
+        sync: false
+      # CAPTCHA
+      - key: CAPTCHA_PROVIDER
+        value: hcaptcha
+      - key: CAPTCHA_SECRET_KEY
+        sync: false
+      - key: CAPTCHA_SITE_KEY
+        sync: false
+      # NIN verification
+      - key: NIN_VERIFICATION_PROVIDER_URL
+        sync: false
+      - key: NIN_VERIFICATION_API_KEY
+        sync: false
+    healthCheckPath: /api/v1/events/
+    autoDeploy: true
+    plan: standard
+
+  # ── Celery worker ────────────────────────────────────────────────────
+  - type: worker
+    name: nexivo-celery-worker
+    runtime: docker
+    repo: https://github.com/Timotee-dev/nexivo
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerCommand: celery -A config worker -l info -c 2
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - fromGroup: nexivo-env
+
+  # ── Celery Beat (scheduler) ──────────────────────────────────────────
+  - type: worker
+    name: nexivo-celery-beat
+    runtime: docker
+    repo: https://github.com/Timotee-dev/nexivo
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerCommand: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - fromGroup: nexivo-env
+
+databases:
+  - name: nexivo-db
+    plan: standard
+    databaseName: nexivo_prod
+    user: nexivo
+
+  - name: nexivo-redis
+    plan: standard
+    ipAllowList: []

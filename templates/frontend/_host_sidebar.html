@@ -1,0 +1,34 @@
+<aside class="sidebar">
+  <div class="sidebar__section">
+    <p class="sidebar__label">Overview</p>
+    <a href="/dashboard/host/" class="sidebar__link {% if active == 'overview' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/dashboard/events/" class="sidebar__link {% if active == 'events' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      My Events
+    </a>
+    <a href="/dashboard/tickets/" class="sidebar__link {% if active == 'tickets' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
+      Tickets Sold
+    </a>
+  </div>
+  <div class="sidebar__section">
+    <p class="sidebar__label">Finance</p>
+    <a href="/dashboard/earnings/" class="sidebar__link {% if active == 'earnings' %}sidebar__link--active{% endif %}">💰 Earnings</a>
+    <a href="/dashboard/payouts/" class="sidebar__link {% if active == 'payouts' %}sidebar__link--active{% endif %}">🏦 Payouts</a>
+    <a href="/dashboard/refunds/" class="sidebar__link {% if active == 'refunds' %}sidebar__link--active{% endif %}">↩ Refunds</a>
+  </div>
+  <div class="sidebar__section">
+    <p class="sidebar__label">Tools</p>
+    <a href="/dashboard/scanner/" class="sidebar__link {% if active == 'scanner' %}sidebar__link--active{% endif %}">📷 QR Scanner</a>
+    <a href="/dashboard/coupons/" class="sidebar__link {% if active == 'coupons' %}sidebar__link--active{% endif %}">🏷 Coupons</a>
+  </div>
+  <div class="sidebar__section">
+    <p class="sidebar__label">Account</p>
+    <a href="/dashboard/profile/" class="sidebar__link {% if active == 'profile' %}sidebar__link--active{% endif %}">👤 Profile</a>
+    <a href="/dashboard/verification/" class="sidebar__link {% if active == 'verification' %}sidebar__link--active{% endif %}">✅ Verification</a>
+    <a href="/dashboard/bank-account/" class="sidebar__link {% if active == 'bank' %}sidebar__link--active{% endif %}">🏦 Bank Account</a>
+  </div>
+</aside>

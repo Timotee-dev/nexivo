@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Following{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_customer_sidebar.html" with active="following" %}
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:28px">Hosts I Follow</h1>
+    <div id="following-list"><div class="spinner" style="margin:40px auto"></div></div>
+  </main>
+</div>
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  const list = document.getElementById('following-list');
+  try {
+    const me = await Api.get('/auth/me/');
+    list.innerHTML = '<p class="text-muted">Follow hosts from their event pages to see them here.</p>';
+  } catch {}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{margin:0;padding:0;background:#F4F4F4;font-family:Inter,-apple-system,sans-serif}
+  .wrap{max-width:600px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+  .header{background:#111;padding:28px 40px;display:flex;align-items:center;justify-content:space-between}
+  .logo{color:#fff;font-size:1.5rem;font-weight:700;letter-spacing:-.02em}
+  .logo span{color:#C9A84C}
+  .body{padding:40px}
+  .h1{font-size:1.5rem;font-weight:700;color:#111;margin:0 0 12px}
+  .sub{font-size:.9375rem;color:#555;line-height:1.7;margin:0 0 24px}
+  .btn{display:inline-block;background:#C9A84C;color:#111;padding:12px 28px;border-radius:8px;font-weight:700;font-size:.9375rem;text-decoration:none}
+  .divider{border:none;border-top:1px solid #EEE;margin:28px 0}
+  .detail-table{width:100%;border-collapse:collapse}
+  .detail-table td{padding:10px 0;border-bottom:1px solid #F0F0F0;font-size:.875rem}
+  .detail-table td:first-child{color:#777;width:40%}
+  .detail-table td:last-child{font-weight:600;color:#111;text-align:right}
+  .footer{background:#F8F8F8;padding:24px 40px;text-align:center}
+  .footer p{font-size:.8125rem;color:#999;margin:0}
+  .ticket-box{background:#F8F8F8;border:2px solid #E0E0E0;border-radius:8px;padding:20px;margin:20px 0;text-align:center}
+  .code{font-family:monospace;font-size:1rem;font-weight:700;color:#111;background:#E8E8E8;padding:8px 16px;border-radius:6px;display:inline-block;margin:8px 0;letter-spacing:.06em}
+  .gold-bar{height:4px;background:linear-gradient(90deg,#C9A84C,#E8C96A,#C9A84C)}
+  @media(max-width:600px){.body{padding:24px}.header{padding:20px 24px}.footer{padding:20px 24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">Nexiv<span>o</span></div>
+    <div style="color:rgba(255,255,255,.5);font-size:.8125rem">Premium Events</div>
+  </div>
+  <div class="gold-bar"></div>
+  <div class="body">
+    {% block body %}{% endblock %}
+  </div>
+  <hr class="divider">
+  <div class="footer">
+    <p>© 2026 Nexivo · <a href="{{ frontend_url }}/help/" style="color:#C9A84C">Help Centre</a> · <a href="{{ frontend_url }}/unsubscribe/" style="color:#999">Unsubscribe</a></p>
+    <p style="margin-top:8px">Secure payments powered by Paystack · Flutterwave · Stripe</p>
+  </div>
+</div>
+</body>
+</html>

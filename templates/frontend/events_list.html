@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Browse Events{% endblock %}
+{% block content %}
+<div class="filter-bar">
+  <div class="filter-bar__inner">
+    <input type="text" id="search-input" class="form-input" placeholder="Search events…" style="max-width:280px;padding:7px 14px;font-size:.875rem">
+    <span class="filter-chip filter-chip--active" data-type="">All Types</span>
+    <span class="filter-chip" data-type="physical">In-Person</span>
+    <span class="filter-chip" data-type="virtual">Virtual</span>
+    <span class="filter-chip" data-type="hybrid">Hybrid</span>
+  </div>
+</div>
+<div class="container">
+  <div style="display:grid;grid-template-columns:220px 1fr;gap:36px;padding:40px 0">
+    <!-- Sidebar filters -->
+    <div>
+      <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:24px">
+        <h3 class="fw-600" style="margin-bottom:16px">Categories</h3>
+        <div id="cat-filter-list" style="display:flex;flex-direction:column;gap:6px">
+          <label class="flex gap-8" style="cursor:pointer;font-size:.875rem"><input type="radio" name="cat" value=""> All</label>
+        </div>
+        <h3 class="fw-600" style="margin:24px 0 12px">Date</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input type="date" id="date-from" class="form-input" placeholder="From">
+          <input type="date" id="date-to" class="form-input" placeholder="To">
+          <button class="btn btn--outline btn--sm" onclick="applyDateFilter()">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div>
+      <div class="grid-3" id="events-grid"></div>
+      <p id="events-empty" class="text-muted text-center mt-32 hidden">No events found. Try adjusting your filters.</p>
+      <div class="flex gap-16 mt-24" id="pagination" style="justify-content:center"></div>
+    </div>
+  </div>
+</div>
+<script src="/static/js/events.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  // Populate category filter
+  try {
+    const cats = await Api.get('/events/categories/', true);
+    const list = document.getElementById('cat-filter-list');
+    cats.results.forEach(c => {
+      const lbl = document.createElement('label');
+      lbl.className = 'flex gap-8'; lbl.style.cursor = 'pointer'; lbl.style.fontSize = '.875rem';
+      lbl.innerHTML = `<input type="radio" name="cat" value="${c.slug}" class="filter-chip" data-category="${c.slug}"> ${c.name}`;
+      list.appendChild(lbl);
+    });
+  } catch {}
+  function applyDateFilter() {
+    const from = document.getElementById('date-from').value;
+    const to = document.getElementById('date-to').value;
+    const url = new URL(window.location.href);
+    if (from) url.searchParams.set('start_after', from);
+    if (to)   url.searchParams.set('start_before', to);
+    window.location.href = url.toString();
+  }
+  window.applyDateFilter = applyDateFilter;
+});
+</script>
+{% endblock %}

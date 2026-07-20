@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block meta_description %}{{ event.short_description|default:event.description|truncatewords:25 }}{% endblock %}
+{% block content %}
+<input type="hidden" id="event-id" value="{{ event.id }}">
+<input type="hidden" id="event-slug" value="{{ event.slug }}">
+<input type="hidden" id="countdown-date" value="{{ event.start_datetime|date:'c' }}">
+
+<!-- Hero -->
+<div class="event-hero">
+  {% if event.banner_image %}
+  <img class="event-hero__img" src="{{ event.banner_image.url }}" alt="{{ event.title }}">
+  {% else %}
+  <div style="background:linear-gradient(135deg,#1a1a1a,#333);width:100%;height:100%"></div>
+  {% endif %}
+  <div class="event-hero__overlay"></div>
+  <div class="event-hero__content">
+    <div class="flex gap-8" style="margin-bottom:12px">
+      <span class="badge badge--gold">{{ event.get_event_type_display }}</span>
+      {% if event.is_featured %}<span class="badge badge--gold">⭐ Featured</span>{% endif %}
+    </div>
+    <h1 class="event-hero__title">{{ event.title }}</h1>
+    <div class="flex gap-16" style="font-size:.9375rem;color:rgba(255,255,255,.8)">
+      <span>📅 {{ event.start_datetime|date:"l, N j, Y" }} at {{ event.start_datetime|date:"P" }}</span>
+      {% if event.city %}<span>📍 {{ event.venue_name|default:event.city }}</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="event-detail__grid">
+    <!-- Left: info -->
+    <div class="event-detail__info">
+
+      <!-- Countdown -->
+      {% if event.is_upcoming %}
+      <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:24px;text-align:center">
+        <p class="text-muted" style="font-size:.875rem;margin-bottom:12px">Event starts in</p>
+        <div id="event-countdown"></div>
+      </div>
+      {% endif %}
+
+      <!-- Host -->
+      <div class="flex gap-16">
+        {% if event.host.avatar %}<img class="avatar" src="{{ event.host.avatar.url }}" alt="{{ event.host.username }}" style="width:48px;height:48px">{% endif %}
+        <div>
+          <p class="text-muted" style="font-size:.8125rem">Hosted by</p>
+          <p class="fw-600">{{ event.host.first_name }} {{ event.host.last_name|default:event.host.username }}</p>
+        </div>
+        <button class="btn btn--outline btn--sm" style="margin-left:auto" id="follow-host-btn">Follow</button>
+      </div>
+
+      <!-- About -->
+      <div>
+        <h2 class="font-display" style="font-size:1.375rem;margin-bottom:16px">About this event</h2>
+        <div class="text-sub" style="line-height:1.8">{{ event.description|linebreaks }}</div>
+      </div>
+
+      <!-- Location -->
+      {% if event.is_physical %}
+      <div>
+        <h2 class="font-display" style="font-size:1.375rem;margin-bottom:16px">Location</h2>
+        <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:20px">
+          <p class="fw-600">{{ event.venue_name }}</p>
+          <p class="text-sub">{{ event.address }}, {{ event.city }}, {{ event.state }}</p>
+          {% if event.latitude and event.longitude %}
+          <a href="https://maps.google.com/?q={{ event.latitude }},{{ event.longitude }}" target="_blank" class="btn btn--outline btn--sm" style="margin-top:12px">Open in Maps →</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if event.is_virtual %}
+      <div>
+        <h2 class="font-display" style="font-size:1.375rem;margin-bottom:16px">Virtual Event</h2>
+        <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:20px">
+          <p class="fw-600">Platform: {{ event.virtual_platform }}</p>
+          {% if event.virtual_access_instructions %}
+          <p class="text-sub" style="margin-top:8px">{{ event.virtual_access_instructions }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Gallery -->
+      {% if event.gallery_images.exists %}
+      <div>
+        <h2 class="font-display" style="font-size:1.375rem;margin-bottom:16px">Gallery</h2>
+        <div class="grid-3" style="gap:12px">
+          {% for img in event.gallery_images.all|slice:":6" %}
+          <div class="card__media" style="border-radius:var(--radius)"><img src="{{ img.image.url }}" alt="{{ img.caption }}" loading="lazy"></div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Reviews -->
+      <div>
+        <div class="flex-between" style="margin-bottom:16px">
+          <h2 class="font-display" style="font-size:1.375rem">Reviews {% if event.review_count %}<span class="text-muted" style="font-size:1rem">({{ event.review_count }})</span>{% endif %}</h2>
+          {% if event.average_rating %}<span class="text-gold fw-600">⭐ {{ event.average_rating }}</span>{% endif %}
+        </div>
+        <div id="reviews-list">
+          {% for review in event.reviews.all %}
+          {% if review.moderation_status == 'approved' %}
+          <div style="border-bottom:1px solid var(--border);padding:16px 0">
+            <div class="flex-between" style="margin-bottom:8px">
+              <span class="fw-600">{{ review.customer.first_name|default:review.customer.username }}</span>
+              <span class="text-gold">{% for i in "12345"|make_list %}{% if forloop.counter <= review.rating %}⭐{% endif %}{% endfor %}</span>
+            </div>
+            <p class="text-sub">{{ review.comment }}</p>
+            {% if review.host_response %}<div style="background:var(--surface-2);padding:12px;border-radius:8px;margin-top:10px;font-size:.875rem"><span class="fw-600">Host reply: </span>{{ review.host_response }}</div>{% endif %}
+          </div>
+          {% endif %}
+          {% empty %}
+          <p class="text-muted">No reviews yet. Be the first!</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: checkout panel -->
+    <div>
+      <div class="checkout-panel">
+        <div class="flex-between" style="margin-bottom:20px">
+          <h3 class="font-display" style="font-size:1.25rem">Book Tickets</h3>
+          <button id="favorite-btn" class="btn btn--ghost btn--sm">🤍</button>
+        </div>
+
+        {% if event.is_sold_out %}
+        <div class="scan-result scan-result--error">Sold out</div>
+        {% elif event.is_past %}
+        <div class="scan-result scan-result--error">This event has ended</div>
+        {% else %}
+
+        {% for tt in event.ticket_types.all %}
+        {% if tt.is_active %}
+        <div class="ticket-row" data-ticket-type-id="{{ tt.id }}" data-price="{{ tt.price }}" data-max="{{ tt.max_per_order }}">
+          <div>
+            <div class="ticket-row__name">{{ tt.name }}</div>
+            <div class="ticket-row__price">{% if tt.is_free %}Free{% else %}₦{{ tt.price|floatformat:0 }}{% endif %}</div>
+            {% if tt.perks %}<div class="text-muted" style="font-size:.75rem;margin-top:2px">{{ tt.perks|join:", " }}</div>{% endif %}
+          </div>
+          <div class="qty-control">
+            <button class="qty-btn" data-dir="down">−</button>
+            <span class="qty-display fw-600">0</span>
+            <button class="qty-btn" data-dir="up">+</button>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        <div class="checkout-total">
+          <div class="checkout-total__row"><span class="text-sub">Subtotal</span><span id="checkout-subtotal">₦0</span></div>
+          <div id="coupon-row" class="hidden checkout-total__row"><span class="text-sub">Discount</span><span id="coupon-discount" class="text-success"></span></div>
+          <div class="checkout-total__row checkout-total__final"><span>Total</span><span id="checkout-final">₦0</span></div>
+        </div>
+
+        <!-- Coupon -->
+        <div class="flex gap-8 mt-16">
+          <input class="form-input" id="coupon-input" placeholder="Coupon code" style="flex:1">
+          <button class="btn btn--outline btn--sm" id="apply-coupon-btn">Apply</button>
+        </div>
+
+        <!-- Gateway -->
+        <div style="margin:16px 0">
+          <p class="text-muted" style="font-size:.8125rem;margin-bottom:8px">Pay with</p>
+          <div class="flex gap-12">
+            <label class="flex gap-6" style="cursor:pointer;font-size:.875rem"><input type="radio" name="gateway" value="paystack" checked> Paystack</label>
+            <label class="flex gap-6" style="cursor:pointer;font-size:.875rem"><input type="radio" name="gateway" value="flutterwave"> Flutterwave</label>
+            <label class="flex gap-6" style="cursor:pointer;font-size:.875rem"><input type="radio" name="gateway" value="stripe"> Stripe</label>
+          </div>
+        </div>
+
+        <button class="btn btn--gold btn--full btn--lg" id="checkout-btn">Book Now</button>
+        <p class="text-muted text-center mt-8" style="font-size:.75rem">🔒 Secure checkout</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/events.js"></script>
+{% endblock %}

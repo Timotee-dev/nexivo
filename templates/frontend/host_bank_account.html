@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Bank Account{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="bank" %}
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">Bank Account</h1>
+    <p class="text-muted" style="margin-bottom:32px">Your payout bank account — where your earnings are sent after events end.</p>
+
+    <div style="max-width:520px">
+      <div id="bank-status-card" class="chart-card" style="margin-bottom:24px">
+        <div class="spinner" style="margin:20px auto"></div>
+      </div>
+
+      <div class="chart-card">
+        <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:20px">Bank Details</h2>
+        <div class="form-group">
+          <label class="form-label">Bank *</label>
+          <select class="form-select" id="bank-code">
+            <option value="">Select your bank…</option>
+            <option value="044">Access Bank</option>
+            <option value="023">Citibank Nigeria</option>
+            <option value="050">EcoBank Nigeria</option>
+            <option value="070">Fidelity Bank</option>
+            <option value="011">First Bank of Nigeria</option>
+            <option value="214">First City Monument Bank</option>
+            <option value="058">Guaranty Trust Bank</option>
+            <option value="030">Heritage Bank</option>
+            <option value="301">Jaiz Bank</option>
+            <option value="082">Keystone Bank</option>
+            <option value="526">Moniepoint MFB</option>
+            <option value="076">Polaris Bank</option>
+            <option value="101">ProvidusBank</option>
+            <option value="221">Stanbic IBTC Bank</option>
+            <option value="068">Standard Chartered Bank</option>
+            <option value="232">Sterling Bank</option>
+            <option value="100">Suntrust Bank</option>
+            <option value="032">Union Bank of Nigeria</option>
+            <option value="033">United Bank For Africa</option>
+            <option value="215">Unity Bank</option>
+            <option value="035">Wema Bank</option>
+            <option value="057">Zenith Bank</option>
+            <option value="120001">9Payment Service Bank</option>
+            <option value="565">Carbon</option>
+            <option value="090270">Kuda Bank</option>
+            <option value="999992">OPay Digital Services</option>
+            <option value="999991">PalmPay</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Number *</label>
+          <input class="form-input" id="account-number" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit account number"
+                 style="font-family:var(--font-mono);letter-spacing:.1em">
+        </div>
+        <div id="account-name-preview" class="hidden" style="background:var(--surface-2);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px">
+          <p class="text-muted" style="font-size:.8125rem">Account Name</p>
+          <p class="fw-600" id="account-name-text"></p>
+        </div>
+        <button class="btn btn--gold" onclick="saveBankAccount()">Save Bank Account</button>
+        <p class="form-hint mt-8">Your account details are stored encrypted. Once saved, we'll create payout accounts with Paystack, Flutterwave, and Stripe — this may take a few minutes.</p>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  try {
+    const hp = await Api.get('/auth/host-profile/');
+    const card = document.getElementById('bank-status-card');
+    if (hp.bank_details_verified) {
+      card.innerHTML = `
+        <div class="flex gap-16" style="align-items:center">
+          <span style="font-size:1.75rem">🏦</span>
+          <div>
+            <p class="fw-600">${hp.bank_name || 'Bank account on file'}</p>
+            <p class="text-muted">${hp.account_number ? '••••' + hp.account_number.slice(-4) : '—'} · ${hp.account_name || ''}</p>
+            <span class="badge badge--green mt-8">Verified</span>
+          </div>
+        </div>`;
+    } else {
+      card.innerHTML = `<span class="badge badge--grey">No verified bank account</span>
+        <p class="text-sub mt-8" style="font-size:.875rem">Add your bank account below to receive payouts.</p>`;
+    }
+  } catch {}
+});
+
+async function saveBankAccount() {
+  const bankCode = document.getElementById('bank-code').value;
+  const bankName = document.getElementById('bank-code').options[document.getElementById('bank-code').selectedIndex]?.text;
+  const accountNumber = document.getElementById('account-number').value.trim();
+
+  if (!bankCode) { Toast.error('Please select your bank.'); return; }
+  if (accountNumber.length !== 10) { Toast.error('Account number must be exactly 10 digits.'); return; }
+
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    await Api.post('/auth/host-profile/bank-account/', {
+      bank_name: bankName, bank_code: bankCode, account_number: accountNumber,
+    });
+    Toast.success('Bank account saved. Verifying with payment gateways…');
+    setTimeout(() => location.reload(), 2500);
+  } catch(err) {
+    Toast.error(err?.detail || 'Failed to save bank account.');
+    btn.disabled = false; btn.textContent = 'Save Bank Account';
+  }
+}
+</script>
+{% endblock %}

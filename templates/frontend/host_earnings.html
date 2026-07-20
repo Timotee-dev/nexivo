@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Earnings{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="earnings" %}
+  <main class="dashboard__main">
+    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:28px">Earnings</h1>
+
+    <div class="stat-grid" style="margin-bottom:32px">
+      <div class="stat-card stat-card--gold"><div class="stat-card__label">Total Revenue</div><div class="stat-card__value" id="e-total">—</div></div>
+      <div class="stat-card"><div class="stat-card__label">Last 30 Days</div><div class="stat-card__value" id="e-30d">—</div></div>
+      <div class="stat-card"><div class="stat-card__label">Current Balance</div><div class="stat-card__value" id="e-balance">—</div></div>
+      <div class="stat-card"><div class="stat-card__label">Tickets Sold</div><div class="stat-card__value" id="e-tickets">—</div></div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:28px">
+      <div class="chart-card__title">Revenue — Last 30 Days</div>
+      <div class="chart-wrap"><canvas id="earnings-chart" style="width:100%;height:100%"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="flex-between" style="margin-bottom:16px">
+        <div class="chart-card__title">Transaction Ledger</div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th></tr></thead>
+          <tbody id="ledger-tbody"><tr><td colspan="4" class="text-center"><div class="spinner" style="margin:16px auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  try {
+    const [analytics, balance, ledger] = await Promise.all([
+      Api.get('/analytics/host/'),
+      Api.get('/payouts/balance/'),
+      Api.get('/payouts/ledger/'),
+    ]);
+    document.getElementById('e-total').textContent = `₦${Number(analytics.total_revenue).toLocaleString()}`;
+    document.getElementById('e-30d').textContent = `₦${Number(analytics.revenue_last_30_days).toLocaleString()}`;
+    document.getElementById('e-balance').textContent = `₦${Number(balance.balance).toLocaleString()}`;
+    document.getElementById('e-tickets').textContent = Number(analytics.total_tickets_sold).toLocaleString();
+
+    if (analytics.revenue_by_day?.length) {
+      Charts.bar('earnings-chart', analytics.revenue_by_day.map(r => r.day), analytics.revenue_by_day.map(r => parseFloat(r.revenue)));
+    }
+
+    const tbody = document.getElementById('ledger-tbody');
+    if (!ledger.results?.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No transactions yet.</td></tr>';
+    } else {
+      tbody.innerHTML = ledger.results.map(e => `
+        <tr>
+          <td style="font-size:.875rem">${new Date(e.created_at).toLocaleDateString()}</td>
+          <td><span class="badge badge--${e.entry_type === 'sale_credit' ? 'green' : 'red'}">${e.entry_type.replace('_', ' ')}</span></td>
+          <td style="font-size:.875rem">${e.note || '—'}</td>
+          <td class="${parseFloat(e.amount) >= 0 ? 'text-success' : 'text-error'}" style="font-weight:600">
+            ${parseFloat(e.amount) >= 0 ? '+' : ''}₦${Math.abs(Number(e.amount)).toLocaleString()}
+          </td>
+        </tr>`).join('');
+    }
+  } catch { Toast.error('Failed to load earnings data.'); }
+});
+</script>
+{% endblock %}
