@@ -298,8 +298,7 @@ class EventPublishView(APIView):
             raise PermissionDenied("You do not own this event.")
         if event.status not in (Event.Status.DRAFT, Event.Status.PENDING_REVIEW):
             return Response({"detail": f"Cannot publish an event with status '{event.status}'."}, status=400)
-        if not event.ticket_types.exists():
-            return Response({"detail": "Add at least one ticket type before publishing."}, status=400)
+
 
         event.publish()
         return Response(EventDetailSerializer(event, context={"request": request}).data)
