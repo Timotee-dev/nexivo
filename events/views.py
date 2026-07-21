@@ -269,21 +269,6 @@ class MyEventsView(generics.ListCreateAPIView):
         )
 
     @transaction.atomic
-    def create(self, request, *args, **kwargs):
-        import json
-        data = request.data.copy()
-        # When sent as FormData, ticket_types arrives as a JSON string — parse it
-        if isinstance(data.get('ticket_types'), str):
-            try:
-                data['ticket_types'] = json.loads(data['ticket_types'])
-            except Exception:
-                pass
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        from rest_framework.response import Response
-        return Response(serializer.data, status=201)
-
     def perform_create(self, serializer):
         ticket_types_data = serializer.validated_data.get("ticket_types", [])
         has_paid_tickets = any(not tt.get("is_free") and tt.get("price", 0) > 0 for tt in ticket_types_data)
