@@ -134,7 +134,7 @@ class HostProfile(EncryptedFieldsMixin, models.Model):
     )
 
     # NIN verification — stored encrypted at rest
-    nin_number = models.CharField(max_length=255, blank=True, null=True)
+    nin_number = models.CharField(max_length=500, blank=True, null=True)
     nin_verified = models.BooleanField(default=False)
     nin_verification_status = models.CharField(
         max_length=20,
@@ -149,7 +149,7 @@ class HostProfile(EncryptedFieldsMixin, models.Model):
     # Bank account for payouts — stored encrypted at rest
     bank_name = models.CharField(max_length=100, blank=True, null=True)
     bank_code = models.CharField(max_length=10, blank=True, null=True)
-    account_number = models.CharField(max_length=20, blank=True, null=True)
+    account_number = models.CharField(max_length=500, blank=True, null=True)
     account_name = models.CharField(max_length=255, blank=True, null=True)
     paystack_subaccount_code = models.CharField(
         max_length=100, blank=True, null=True, db_index=True
@@ -168,7 +168,7 @@ class HostProfile(EncryptedFieldsMixin, models.Model):
     total_revenue = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0)
 
-    can_sell_paid_tickets = models.BooleanField(default=True)
+    can_sell_paid_tickets = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -183,11 +183,12 @@ class HostProfile(EncryptedFieldsMixin, models.Model):
         return f"HostProfile<{self.user.email}>"
 
     def refresh_paid_ticket_eligibility(self):
-        """All hosts can sell paid tickets — no NIN verification required."""
-        if not self.can_sell_paid_tickets:
-            self.can_sell_paid_tickets = True
+        """Host can only sell paid tickets once NIN is verified AND bank details verified."""
+        eligible = self.nin_verified and self.bank_details_verified
+        if eligible != self.can_sell_paid_tickets:
+            self.can_sell_paid_tickets = eligible
             self.save(update_fields=["can_sell_paid_tickets"])
-        return True
+        return eligible
 
 
 class CustomerProfile(models.Model):
