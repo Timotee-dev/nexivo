@@ -147,13 +147,22 @@ class EventDetailSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class TicketTypeInputSerializer(serializers.Serializer):
+    """Simple input serializer for ticket types during event creation."""
+    name = serializers.CharField(max_length=100)
+    price = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
+    quantity_total = serializers.IntegerField(min_value=1)
+    max_per_order = serializers.IntegerField(default=10)
+    description = serializers.CharField(default='', allow_blank=True, required=False)
+
+
 class EventCreateSerializer(EventDetailSerializer):
     """
     Create serializer accepting nested ticket_types so a host can submit
     the full event + ticket tiers in one request.
     """
 
-    ticket_types = TicketTypeSerializer(many=True, required=False)
+    ticket_types = TicketTypeInputSerializer(many=True, required=False)
 
     @transaction.atomic
     def create(self, validated_data):
@@ -162,8 +171,17 @@ class EventCreateSerializer(EventDetailSerializer):
         event = Event.objects.create(**validated_data)
 
         for tt_data in ticket_types_data:
-            tt_data["quantity_remaining"] = tt_data["quantity_total"]
-            TicketType.objects.create(event=event, **tt_data)
+            if not tt_data.get("name"):
+                continue
+            TicketType.objects.create(
+                event=event,
+                name=tt_data.get("name", ""),
+                price=tt_data.get("price", 0),
+                quantity_total=tt_data.get("quantity_total", 0),
+                quantity_remaining=tt_data.get("quantity_total", 0),
+                max_per_order=tt_data.get("max_per_order", 10),
+                description=tt_data.get("description", ""),
+            )
 
         return event
 
