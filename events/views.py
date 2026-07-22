@@ -268,24 +268,18 @@ class MyEventsView(generics.ListCreateAPIView):
             .order_by("-created_at")
         )
 
-    def create(self, request, *args, **kwargs):
-        import json
-        data = request.data.copy()
-        tt_raw = data.get('ticket_types')
-        if isinstance(tt_raw, str):
-            try:
-                data['ticket_types'] = json.loads(tt_raw)
-            except Exception:
-                data['ticket_types'] = []
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        from rest_framework.response import Response
-        return Response(serializer.data, status=201)
-
     @transaction.atomic
     def perform_create(self, serializer):
-        # All hosts can create paid tickets — NIN requirement removed
+        ticket_types_data = serializer.validated_data.get("ticket_types", [])
+        has_paid_tickets = any(not tt.get("is_free") and tt.get("price", 0) > 0 for tt in ticket_types_data)
+
+        if has_paid_tickets:
+            profile = getattr(self.request.user, "host_profile", None)
+            if not (profile and profile.can_sell_paid_tickets):
+                raise PermissionDenied(
+                    "You must complete NIN and bank verification before creating paid ticket types."
+                )
+
         event = serializer.save()
         AuditLog.objects.create(
             actor=self.request.user, action=AuditLog.Action.EVENT_CREATED,
@@ -355,15 +349,15 @@ class TicketTypeListCreateView(generics.ListCreateAPIView):
         if event.host != self.request.user and not self.request.user.is_super_admin:
             raise PermissionDenied("You do not own this event.")
 
-        is_paid = not serializer.validated_data.get("is_free") and serializer.validated_data.get("price", 0) > 0
-        if is_paid:
-            profile = getattr(self.request.user, "host_profile", None)
-            if not (profile and profile.can_sell_paid_tickets):
-                raise PermissionDenied(
-                    "You must complete NIN and bank verification before adding paid ticket types."
-                )
-
-        serializer.save(event=event, quantity_remaining=serializer.validated_data["quantity_total"])
+        # NIN verification not required — all hosts can add paid ticket types
+        qty = serializer.validated_data.get("quantity_total", 0)
+        price = float(serializer.validated_data.get("price", 0) or 0)
+        serializer.save(
+            event=event,
+            quantity_remaining=qty,
+            is_free=price == 0,
+            is_active=True,
+        )
 
 
 class TicketTypeDetailView(generics.RetrieveUpdateDestroyAPIView):
