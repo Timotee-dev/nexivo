@@ -156,13 +156,38 @@ class TicketTypeInputSerializer(serializers.Serializer):
     description = serializers.CharField(default='', allow_blank=True, required=False)
 
 
-class EventCreateSerializer(EventDetailSerializer):
+class EventCreateSerializer(serializers.ModelSerializer):
     """
     Create serializer accepting nested ticket_types so a host can submit
     the full event + ticket tiers in one request.
     """
+    ticket_types = TicketTypeInputSerializer(many=True, required=False, write_only=True)
 
-    ticket_types = TicketTypeInputSerializer(many=True, required=False)
+    class Meta:
+        model = Event
+        fields = [
+            "title", "short_description", "description", "event_type",
+            "venue_name", "address", "city", "state", "country",
+            "virtual_platform", "virtual_join_url", "virtual_access_instructions",
+            "start_datetime", "end_datetime", "status", "refund_policy",
+            "terms_and_conditions", "ticket_types", "banner_image", "category",
+        ]
+        extra_kwargs = {
+            "short_description": {"required": False, "allow_blank": True},
+            "venue_name": {"required": False, "allow_blank": True},
+            "address": {"required": False, "allow_blank": True},
+            "city": {"required": False, "allow_blank": True},
+            "state": {"required": False, "allow_blank": True},
+            "country": {"required": False, "allow_blank": True},
+            "virtual_platform": {"required": False, "allow_blank": True, "allow_null": True},
+            "virtual_join_url": {"required": False, "allow_blank": True, "allow_null": True},
+            "virtual_access_instructions": {"required": False, "allow_blank": True, "allow_null": True},
+            "refund_policy": {"required": False, "allow_blank": True, "allow_null": True},
+            "terms_and_conditions": {"required": False, "allow_blank": True, "allow_null": True},
+            "banner_image": {"required": False, "allow_null": True},
+            "category": {"required": False, "allow_null": True},
+            "status": {"required": False},
+        }
 
     @transaction.atomic
     def create(self, validated_data):
@@ -173,18 +198,14 @@ class EventCreateSerializer(EventDetailSerializer):
         for tt_data in ticket_types_data:
             if not tt_data.get("name"):
                 continue
-            price = float(str(tt_data.get("price", 0) or 0))
-            qty = int(str(tt_data.get("quantity_total", 0) or 0))
             TicketType.objects.create(
                 event=event,
                 name=tt_data.get("name", ""),
-                price=price,
-                quantity_total=qty,
-                quantity_remaining=qty,
-                max_per_order=int(str(tt_data.get("max_per_order", 10) or 10)),
-                description=tt_data.get("description", "") or "",
-                is_free=price == 0,
-                is_active=True,
+                price=tt_data.get("price", 0),
+                quantity_total=tt_data.get("quantity_total", 0),
+                quantity_remaining=tt_data.get("quantity_total", 0),
+                max_per_order=tt_data.get("max_per_order", 10),
+                description=tt_data.get("description", ""),
             )
 
         return event
