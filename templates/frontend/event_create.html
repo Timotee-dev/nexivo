@@ -410,7 +410,7 @@ async function submitEvent() {
   if (bannerFile) fd.append('banner_image', bannerFile);
 
   try {
-    // Must use fetch directly (not Api.post) so FormData sets Content-Type automatically
+    // Step 1: Create the event
     const token = Api.getToken();
     const res = await fetch('/api/v1/events/mine/', {
       method: 'POST',
@@ -421,6 +421,31 @@ async function submitEvent() {
       const err = await res.json().catch(() => ({}));
       throw err;
     }
+    const event = await res.json();
+
+    // Step 2: Add ticket types separately
+    const ticketData = getTicketData();
+    for (const tt of ticketData) {
+      if (!tt.name) continue;
+      await fetch(`/api/v1/events/${event.slug}/ticket-types/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: tt.name,
+          price: tt.price,
+          quantity_total: tt.quantity_total,
+          quantity_remaining: tt.quantity_total,
+          max_per_order: tt.max_per_order,
+          description: tt.description,
+          is_free: tt.price === 0,
+          is_active: true,
+        }),
+      });
+    }
+
     Toast.success('Event published! It is now live on Nexivo.');
     setTimeout(() => window.location.href = '/dashboard/host/', 1500);
   } catch (err) {
