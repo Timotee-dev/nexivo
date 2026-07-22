@@ -36,10 +36,23 @@ class TicketTypeSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "quantity_remaining", "created_at"]
+        extra_kwargs = {
+            "description": {"required": False, "allow_blank": True, "default": ""},
+            "is_free": {"required": False, "default": False},
+            "currency": {"required": False, "default": "NGN"},
+            "max_per_order": {"required": False, "default": 10},
+            "sales_start": {"required": False, "allow_null": True, "default": None},
+            "sales_end": {"required": False, "allow_null": True, "default": None},
+            "is_early_bird": {"required": False, "default": False},
+            "early_bird_deadline": {"required": False, "allow_null": True, "default": None},
+            "perks": {"required": False, "default": list},
+            "is_active": {"required": False, "default": True},
+            "display_order": {"required": False, "default": 0},
+        }
 
     def validate(self, attrs):
-        if attrs.get("price", 0) == 0:
-            attrs["is_free"] = True
+        price = float(attrs.get("price", 0) or 0)
+        attrs["is_free"] = price == 0
         sales_start = attrs.get("sales_start")
         sales_end = attrs.get("sales_end")
         if sales_start and sales_end and sales_end <= sales_start:
@@ -156,38 +169,13 @@ class TicketTypeInputSerializer(serializers.Serializer):
     description = serializers.CharField(default='', allow_blank=True, required=False)
 
 
-class EventCreateSerializer(serializers.ModelSerializer):
+class EventCreateSerializer(EventDetailSerializer):
     """
     Create serializer accepting nested ticket_types so a host can submit
     the full event + ticket tiers in one request.
     """
-    ticket_types = TicketTypeInputSerializer(many=True, required=False, write_only=True)
 
-    class Meta:
-        model = Event
-        fields = [
-            "title", "short_description", "description", "event_type",
-            "venue_name", "address", "city", "state", "country",
-            "virtual_platform", "virtual_join_url", "virtual_access_instructions",
-            "start_datetime", "end_datetime", "status", "refund_policy",
-            "terms_and_conditions", "ticket_types", "banner_image", "category",
-        ]
-        extra_kwargs = {
-            "short_description": {"required": False, "allow_blank": True},
-            "venue_name": {"required": False, "allow_blank": True},
-            "address": {"required": False, "allow_blank": True},
-            "city": {"required": False, "allow_blank": True},
-            "state": {"required": False, "allow_blank": True},
-            "country": {"required": False, "allow_blank": True},
-            "virtual_platform": {"required": False, "allow_blank": True, "allow_null": True},
-            "virtual_join_url": {"required": False, "allow_blank": True, "allow_null": True},
-            "virtual_access_instructions": {"required": False, "allow_blank": True, "allow_null": True},
-            "refund_policy": {"required": False, "allow_blank": True, "allow_null": True},
-            "terms_and_conditions": {"required": False, "allow_blank": True, "allow_null": True},
-            "banner_image": {"required": False, "allow_null": True},
-            "category": {"required": False, "allow_null": True},
-            "status": {"required": False},
-        }
+    ticket_types = TicketTypeInputSerializer(many=True, required=False)
 
     @transaction.atomic
     def create(self, validated_data):
