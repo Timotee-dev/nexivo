@@ -271,7 +271,7 @@ class MyEventsView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         import json
         data = request.data.copy()
-        # When sent as FormData, ticket_types arrives as a JSON string — parse it
+        # FormData sends ticket_types as a JSON string — parse it back to a list
         tt_raw = data.get('ticket_types')
         if isinstance(tt_raw, str):
             try:
@@ -286,6 +286,7 @@ class MyEventsView(generics.ListCreateAPIView):
 
     @transaction.atomic
     def perform_create(self, serializer):
+        # All hosts can create paid tickets — NIN requirement removed
         event = serializer.save()
         AuditLog.objects.create(
             actor=self.request.user, action=AuditLog.Action.EVENT_CREATED,

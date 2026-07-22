@@ -173,15 +173,16 @@ class EventCreateSerializer(EventDetailSerializer):
         for tt_data in ticket_types_data:
             if not tt_data.get("name"):
                 continue
-            price = float(tt_data.get("price", 0) or 0)
+            price = float(str(tt_data.get("price", 0) or 0))
+            qty = int(str(tt_data.get("quantity_total", 0) or 0))
             TicketType.objects.create(
                 event=event,
                 name=tt_data.get("name", ""),
                 price=price,
-                quantity_total=tt_data.get("quantity_total", 0),
-                quantity_remaining=tt_data.get("quantity_total", 0),
-                max_per_order=tt_data.get("max_per_order", 10),
-                description=tt_data.get("description", ""),
+                quantity_total=qty,
+                quantity_remaining=qty,
+                max_per_order=int(str(tt_data.get("max_per_order", 10) or 10)),
+                description=tt_data.get("description", "") or "",
                 is_free=price == 0,
                 is_active=True,
             )
