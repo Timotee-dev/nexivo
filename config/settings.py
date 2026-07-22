@@ -139,8 +139,19 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# ── Cloudinary (persistent image storage) ─────────────────────────────────
+CLOUDINARY_URL = config("CLOUDINARY_URL", default="")
+if CLOUDINARY_URL:
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.api
+    cloudinary.config(cloudinary_url=CLOUDINARY_URL)
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+    INSTALLED_APPS += ["cloudinary_storage", "cloudinary"]
+
+# Keep S3 support as fallback
 USE_S3 = config("USE_S3", default=False, cast=bool)
-if USE_S3:
+if USE_S3 and not CLOUDINARY_URL:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default="")
     AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default="")
