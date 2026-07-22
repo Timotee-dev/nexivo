@@ -271,7 +271,6 @@ class MyEventsView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         import json
         data = request.data.copy()
-        # FormData sends ticket_types as a JSON string — parse it back to a list
         tt_raw = data.get('ticket_types')
         if isinstance(tt_raw, str):
             try:
