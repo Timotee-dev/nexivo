@@ -65,7 +65,7 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
 input, textarea, select { font-family: inherit; }
 
 /* ── Layout ─────────────────────────────────────────────────────────── */
-.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 16px; width: 100%; }
 .container--narrow { max-width: 720px; margin: 0 auto; padding: 0 24px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
@@ -548,10 +548,14 @@ input, textarea, select { font-family: inherit; }
     overflow-y: auto;
   }
   .host-section { padding: 48px 32px; }
+  .nav__actions { gap: 8px; }
 }
 
 /* ── Mobile ─────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Prevent horizontal overflow */
+  html, body { overflow-x: hidden; max-width: 100%; }
+  .container, .container--narrow { width: 100%; max-width: 100%; padding: 0 14px; }
   /* Layout */
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .container { padding: 0 16px; }
@@ -560,7 +564,10 @@ input, textarea, select { font-family: inherit; }
   /* Nav */
   .nav__links { display: none; }
   .nav__menu-btn { display: flex; }
-  .nav__inner { padding: 0 16px; height: 56px; }
+  .nav__inner { padding: 0 12px; height: 56px; width: 100%; }
+  .nav__logo { font-size: 1.2rem; }
+  .nav__actions { gap: 6px; }
+  .btn--sm { padding: 6px 10px; font-size: .8125rem; }
 
   /* Hero */
   .hero { padding: 48px 16px 40px; }
