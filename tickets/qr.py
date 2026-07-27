@@ -9,14 +9,13 @@ import hashlib
 import io
 
 import qrcode
+from qrcode.image.styledpil import StyledPilImage
+from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 from django.core.files.base import ContentFile
 
 
 def _integrity_stamp(ticket_code: str) -> str:
-    """Short HMAC-like stamp so a scanned QR can't be trivially forged by
-    guessing a ticket_code format; full validation still happens server-side
-    against the DB, this is just a cheap pre-check."""
     raw = f"{ticket_code}:{settings.SECRET_KEY}".encode()
     return hashlib.sha256(raw).hexdigest()[:10]
 
@@ -38,9 +37,42 @@ def verify_qr_payload(payload: str) -> str | None:
 
 def generate_qr_image(ticket_code: str) -> ContentFile:
     payload = build_qr_payload(ticket_code)
-    img = qrcode.make(payload, box_size=8, border=2)
+
+    # Generate QR code
+    qr = qrcode.QRCode(box_size=8, border=2, error_correction=qrcode.constants.ERROR_CORRECT_H)
+    qr.add_data(payload)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+
+    # Add "Powered by Nexivo" branding below the QR
+    qr_width, qr_height = qr_img.size
+    branding_height = 28
+    total_height = qr_height + branding_height
+
+    # Create new image with white background
+    final_img = Image.new("RGB", (qr_width, total_height), "white")
+    final_img.paste(qr_img, (0, 0))
+
+    # Add branding text
+    draw = ImageDraw.Draw(final_img)
+    text = "Powered by Nexivo"
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 11)
+    except Exception:
+        font = ImageFont.load_default()
+
+    # Center the text
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_x = (qr_width - text_width) // 2
+    text_y = qr_height + 6
+
+    # Draw gold/yellow background for branding strip
+    draw.rectangle([(0, qr_height), (qr_width, total_height)], fill="#C9A84C")
+    draw.text((text_x, text_y), text, fill="white", font=font)
+
     buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
+    final_img.save(buffer, format="PNG")
     buffer.seek(0)
     return ContentFile(buffer.read(), name=f"{ticket_code}.png")
 

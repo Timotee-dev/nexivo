@@ -180,5 +180,30 @@
   </div>
 </div>
 
-<script src="/static/js/events.js"></script>
+<script src="/static/js/events.js">
+function shareEvent(slug, title) {
+  const url = window.location.origin + '/events/' + slug + '/';
+  if (navigator.share) {
+    navigator.share({ title: title, url: url })
+      .catch(() => copyToClipboard(url));
+  } else {
+    copyToClipboard(url);
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    Toast.success('Event link copied to clipboard!');
+  }).catch(() => {
+    // Fallback
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    Toast.success('Event link copied!');
+  });
+}
+</script>
 {% endblock %}

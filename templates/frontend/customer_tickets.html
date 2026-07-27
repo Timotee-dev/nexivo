@@ -35,8 +35,11 @@
     <button class="modal__close" onclick="Modal.close('qr-modal')">×</button>
     <h2 class="modal__title" id="qr-modal-title">Your Ticket</h2>
     <p class="text-muted" id="qr-modal-code" style="margin-bottom:20px;font-family:monospace"></p>
-    <img id="qr-modal-img" style="width:200px;height:200px;margin:0 auto;border-radius:8px;display:block">
-    <p class="text-muted" style="font-size:.8125rem;margin-top:16px">Show this QR code at the entrance</p>
+    <img id="qr-modal-img" style="width:220px;height:auto;margin:0 auto;border-radius:8px;display:block">
+    <p class="text-muted" style="font-size:.8125rem;margin-top:12px">Show this QR code at the entrance</p>
+    <a id="qr-modal-download" href="#" download class="btn btn--gold btn--sm" style="margin-top:12px;display:inline-flex">
+      ⬇ Download QR Code
+    </a>
   </div>
 </div>
 
@@ -93,10 +96,13 @@ async function loadTickets() {
               ${t.qr_image ? `
                 <button class="btn btn--gold btn--sm" onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')">
                   📱 Show QR Code
-                </button>` : ''}
+                </button>
+                <a href="${t.qr_image}" download="nexivo-ticket-${t.ticket_code}.png" class="btn btn--outline btn--sm">
+                  ⬇ Download QR
+                </a>` : ''}
               ${t.pdf_file ? `
                 <a href="${t.pdf_file}" download class="btn btn--outline btn--sm">
-                  ⬇ Download PDF
+                  📄 Download PDF
                 </a>` : ''}
               ${!isUsed && !isPast ? `
                 <button class="btn btn--outline btn--sm" onclick="openTransfer('${t.ticket_code}')">
@@ -125,6 +131,9 @@ function showQR(code, qrUrl, eventTitle) {
   document.getElementById('qr-modal-title').textContent = eventTitle || 'Your Ticket';
   document.getElementById('qr-modal-code').textContent = code;
   document.getElementById('qr-modal-img').src = qrUrl;
+  const dl = document.getElementById('qr-modal-download');
+  dl.href = qrUrl;
+  dl.download = 'nexivo-ticket-' + code + '.png';
   Modal.open('qr-modal');
 }
 
