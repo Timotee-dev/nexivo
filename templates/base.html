@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function buildMenu() {
     var user = null;
-    try { user = JSON.parse(localStorage.getItem('nx_user') || 'null'); } catch(e) {}
+    try { user = JSON.parse(localStorage.getItem('nexivo_user') || 'null'); } catch(e) {}
     var role = user ? user.role : '';
     // Show My Tickets in desktop nav for customers
     var ticketsBtn = document.getElementById('nav-tickets-btn');
