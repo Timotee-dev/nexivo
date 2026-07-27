@@ -172,9 +172,60 @@ const Modal = (() => {
 /* ── Mobile nav ───────────────────────────────────────────────────────── */
 function initMobileNav() {
   const btn = document.querySelector('.nav__menu-btn');
+  if (!btn) return;
+
+  // Try sidebar first (dashboard pages)
   const sidebar = document.querySelector('.sidebar');
-  if (!btn || !sidebar) return;
-  btn.addEventListener('click', () => sidebar.classList.toggle('is-open'));
+
+  // Create mobile drawer if it doesn't exist
+  let drawer = document.getElementById('mobile-drawer');
+  if (!drawer && !sidebar) {
+    drawer = document.createElement('div');
+    drawer.id = 'mobile-drawer';
+    drawer.style.cssText = `
+      display:none;position:fixed;top:60px;left:0;right:0;bottom:0;
+      background:var(--primary);z-index:300;padding:20px;
+      flex-direction:column;gap:4px;overflow-y:auto;
+    `;
+
+    const user = JSON.parse(localStorage.getItem('nx_user') || 'null');
+    const role = user?.role || '';
+
+    const links = [
+      { href: '/', label: '🏠 Home' },
+      { href: '/events/', label: '🔍 Browse Events' },
+    ];
+    if (role === 'customer') {
+      links.push({ href: '/dashboard/customer/', label: '📋 My Dashboard' });
+      links.push({ href: '/dashboard/my-tickets/', label: '🎫 My Tickets' });
+      links.push({ href: '/dashboard/bookings/', label: '📦 My Bookings' });
+      links.push({ href: '/dashboard/my-profile/', label: '👤 Profile' });
+    }
+    if (role === 'host' || role === 'super_admin') {
+      links.push({ href: '/dashboard/host/', label: '📊 Host Dashboard' });
+      links.push({ href: '/dashboard/events/', label: '📅 My Events' });
+      links.push({ href: '/events/create/', label: '➕ Create Event' });
+      links.push({ href: '/dashboard/earnings/', label: '💰 Earnings' });
+      links.push({ href: '/dashboard/scanner/', label: '📷 QR Scanner' });
+      links.push({ href: '/dashboard/bank-account/', label: '🏦 Bank Account' });
+    }
+
+    drawer.innerHTML = links.map(l =>
+      `<a href="${l.href}" style="color:rgba(255,255,255,.85);padding:14px 16px;font-size:1rem;font-weight:500;border-radius:8px;display:block;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.08)">${l.label}</a>`
+    ).join('') + (user ? `<button onclick="Auth.logout()" style="color:rgba(255,255,255,.6);padding:14px 16px;font-size:1rem;background:none;border:none;cursor:pointer;text-align:left;width:100%">🚪 Sign Out</button>` : `<a href="/auth/login/" style="color:rgba(255,255,255,.85);padding:14px 16px;font-size:1rem;font-weight:500;display:block">Sign In</a><a href="/auth/register/" style="color:var(--gold);padding:14px 16px;font-size:1rem;font-weight:700;display:block">Get Started</a>`);
+
+    document.body.appendChild(drawer);
+  }
+
+  btn.addEventListener('click', () => {
+    if (sidebar) {
+      sidebar.classList.toggle('is-open');
+    } else if (drawer) {
+      const open = drawer.style.display === 'flex';
+      drawer.style.display = open ? 'none' : 'flex';
+      btn.textContent = open ? '☰' : '✕';
+    }
+  });
 }
 
 /* ── Init ─────────────────────────────────────────────────────────────── */
