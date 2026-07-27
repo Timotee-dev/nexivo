@@ -94,7 +94,52 @@
 
 <div class="toast-container" id="toast-container"></div>
 
+<!-- Mobile bottom navigation (shows only on mobile for logged-in users) -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav" style="display:none">
+  <a href="/" class="mobile-nav-link">
+    <span class="nav-icon">🏠</span>
+    <span>Home</span>
+  </a>
+  <a href="/events/" class="mobile-nav-link">
+    <span class="nav-icon">🔍</span>
+    <span>Browse</span>
+  </a>
+  <a href="/dashboard/my-tickets/" class="mobile-nav-link" id="mob-tickets" style="display:none">
+    <span class="nav-icon">🎫</span>
+    <span>Tickets</span>
+  </a>
+  <a href="/dashboard/host/" class="mobile-nav-link" id="mob-host-dash" style="display:none">
+    <span class="nav-icon">📅</span>
+    <span>Events</span>
+  </a>
+  <a href="/dashboard/" class="mobile-nav-link" id="mob-account">
+    <span class="nav-icon">👤</span>
+    <span>Account</span>
+  </a>
+</nav>
+
 <script src="/static/js/nexivo.js"></script>
+<script>
+// Show mobile bottom nav for logged-in users
+document.addEventListener('DOMContentLoaded', () => {
+  const user = JSON.parse(localStorage.getItem('nx_user') || 'null');
+  if (user) {
+    document.getElementById('mobile-bottom-nav').style.display = 'flex';
+    document.body.classList.add('mobile-page-pad');
+    if (user.role === 'customer') {
+      document.getElementById('mob-tickets').style.display = '';
+    }
+    if (user.role === 'host' || user.role === 'super_admin') {
+      document.getElementById('mob-host-dash').style.display = '';
+    }
+    // Highlight active link
+    const path = window.location.pathname;
+    document.querySelectorAll('.mobile-nav-link').forEach(a => {
+      if (a.getAttribute('href') === path) a.classList.add('active');
+    });
+  }
+});
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
