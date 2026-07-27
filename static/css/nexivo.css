@@ -564,9 +564,11 @@ input, textarea, select { font-family: inherit; }
   /* Nav */
   .nav__links { display: none; }
   .nav__menu-btn { display: flex; }
-  .nav__inner { padding: 0 12px; height: 56px; width: 100%; }
-  .nav__logo { font-size: 1.2rem; }
-  .nav__actions { gap: 6px; }
+  .nav__inner { padding: 0 12px; height: 56px; width: 100%; overflow: hidden; }
+  .nav__logo { font-size: 1.1rem; flex-shrink: 0; }
+  .nav__actions { gap: 4px; flex-shrink: 0; overflow: hidden; }
+  .nav__actions .btn--sm { padding: 5px 8px; font-size: .75rem; }
+  #user-menu-name { display: none; }
   .btn--sm { padding: 6px 10px; font-size: .8125rem; }
 
   /* Hero */
