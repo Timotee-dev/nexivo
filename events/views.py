@@ -268,16 +268,22 @@ class MyEventsView(generics.ListCreateAPIView):
             .order_by("-created_at")
         )
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         import json
-        data = request.data.copy()
-        tt_raw = data.get('ticket_types')
+        # Parse ticket_types without copying request.data (avoids file pickle error)
+        tt_raw = request.data.get('ticket_types')
+        ticket_types = []
         if isinstance(tt_raw, str):
             try:
-                data['ticket_types'] = json.loads(tt_raw)
+                ticket_types = json.loads(tt_raw)
             except Exception:
-                data['ticket_types'] = []
-        serializer = self.get_serializer(data=data)
+                ticket_types = []
+        elif isinstance(tt_raw, list):
+            ticket_types = tt_raw
+        request._ticket_types_parsed = ticket_types
+
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         from rest_framework.response import Response
@@ -286,6 +292,26 @@ class MyEventsView(generics.ListCreateAPIView):
     @transaction.atomic
     def perform_create(self, serializer):
         event = serializer.save()
+
+        # Save ticket types parsed in create()
+        from events.models import TicketType
+        for tt_data in getattr(self.request, '_ticket_types_parsed', []):
+            if not tt_data.get('name'):
+                continue
+            price = float(str(tt_data.get('price', 0) or 0))
+            qty = int(str(tt_data.get('quantity_total', 0) or 0))
+            TicketType.objects.create(
+                event=event,
+                name=tt_data.get('name', ''),
+                price=price,
+                quantity_total=qty,
+                quantity_remaining=qty,
+                max_per_order=int(str(tt_data.get('max_per_order', 10) or 10)),
+                description=tt_data.get('description', '') or '',
+                is_free=price == 0,
+                is_active=True,
+            )
+
         AuditLog.objects.create(
             actor=self.request.user, action=AuditLog.Action.EVENT_CREATED,
             target_model="Event", target_id=str(event.id), metadata={"title": event.title},
@@ -353,14 +379,16 @@ class TicketTypeListCreateView(generics.ListCreateAPIView):
         event = self.get_event()
         if event.host != self.request.user and not self.request.user.is_super_admin:
             raise PermissionDenied("You do not own this event.")
-        qty = serializer.validated_data.get("quantity_total", 0)
-        price = float(serializer.validated_data.get("price", 0) or 0)
-        serializer.save(
-            event=event,
-            quantity_remaining=qty,
-            is_free=price == 0,
-            is_active=True,
-        )
+
+        is_paid = not serializer.validated_data.get("is_free") and serializer.validated_data.get("price", 0) > 0
+        if is_paid:
+            profile = getattr(self.request.user, "host_profile", None)
+            if not (profile and profile.can_sell_paid_tickets):
+                raise PermissionDenied(
+                    "You must complete NIN and bank verification before adding paid ticket types."
+                )
+
+        serializer.save(event=event, quantity_remaining=serializer.validated_data["quantity_total"])
 
 
 class TicketTypeDetailView(generics.RetrieveUpdateDestroyAPIView):
