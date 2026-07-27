@@ -9,83 +9,111 @@
   <link rel="stylesheet" href="/static/css/nexivo.css">
   {% block extra_css %}{% endblock %}
   <style>
-    /* ── Mobile drawer ─────────────────────────────────────── */
-    .mob-drawer {
+    #mob-drawer {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: var(--primary);
-      z-index: 500;
+      background: #1a1a2e;
+      z-index: 99999;
       flex-direction: column;
       overflow-y: auto;
     }
-    .mob-drawer.open { display: flex; }
-    .mob-drawer__head {
+    #mob-drawer.open { display: flex; }
+    .mob-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 20px;
-      border-bottom: 1px solid rgba(255,255,255,.1);
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      flex-shrink: 0;
     }
-    .mob-drawer__logo { color:#fff; font-size:1.4rem; font-weight:800; }
-    .mob-drawer__logo span { color: var(--gold); }
-    .mob-drawer__close {
+    .mob-logo { color:#fff; font-size:1.4rem; font-weight:800; letter-spacing:-.02em; }
+    .mob-logo span { color: #C9A84C; }
+    .mob-close {
       color: rgba(255,255,255,.7);
       font-size: 1.5rem;
       background: none;
       border: none;
       cursor: pointer;
+      line-height: 1;
       padding: 4px 8px;
     }
-    .mob-drawer__links { padding: 12px 0; flex: 1; }
-    .mob-drawer__link {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 20px;
-      color: rgba(255,255,255,.85);
-      font-size: 1rem;
-      font-weight: 500;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(255,255,255,.06);
-      transition: background .15s;
-    }
-    .mob-drawer__link:hover { background: rgba(255,255,255,.08); }
-    .mob-drawer__link .icon { font-size: 1.25rem; width: 28px; }
-    .mob-drawer__section {
-      padding: 12px 20px 4px;
-      font-size: .75rem;
+    .mob-section {
+      padding: 16px 20px 4px;
+      font-size: .7rem;
       font-weight: 700;
-      letter-spacing: .08em;
+      letter-spacing: .1em;
       text-transform: uppercase;
       color: rgba(255,255,255,.35);
     }
-    .mob-drawer__footer {
-      padding: 16px 20px;
-      border-top: 1px solid rgba(255,255,255,.1);
+    .mob-link {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 20px;
+      color: rgba(255,255,255,.85);
+      font-size: .9375rem;
+      font-weight: 500;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,.06);
     }
-    /* Hide username in nav on mobile */
+    .mob-link:hover, .mob-link:active { background: rgba(255,255,255,.08); }
+    .mob-link .mi { font-size: 1.2rem; width: 26px; flex-shrink: 0; }
+    .mob-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,.1);
+      margin-top: auto;
+      flex-shrink: 0;
+    }
+    .mob-signout {
+      display: block; width: 100%; padding: 13px;
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.85);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 8px;
+      font-size: .9375rem;
+      cursor: pointer;
+      font-weight: 600;
+      text-align: center;
+    }
+    .mob-btn-primary {
+      display: block; width: 100%; padding: 13px;
+      background: #C9A84C; color: #111;
+      border-radius: 8px; font-size: .9375rem;
+      font-weight: 700; text-align: center;
+      text-decoration: none; margin-bottom: 10px;
+    }
+    .mob-btn-outline {
+      display: block; width: 100%; padding: 13px;
+      background: transparent; color: #fff;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 8px; font-size: .9375rem;
+      font-weight: 600; text-align: center;
+      text-decoration: none; margin-bottom: 10px;
+    }
+    .mob-user-info {
+      color: rgba(255,255,255,.5);
+      font-size: .8125rem;
+      margin-bottom: 12px;
+    }
+    .mob-user-info strong { color: rgba(255,255,255,.85); }
     @media(max-width: 768px) {
       #user-menu-name { display: none !important; }
       #user-menu .btn--ghost { display: none !important; }
-      .nav__actions { gap: 6px; }
     }
   </style>
 </head>
 <body>
 
-<!-- ── Navigation ──────────────────────────────────────────────── -->
 <nav class="nav">
   <div class="nav__inner">
     <a href="/" class="nav__logo">Nexiv<span>o</span></a>
-
     <div class="nav__links">
       <a href="/events/" class="nav__link">Explore</a>
       <a href="/events/?event_type=virtual" class="nav__link">Virtual</a>
       <a href="/events/?event_type=physical" class="nav__link">In-Person</a>
       <a href="/events/create/" class="nav__link">Host an Event</a>
     </div>
-
     <div class="nav__actions">
       <button id="theme-toggle" class="btn btn--ghost btn--sm" aria-label="Toggle theme">
         <span id="theme-icon">🌙</span>
@@ -99,34 +127,29 @@
         <button id="logout-btn" class="btn btn--outline btn--sm">Sign Out</button>
         <span class="text-sub fw-600" id="user-menu-name"></span>
       </div>
-      <button class="nav__menu-btn btn btn--ghost" id="mob-menu-btn" aria-label="Menu">☰</button>
+      <button class="nav__menu-btn btn btn--ghost" id="mob-open-btn" aria-label="Menu">☰</button>
     </div>
   </div>
 </nav>
 
-<!-- ── Mobile Drawer ────────────────────────────────────────────── -->
-<div class="mob-drawer" id="mob-drawer">
-  <div class="mob-drawer__head">
-    <div class="mob-drawer__logo">Nexiv<span>o</span></div>
-    <button class="mob-drawer__close" id="mob-drawer-close">✕</button>
+<!-- Mobile Full-Screen Drawer -->
+<div id="mob-drawer">
+  <div class="mob-head">
+    <div class="mob-logo">Nexiv<span>o</span></div>
+    <button class="mob-close" id="mob-close-btn">✕</button>
   </div>
-  <div class="mob-drawer__links" id="mob-drawer-links">
-    <!-- Populated by JS based on role -->
-  </div>
-  <div class="mob-drawer__footer" id="mob-drawer-footer"></div>
+  <div id="mob-body" style="flex:1;overflow-y:auto"></div>
+  <div class="mob-footer" id="mob-footer"></div>
 </div>
 
 {% block content %}{% endblock %}
 
-<!-- ── Footer ──────────────────────────────────────────────────── -->
 <footer style="border-top:1px solid var(--border);padding:48px 0;margin-top:64px">
   <div class="container">
     <div class="grid-4" style="margin-bottom:40px">
       <div>
         <div class="nav__logo" style="margin-bottom:16px">Nexiv<span style="color:var(--gold)">o</span></div>
-        <p class="text-sub" style="font-size:.875rem;line-height:1.7">
-          The premium marketplace for discovering and booking world-class events in Nigeria and beyond.
-        </p>
+        <p class="text-sub" style="font-size:.875rem;line-height:1.7">The premium marketplace for discovering and booking world-class events in Nigeria and beyond.</p>
       </div>
       <div>
         <p class="fw-600" style="margin-bottom:12px">Discover</p>
@@ -161,94 +184,74 @@
 </footer>
 
 <div class="toast-container" id="toast-container"></div>
-
 <script src="/static/js/nexivo.js"></script>
 <script>
-// ── Mobile drawer ──────────────────────────────────────────────
-(function() {
-  const btn = document.getElementById('mob-menu-btn');
-  const drawer = document.getElementById('mob-drawer');
-  const closeBtn = document.getElementById('mob-drawer-close');
-  const linksEl = document.getElementById('mob-drawer-links');
-  const footerEl = document.getElementById('mob-drawer-footer');
+document.addEventListener('DOMContentLoaded', function() {
+  var openBtn = document.getElementById('mob-open-btn');
+  var closeBtn = document.getElementById('mob-close-btn');
+  var drawer = document.getElementById('mob-drawer');
+  var body = document.getElementById('mob-body');
+  var footer = document.getElementById('mob-footer');
 
-  function buildDrawer() {
-    const user = JSON.parse(localStorage.getItem('nx_user') || 'null');
-    const role = user?.role || '';
+  function buildMenu() {
+    var user = null;
+    try { user = JSON.parse(localStorage.getItem('nx_user') || 'null'); } catch(e) {}
+    var role = user ? user.role : '';
+    var name = user ? (user.first_name || user.email || '') : '';
+    var html = '';
 
-    let html = '';
+    html += '<div class="mob-section">Discover</div>';
+    html += '<a href="/" class="mob-link"><span class="mi">🏠</span> Home</a>';
+    html += '<a href="/events/" class="mob-link"><span class="mi">🔍</span> Browse Events</a>';
 
-    // Always visible
-    html += `<div class="mob-drawer__section">Discover</div>`;
-    html += `<a href="/" class="mob-drawer__link"><span class="icon">🏠</span> Home</a>`;
-    html += `<a href="/events/" class="mob-drawer__link"><span class="icon">🔍</span> Browse Events</a>`;
+    if (user && role === 'customer') {
+      html += '<div class="mob-section">My Account</div>';
+      html += '<a href="/dashboard/customer/" class="mob-link"><span class="mi">📊</span> My Dashboard</a>';
+      html += '<a href="/dashboard/my-tickets/" class="mob-link"><span class="mi">🎫</span> My Tickets</a>';
+      html += '<a href="/dashboard/bookings/" class="mob-link"><span class="mi">📦</span> My Bookings</a>';
+      html += '<a href="/dashboard/favorites/" class="mob-link"><span class="mi">❤️</span> Saved Events</a>';
+      html += '<a href="/dashboard/notifications/" class="mob-link"><span class="mi">🔔</span> Notifications</a>';
+      html += '<a href="/dashboard/my-profile/" class="mob-link"><span class="mi">👤</span> Profile</a>';
+    }
+
+    if (user && (role === 'host' || role === 'super_admin')) {
+      html += '<div class="mob-section">Host</div>';
+      html += '<a href="/dashboard/host/" class="mob-link"><span class="mi">📊</span> Host Dashboard</a>';
+      html += '<a href="/dashboard/events/" class="mob-link"><span class="mi">📅</span> My Events</a>';
+      html += '<a href="/events/create/" class="mob-link"><span class="mi">➕</span> Create Event</a>';
+      html += '<a href="/dashboard/tickets/" class="mob-link"><span class="mi">🎫</span> Tickets Sold</a>';
+      html += '<a href="/dashboard/earnings/" class="mob-link"><span class="mi">💰</span> Earnings</a>';
+      html += '<a href="/dashboard/scanner/" class="mob-link"><span class="mi">📷</span> QR Scanner</a>';
+      html += '<a href="/dashboard/bank-account/" class="mob-link"><span class="mi">🏦</span> Bank Account</a>';
+    }
+
+    body.innerHTML = html;
 
     if (user) {
-      if (role === 'customer') {
-        html += `<div class="mob-drawer__section">My Account</div>`;
-        html += `<a href="/dashboard/customer/" class="mob-drawer__link"><span class="icon">📊</span> Dashboard</a>`;
-        html += `<a href="/dashboard/my-tickets/" class="mob-drawer__link"><span class="icon">🎫</span> My Tickets</a>`;
-        html += `<a href="/dashboard/bookings/" class="mob-drawer__link"><span class="icon">📦</span> My Bookings</a>`;
-        html += `<a href="/dashboard/favorites/" class="mob-drawer__link"><span class="icon">❤️</span> Saved Events</a>`;
-        html += `<a href="/dashboard/notifications/" class="mob-drawer__link"><span class="icon">🔔</span> Notifications</a>`;
-        html += `<a href="/dashboard/my-profile/" class="mob-drawer__link"><span class="icon">👤</span> Profile</a>`;
-      }
-      if (role === 'host' || role === 'super_admin') {
-        html += `<div class="mob-drawer__section">Host</div>`;
-        html += `<a href="/dashboard/host/" class="mob-drawer__link"><span class="icon">📊</span> Host Dashboard</a>`;
-        html += `<a href="/dashboard/events/" class="mob-drawer__link"><span class="icon">📅</span> My Events</a>`;
-        html += `<a href="/events/create/" class="mob-drawer__link"><span class="icon">➕</span> Create Event</a>`;
-        html += `<a href="/dashboard/tickets/" class="mob-drawer__link"><span class="icon">🎫</span> Tickets Sold</a>`;
-        html += `<a href="/dashboard/earnings/" class="mob-drawer__link"><span class="icon">💰</span> Earnings</a>`;
-        html += `<a href="/dashboard/scanner/" class="mob-drawer__link"><span class="icon">📷</span> QR Scanner</a>`;
-        html += `<a href="/dashboard/bank-account/" class="mob-drawer__link"><span class="icon">🏦</span> Bank Account</a>`;
-      }
-
-      footerEl.innerHTML = `
-        <div style="color:rgba(255,255,255,.5);font-size:.875rem;margin-bottom:12px">
-          Signed in as <strong style="color:rgba(255,255,255,.8)">${user.first_name || user.email}</strong>
-        </div>
-        <button onclick="Auth.logout()" style="
-          display:block;width:100%;padding:12px;background:rgba(255,255,255,.08);
-          color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);
-          border-radius:8px;font-size:.9375rem;cursor:pointer;font-weight:600
-        ">🚪 Sign Out</button>`;
+      footer.innerHTML =
+        '<div class="mob-user-info">Signed in as <strong>' + name + '</strong></div>' +
+        '<button class="mob-signout" onclick="Auth.logout()">🚪 Sign Out</button>';
     } else {
-      footerEl.innerHTML = `
-        <a href="/auth/login/" style="
-          display:block;width:100%;padding:12px;text-align:center;
-          background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.2);
-          border-radius:8px;font-size:.9375rem;margin-bottom:10px;font-weight:600
-        ">Sign In</a>
-        <a href="/auth/register/" style="
-          display:block;width:100%;padding:12px;text-align:center;
-          background:var(--gold);color:#111;border-radius:8px;
-          font-size:.9375rem;font-weight:700
-        ">Get Started</a>`;
+      footer.innerHTML =
+        '<a href="/auth/register/" class="mob-btn-primary">Get Started — Free</a>' +
+        '<a href="/auth/login/" class="mob-btn-outline">Sign In</a>';
     }
-
-    linksEl.innerHTML = html;
   }
 
-  btn?.addEventListener('click', () => {
-    buildDrawer();
+  function openDrawer() {
+    buildMenu();
     drawer.classList.add('open');
     document.body.style.overflow = 'hidden';
-  });
+  }
 
-  closeBtn?.addEventListener('click', () => {
+  function closeDrawer() {
     drawer.classList.remove('open');
     document.body.style.overflow = '';
-  });
+  }
 
-  // Close on backdrop click
-  drawer?.addEventListener('click', (e) => {
-    if (e.target === drawer) {
-      drawer.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-  });
-})();
+  if (openBtn) openBtn.addEventListener('click', openDrawer);
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+});
 </script>
 {% block extra_js %}{% endblock %}
 </body>
