@@ -27,7 +27,6 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 # ── Apps ──────────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
-    "cloudinary_storage",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -59,7 +58,6 @@ INSTALLED_APPS = [
     "disputes",
     "analytics",
     "frontend",
-    "cloudinary",
 ]
 
 # ── Middleware ─────────────────────────────────────────────────────────────
@@ -147,6 +145,11 @@ if CLOUDINARY_URL:
     import cloudinary
     cloudinary.config(cloudinary_url=CLOUDINARY_URL)
     DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+    sf_idx = next((i for i, a in enumerate(INSTALLED_APPS) if a == "django.contrib.staticfiles"), len(INSTALLED_APPS))
+    if "cloudinary_storage" not in INSTALLED_APPS:
+        INSTALLED_APPS.insert(sf_idx, "cloudinary_storage")
+    if "cloudinary" not in INSTALLED_APPS:
+        INSTALLED_APPS.append("cloudinary")
 
 # Keep S3 support as fallback
 USE_S3 = config("USE_S3", default=False, cast=bool)
