@@ -32,7 +32,9 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "cloudinary_storage",
     "django.contrib.staticfiles",
+    "cloudinary",
     "django.contrib.humanize",
     # Third-party
     "rest_framework",
@@ -143,11 +145,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 CLOUDINARY_URL = config("CLOUDINARY_URL", default="")
 if CLOUDINARY_URL:
     import cloudinary
-    import cloudinary.uploader
-    import cloudinary.api
     cloudinary.config(cloudinary_url=CLOUDINARY_URL)
     DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-    INSTALLED_APPS += ["cloudinary_storage", "cloudinary"]
 
 # Keep S3 support as fallback
 USE_S3 = config("USE_S3", default=False, cast=bool)
