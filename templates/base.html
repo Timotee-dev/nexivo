@@ -124,6 +124,7 @@
       </div>
       <div id="user-menu" class="flex gap-8 hidden">
         <a href="/dashboard/" class="btn btn--ghost btn--sm">Dashboard</a>
+        <a href="/dashboard/my-tickets/" class="btn btn--gold btn--sm" id="nav-tickets-btn" style="display:none">🎫 My Tickets</a>
         <button id="logout-btn" class="btn btn--outline btn--sm">Sign Out</button>
         <span class="text-sub fw-600" id="user-menu-name"></span>
       </div>
@@ -197,6 +198,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var user = null;
     try { user = JSON.parse(localStorage.getItem('nx_user') || 'null'); } catch(e) {}
     var role = user ? user.role : '';
+    // Show My Tickets in desktop nav for customers
+    var ticketsBtn = document.getElementById('nav-tickets-btn');
+    if (ticketsBtn) ticketsBtn.style.display = (user && role === 'customer') ? '' : 'none';
     var name = user ? (user.first_name || user.email || '') : '';
     var html = '';
 
