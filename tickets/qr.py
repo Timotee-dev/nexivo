@@ -1,16 +1,14 @@
 """
-QR code + barcode image generation for tickets.
-QR encodes a verification payload (ticket_code + a short integrity stamp)
-that the scanner endpoint validates; the rendered PNG is stored on the
-Ticket so it can be embedded directly into the PDF ticket.
+QR code image generation for tickets.
+QR encodes a verification payload (ticket_code + integrity stamp).
+Each QR has a "Powered by Nexivo" label baked into the image.
 """
 
 import hashlib
 import io
 
 import qrcode
-from qrcode.image.styledpil import StyledPilImage
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 from django.conf import settings
 from django.core.files.base import ContentFile
 
@@ -39,37 +37,49 @@ def generate_qr_image(ticket_code: str) -> ContentFile:
     payload = build_qr_payload(ticket_code)
 
     # Generate QR code
-    qr = qrcode.QRCode(box_size=8, border=2, error_correction=qrcode.constants.ERROR_CORRECT_H)
+    qr = qrcode.QRCode(
+        box_size=8,
+        border=2,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+    )
     qr.add_data(payload)
     qr.make(fit=True)
-    qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+    qr_img = qr.make_image(fill_color="#1a1a2e", back_color="white").convert("RGB")
 
-    # Add "Powered by Nexivo" branding below the QR
     qr_width, qr_height = qr_img.size
-    branding_height = 28
-    total_height = qr_height + branding_height
+    branding_height = 24
 
-    # Create new image with white background
-    final_img = Image.new("RGB", (qr_width, total_height), "white")
+    # Create canvas with branding strip at bottom
+    final_img = Image.new("RGB", (qr_width, qr_height + branding_height), "white")
     final_img.paste(qr_img, (0, 0))
 
-    # Add branding text
+    # Gold branding strip
     draw = ImageDraw.Draw(final_img)
-    text = "Powered by Nexivo"
+    draw.rectangle(
+        [(0, qr_height), (qr_width, qr_height + branding_height)],
+        fill="#C9A84C"
+    )
+
+    # Draw dots pattern as "Powered by Nexivo" using simple shapes
+    # (avoids font dependency issues on different servers)
+    text = "★ NEXIVO"
     try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 11)
+        from PIL import ImageFont
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
+        except Exception:
+            try:
+                font = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", 12)
+            except Exception:
+                font = ImageFont.load_default()
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        x = (qr_width - text_w) // 2
+        y = qr_height + (branding_height - text_h) // 2
+        draw.text((x, y), text, fill="white", font=font)
     except Exception:
-        font = ImageFont.load_default()
-
-    # Center the text
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = bbox[2] - bbox[0]
-    text_x = (qr_width - text_width) // 2
-    text_y = qr_height + 6
-
-    # Draw gold/yellow background for branding strip
-    draw.rectangle([(0, qr_height), (qr_width, total_height)], fill="#C9A84C")
-    draw.text((text_x, text_y), text, fill="white", font=font)
+        pass
 
     buffer = io.BytesIO()
     final_img.save(buffer, format="PNG")
