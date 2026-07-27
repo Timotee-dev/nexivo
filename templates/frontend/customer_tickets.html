@@ -1,13 +1,25 @@
 {% extends "base.html" %}
 {% block title %}My Tickets{% endblock %}
 {% block content %}
-<div class="dashboard">
-  {% include "frontend/_customer_sidebar.html" with active="tickets" %}
-  <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">My Tickets</h1>
-    <p class="text-muted" style="margin-bottom:28px">Your upcoming and past event tickets</p>
-    <div id="my-tickets"><div class="spinner" style="margin:40px auto"></div></div>
-  </main>
+
+<div style="max-width:680px;margin:0 auto;padding:24px 16px">
+  <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:4px">My Tickets</h1>
+  <p style="color:var(--muted);margin-bottom:24px;font-size:.9375rem">Your upcoming and past event tickets</p>
+  <div id="my-tickets"><div class="spinner" style="margin:40px auto"></div></div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal-backdrop" id="qr-modal">
+  <div class="modal" style="position:relative;text-align:center;max-width:340px">
+    <button class="modal__close" onclick="Modal.close('qr-modal')">×</button>
+    <h2 class="modal__title" id="qr-modal-title">Your Ticket</h2>
+    <p style="color:var(--muted);font-size:.8125rem;font-family:monospace;margin-bottom:16px" id="qr-modal-code"></p>
+    <img id="qr-modal-img" style="width:200px;height:auto;margin:0 auto;display:block;border-radius:8px">
+    <p style="color:var(--muted);font-size:.8125rem;margin-top:12px">Show this at the entrance</p>
+    <a id="qr-modal-download" href="#" download class="btn btn--gold" style="margin-top:14px;display:inline-flex">
+      ⬇ Download QR Code
+    </a>
+  </div>
 </div>
 
 <!-- Transfer Modal -->
@@ -15,7 +27,7 @@
   <div class="modal" style="position:relative">
     <button class="modal__close" onclick="Modal.close('transfer-modal')">×</button>
     <h2 class="modal__title">Transfer Ticket</h2>
-    <p class="modal__sub">Send this ticket to another person. They have 48 hours to accept.</p>
+    <p class="modal__sub">Send this ticket to someone else. They have 48 hours to accept.</p>
     <input type="hidden" id="transfer-ticket-code">
     <div class="form-group">
       <label class="form-label">Recipient Email *</label>
@@ -29,21 +41,7 @@
   </div>
 </div>
 
-<!-- QR Modal -->
-<div class="modal-backdrop" id="qr-modal">
-  <div class="modal" style="position:relative;text-align:center">
-    <button class="modal__close" onclick="Modal.close('qr-modal')">×</button>
-    <h2 class="modal__title" id="qr-modal-title">Your Ticket</h2>
-    <p class="text-muted" id="qr-modal-code" style="margin-bottom:20px;font-family:monospace"></p>
-    <img id="qr-modal-img" style="width:220px;height:auto;margin:0 auto;border-radius:8px;display:block">
-    <p class="text-muted" style="font-size:.8125rem;margin-top:12px">Show this QR code at the entrance</p>
-    <a id="qr-modal-download" href="#" download class="btn btn--gold btn--sm" style="margin-top:12px;display:inline-flex">
-      ⬇ Download QR Code
-    </a>
-  </div>
-</div>
-
-<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/nexivo.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
   Auth.requireAuth();
@@ -52,7 +50,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadTickets() {
   const el = document.getElementById('my-tickets');
-  el.innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
 
   try {
     const data = await Api.get('/tickets/mine/');
@@ -60,70 +57,87 @@ async function loadTickets() {
 
     if (!tickets.length) {
       el.innerHTML = `
-        <div style="text-align:center;padding:56px 20px;color:var(--muted)">
+        <div style="text-align:center;padding:48px 20px">
           <div style="font-size:3rem;margin-bottom:12px">🎫</div>
-          <h3 style="font-size:1.125rem;color:var(--text);margin-bottom:6px">No tickets yet</h3>
-          <p>Book an event to get your first ticket</p>
-          <a href="/events/" class="btn btn--gold" style="margin-top:16px;display:inline-flex">Browse Events</a>
+          <h3 style="font-size:1.125rem;font-weight:700;margin-bottom:6px">No tickets yet</h3>
+          <p style="color:var(--muted);margin-bottom:20px">Book an event to get your first ticket</p>
+          <a href="/events/" class="btn btn--gold">Browse Events</a>
         </div>`;
       return;
     }
 
     el.innerHTML = tickets.map(t => {
-      const event = t.event || {};
-      const booking = t.booking_item?.booking || {};
+      const eventTitle = t.event_title || t.event?.title || 'Event';
+      const ticketTypeName = t.ticket_type_name || t.ticket_type?.name || '';
       const isUsed = t.status === 'used';
-      const isPast = event.start_datetime && new Date(event.start_datetime) < new Date();
+      const isValid = t.status === 'valid' || (!isUsed && t.status !== 'cancelled');
+      const qrUrl = t.qr_image || '';
 
       return `
-        <div style="background:var(--bg);border:1.5px solid ${isUsed ? 'var(--border)' : 'var(--gold)'};border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;opacity:${isUsed ? '.6' : '1'}">
+      <div style="
+        background:var(--bg);
+        border:2px ${isUsed ? 'solid var(--border)' : 'dashed var(--gold)'};
+        border-radius:var(--radius-lg);
+        padding:20px;
+        margin-bottom:16px;
+        opacity:${isUsed ? '.6' : '1'}
+      ">
+        <!-- Event title and status -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
+          <h3 style="font-size:1rem;font-weight:700;line-height:1.3;flex:1">${eventTitle}</h3>
+          <span style="
+            padding:3px 10px;border-radius:40px;font-size:.75rem;font-weight:600;white-space:nowrap;flex-shrink:0;
+            background:${isUsed ? 'var(--surface-2)' : '#e8f5e9'};
+            color:${isUsed ? 'var(--muted)' : 'var(--success)'}
+          ">${isUsed ? 'Used' : 'Valid'}</span>
+        </div>
+
+        <!-- Ticket type -->
+        <p style="color:var(--muted);font-size:.875rem;margin-bottom:8px">${ticketTypeName}</p>
+
+        <!-- Ticket code -->
+        <div style="background:var(--surface-2);border-radius:6px;padding:8px 12px;margin-bottom:14px;font-family:monospace;font-size:.8125rem;word-break:break-all">
+          ${t.ticket_code}
+        </div>
+
+        <!-- QR Image -->
+        ${qrUrl ? `
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;cursor:pointer" onclick="showQR('${t.ticket_code}', '${qrUrl}', '${eventTitle.replace(/'/g, "\\'")}')">
+          <img src="${qrUrl}" alt="QR Code"
+               style="width:80px;height:80px;border-radius:8px;border:2px solid var(--border);flex-shrink:0"
+               onerror="this.parentElement.style.display='none'">
           <div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-              <span style="font-size:1.0625rem;font-weight:700">${event.title || 'Event'}</span>
-              <span style="padding:2px 10px;border-radius:40px;font-size:.75rem;font-weight:600;background:${isUsed ? 'var(--surface-2)' : isPast ? 'var(--surface-2)' : '#e8f5e9'};color:${isUsed ? 'var(--muted)' : isPast ? 'var(--muted)' : 'var(--success)'}">
-                ${isUsed ? 'Used' : isPast ? 'Past' : 'Valid'}
-              </span>
-            </div>
-            <div style="color:var(--muted);font-size:.875rem;margin-bottom:6px">
-              ${event.start_datetime ? '📅 ' + new Date(event.start_datetime).toLocaleDateString('en-NG', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) : ''}
-              ${event.city ? ' &nbsp;📍 ' + (event.venue_name || event.city) : ''}
-            </div>
-            <div style="color:var(--muted);font-size:.875rem;margin-bottom:12px">
-              ${t.ticket_type?.name || ''} &nbsp;·&nbsp;
-              <span style="font-family:monospace;background:var(--surface-2);padding:2px 8px;border-radius:4px;font-size:.8125rem">${t.ticket_code}</span>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              ${t.qr_image ? `
-                <button class="btn btn--gold btn--sm" onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')">
-                  📱 Show QR Code
-                </button>
-                <a href="${t.qr_image}" download="nexivo-ticket-${t.ticket_code}.png" class="btn btn--outline btn--sm">
-                  ⬇ Download QR
-                </a>` : ''}
-              ${t.pdf_file ? `
-                <a href="${t.pdf_file}" download class="btn btn--outline btn--sm">
-                  📄 Download PDF
-                </a>` : ''}
-              ${!isUsed && !isPast ? `
-                <button class="btn btn--outline btn--sm" onclick="openTransfer('${t.ticket_code}')">
-                  ↗ Transfer
-                </button>` : ''}
-            </div>
+            <p style="font-weight:600;font-size:.875rem;margin-bottom:2px">📱 Tap to show QR code</p>
+            <p style="color:var(--muted);font-size:.8125rem">Show at the entrance for check-in</p>
           </div>
-          ${t.qr_image ? `
-            <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
-              <img src="${t.qr_image}"
-                   style="width:80px;height:80px;border-radius:8px;cursor:pointer;border:2px solid var(--border);flex-shrink:0"
-                   onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')"
-                   alt="QR Code"
-                   onerror="this.style.display='none'">
-              <p style="font-size:.75rem;color:var(--muted)">Tap QR to enlarge<br>Show at entrance</p>
-            </div>` : ''}
-        </div>`;
+        </div>` : `
+        <div style="background:var(--surface-2);border-radius:8px;padding:14px;margin-bottom:14px;text-align:center;color:var(--muted);font-size:.875rem">
+          QR code generating…
+        </div>`}
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${qrUrl ? `
+          <button class="btn btn--gold btn--sm" onclick="showQR('${t.ticket_code}', '${qrUrl}', '${eventTitle.replace(/'/g, "\\'")}')">
+            📱 Show QR
+          </button>
+          <a href="${qrUrl}" download="ticket-${t.ticket_code}.png" class="btn btn--outline btn--sm">
+            ⬇ QR
+          </a>` : ''}
+          ${t.pdf_file ? `
+          <a href="${t.pdf_file}" download class="btn btn--outline btn--sm">
+            📄 PDF
+          </a>` : ''}
+          ${isValid && !isUsed ? `
+          <button class="btn btn--outline btn--sm" onclick="openTransfer('${t.ticket_code}')">
+            ↗ Transfer
+          </button>` : ''}
+        </div>
+      </div>`;
     }).join('');
 
   } catch (e) {
-    el.innerHTML = '<p style="color:var(--muted)">Could not load tickets. Please refresh.</p>';
+    el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:32px">Could not load tickets. Please refresh.</p>';
   }
 }
 
@@ -156,7 +170,7 @@ async function submitTransfer() {
     Toast.success('Ticket transfer sent!');
     Modal.close('transfer-modal');
   } catch(err) {
-    Toast.error(err?.detail || 'Transfer failed. Please try again.');
+    Toast.error(err?.detail || 'Transfer failed.');
   }
 }
 </script>
