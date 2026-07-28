@@ -1,65 +1,87 @@
 """
-Custom Cloudinary storage backend that bypasses django-cloudinary-storage.
+Custom Cloudinary storage backend.
 Uses the cloudinary SDK directly for reliable file uploads.
 """
 import io
+import logging
 import os
 
-import cloudinary
-import cloudinary.uploader
-from django.core.files.storage import Storage
-from django.utils.deconstruct import deconstructible
+logger = logging.getLogger("nexivo")
 
 
-@deconstructible
-class CloudinaryStorage(Storage):
-    def _upload(self, name, content):
-        folder = os.path.dirname(name)
-        public_id = os.path.splitext(os.path.basename(name))[0]
-        result = cloudinary.uploader.upload(
-            content,
-            folder=folder,
-            public_id=public_id,
-            overwrite=True,
-            resource_type="auto",
-        )
-        return result
+class CloudinaryStorage:
+    def __init__(self):
+        try:
+            import cloudinary
+            import cloudinary.uploader
+            import cloudinary.api
+            self._cloudinary = cloudinary
+            self._uploader = cloudinary.uploader
+            self._api = cloudinary.api
+            logger.info("CloudinaryStorage initialized: cloud=%s", cloudinary.config().cloud_name)
+        except Exception as e:
+            logger.error("CloudinaryStorage init failed: %s", e)
+            self._cloudinary = None
 
     def _save(self, name, content):
-        content.seek(0)
-        result = self._upload(name, content)
-        return result.get("public_id", name)
+        if not self._cloudinary:
+            logger.error("Cloudinary not configured — cannot save %s", name)
+            return name
+        try:
+            content.seek(0)
+            folder = os.path.dirname(name)
+            result = self._uploader.upload(
+                content,
+                folder=folder or "nexivo",
+                resource_type="auto",
+                overwrite=True,
+            )
+            url = result.get("secure_url", "")
+            logger.info("Cloudinary upload success: %s -> %s", name, url)
+            return url
+        except Exception as e:
+            logger.error("Cloudinary upload failed for %s: %s", name, e)
+            return name
 
     def url(self, name):
         if not name:
             return ""
-        if name.startswith("http"):
-            return name
-        try:
-            result = cloudinary.CloudinaryImage(name).build_url()
-            return result
-        except Exception:
-            return name
+        return name
 
     def exists(self, name):
-        try:
-            cloudinary.api.resource(name)
-            return True
-        except Exception:
-            return False
+        return False
 
     def delete(self, name):
         try:
-            cloudinary.uploader.destroy(name)
+            if self._cloudinary and "cloudinary.com" in str(name):
+                public_id = name.split("/upload/")[-1].rsplit(".", 1)[0]
+                self._uploader.destroy(public_id)
         except Exception:
             pass
 
     def size(self, name):
-        try:
-            result = cloudinary.api.resource(name)
-            return result.get("bytes", 0)
-        except Exception:
-            return 0
+        return 0
 
     def listdir(self, path):
         return [], []
+
+    def path(self, name):
+        raise NotImplementedError("CloudinaryStorage does not support path()")
+
+    def open(self, name, mode='rb'):
+        import urllib.request
+        from django.core.files.base import ContentFile
+        try:
+            with urllib.request.urlopen(name) as r:
+                return ContentFile(r.read())
+        except Exception:
+            raise FileNotFoundError(name)
+
+    def save(self, name, content, max_length=None):
+        return self._save(name, content)
+
+    def get_available_name(self, name, max_length=None):
+        return name
+
+    def generate_filename(self, filename):
+        return filename
