@@ -1,23 +1,20 @@
 """
-Background task entry points for the payments app. Calls here are
-synchronous in this codebase; wire to Celery/RQ in production for true
-async execution without blocking the request that triggered them.
+Background task entry points for the payments app.
 """
 
 import logging
+from django.conf import settings
 
 logger = logging.getLogger("nexivo")
 
 
 def create_host_subaccounts(host_profile_id):
     """
-    Creates payout subaccounts with all three gateways for a host who has
-    just submitted bank details. Each gateway's subaccount ID is stored on
-    the HostProfile so future payment initializations can route splits there.
+    Creates Paystack subaccount for a host who has just submitted bank details.
+    Flutterwave and Stripe are skipped if their keys are not configured.
     """
     from accounts.models import HostProfile
     from payments.gateways.base import GatewayError
-    from payments.gateways.registry import get_gateway_client
     from payments.models import Payment
 
     try:
@@ -32,25 +29,54 @@ def create_host_subaccounts(host_profile_id):
 
     any_succeeded = False
 
-    for gateway in (Payment.Gateway.PAYSTACK, Payment.Gateway.FLUTTERWAVE, Payment.Gateway.STRIPE):
+    # Only try Paystack if key is configured
+    paystack_key = getattr(settings, 'PAYSTACK_SECRET_KEY', '')
+    if paystack_key:
         try:
-            client = get_gateway_client(gateway)
+            from payments.gateways.paystack import PaystackClient
+            client = PaystackClient()
             result = client.create_subaccount(host_profile=profile)
-            subaccount_code = result["subaccount_code"]
-
-            if gateway == Payment.Gateway.PAYSTACK:
+            subaccount_code = result.get("subaccount_code")
+            if subaccount_code:
                 profile.paystack_subaccount_code = subaccount_code
-            elif gateway == Payment.Gateway.FLUTTERWAVE:
-                profile.flutterwave_subaccount_id = subaccount_code
-            elif gateway == Payment.Gateway.STRIPE:
-                profile.stripe_connect_account_id = subaccount_code
-
-            any_succeeded = True
-            logger.info("Created %s subaccount for host_profile=%s: %s", gateway, host_profile_id, subaccount_code)
+                any_succeeded = True
+                logger.info("Created Paystack subaccount for host_profile=%s: %s", host_profile_id, subaccount_code)
+            else:
+                logger.error("Paystack subaccount creation returned no code: %s", result)
         except GatewayError as exc:
-            logger.error("Failed to create %s subaccount for host_profile=%s: %s", gateway, host_profile_id, exc)
+            logger.error("Failed to create Paystack subaccount for host_profile=%s: %s", host_profile_id, exc)
         except Exception:
-            logger.exception("Unexpected error creating %s subaccount for host_profile=%s", gateway, host_profile_id)
+            logger.exception("Unexpected error creating Paystack subaccount for host_profile=%s", host_profile_id)
+    else:
+        logger.warning("PAYSTACK_SECRET_KEY not set — skipping Paystack subaccount creation")
+
+    # Skip Flutterwave if key not configured
+    flutterwave_key = getattr(settings, 'FLUTTERWAVE_SECRET_KEY', '')
+    if flutterwave_key:
+        try:
+            from payments.gateways.flutterwave import FlutterwaveClient
+            client = FlutterwaveClient()
+            result = client.create_subaccount(host_profile=profile)
+            subaccount_code = result.get("subaccount_code")
+            if subaccount_code:
+                profile.flutterwave_subaccount_id = subaccount_code
+                any_succeeded = True
+        except Exception as exc:
+            logger.error("Failed to create Flutterwave subaccount: %s", exc)
+
+    # Skip Stripe if key not configured
+    stripe_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
+    if stripe_key:
+        try:
+            from payments.gateways.stripe_gw import StripeClient
+            client = StripeClient()
+            result = client.create_subaccount(host_profile=profile)
+            subaccount_code = result.get("subaccount_code")
+            if subaccount_code:
+                profile.stripe_connect_account_id = subaccount_code
+                any_succeeded = True
+        except Exception as exc:
+            logger.error("Failed to create Stripe subaccount: %s", exc)
 
     if any_succeeded:
         profile.bank_details_verified = True
