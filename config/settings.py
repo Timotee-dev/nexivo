@@ -153,7 +153,14 @@ if CLOUDINARY_CLOUD_NAME:
         api_secret=CLOUDINARY_API_SECRET,
         secure=True,
     )
-    DEFAULT_FILE_STORAGE = "core.storage.CloudinaryStorage"
+    STORAGES = {
+        "default": {
+            "BACKEND": "core.storage.CloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 # Keep S3 support as fallback
 USE_S3 = config("USE_S3", default=False, cast=bool)
