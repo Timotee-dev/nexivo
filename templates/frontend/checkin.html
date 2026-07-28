@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}Check-In — {{ event.title }}{% endblock %}
+{% block content %}
+
+<style>
+  body { background: #0a0a0f; }
+  .ci-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+  }
+  .ci-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .ci-logo { font-size: 2rem; font-weight: 800; color: #C9A84C; letter-spacing: -.03em; }
+  .ci-event { color: rgba(255,255,255,.7); font-size: .9375rem; margin-top: 4px; }
+
+  .ci-scanner-box {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 20px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  .ci-video-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #111;
+    margin-bottom: 20px;
+  }
+  #ci-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .ci-scan-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #C9A84C, transparent);
+    animation: scan-line 2s ease-in-out infinite;
+  }
+  @keyframes scan-line {
+    0% { top: 10%; }
+    50% { top: 85%; }
+    100% { top: 10%; }
+  }
+  .ci-corner {
+    position: absolute;
+    width: 24px; height: 24px;
+    border-color: #C9A84C;
+    border-style: solid;
+  }
+  .ci-corner--tl { top: 12px; left: 12px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+  .ci-corner--tr { top: 12px; right: 12px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+  .ci-corner--bl { bottom: 12px; left: 12px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+  .ci-corner--br { bottom: 12px; right: 12px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+  .ci-hint { color: rgba(255,255,255,.45); font-size: .8125rem; margin-bottom: 16px; }
+
+  .ci-manual { display: flex; gap: 8px; }
+  .ci-manual input {
+    flex: 1; background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 10px; padding: 12px 14px;
+    color: #fff; font-size: .9375rem;
+    outline: none;
+    font-family: monospace;
+  }
+  .ci-manual input::placeholder { color: rgba(255,255,255,.3); }
+  .ci-manual input:focus { border-color: #C9A84C; }
+  .ci-manual button {
+    background: #C9A84C; color: #111;
+    border: none; border-radius: 10px;
+    padding: 12px 18px; font-weight: 700;
+    cursor: pointer; font-size: .9375rem;
+  }
+
+  /* Result overlay */
+  .ci-result {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .ci-result.show { display: flex; }
+  .ci-result--success { background: rgba(16, 185, 129, .95); }
+  .ci-result--error { background: rgba(239, 68, 68, .95); }
+  .ci-result--warning { background: rgba(245, 158, 11, .95); }
+
+  .ci-result__card {
+    text-align: center;
+    color: #fff;
+    max-width: 320px;
+    width: 100%;
+  }
+  .ci-result__icon { font-size: 5rem; margin-bottom: 16px; line-height: 1; }
+  .ci-result__title { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+  .ci-result__name { font-size: 2rem; font-weight: 900; margin-bottom: 4px; letter-spacing: -.02em; }
+  .ci-result__ticket { font-size: 1rem; opacity: .85; margin-bottom: 24px; }
+  .ci-result__msg { font-size: .9375rem; opacity: .9; margin-bottom: 24px; }
+  .ci-result__close {
+    background: rgba(255,255,255,.2);
+    border: 2px solid rgba(255,255,255,.4);
+    color: #fff;
+    border-radius: 12px;
+    padding: 12px 32px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+  }
+  .ci-result__close:hover { background: rgba(255,255,255,.3); }
+
+  .ci-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+    justify-content: center;
+  }
+  .ci-stat {
+    text-align: center;
+    background: rgba(255,255,255,.06);
+    border-radius: 12px;
+    padding: 12px 20px;
+    flex: 1;
+  }
+  .ci-stat__num { font-size: 1.5rem; font-weight: 800; color: #C9A84C; }
+  .ci-stat__label { font-size: .75rem; color: rgba(255,255,255,.5); margin-top: 2px; }
+</style>
+
+<div class="ci-wrap">
+  <div class="ci-header">
+    <div class="ci-logo">Nexivo</div>
+    <div class="ci-event">{{ event.title }}</div>
+  </div>
+
+  <div class="ci-scanner-box">
+    <div class="ci-video-wrap">
+      <video id="ci-video" autoplay playsinline muted></video>
+      <div class="ci-scan-line"></div>
+      <div class="ci-corner ci-corner--tl"></div>
+      <div class="ci-corner ci-corner--tr"></div>
+      <div class="ci-corner ci-corner--bl"></div>
+      <div class="ci-corner ci-corner--br"></div>
+    </div>
+
+    <p class="ci-hint">Point camera at attendee's QR code</p>
+
+    <div class="ci-manual">
+      <input type="text" id="ci-manual-input" placeholder="Or type ticket code…" autocomplete="off" autocorrect="off" autocapitalize="off">
+      <button onclick="submitCode()">Go</button>
+    </div>
+
+    <div class="ci-stats" style="margin-top:20px">
+      <div class="ci-stat">
+        <div class="ci-stat__num" id="ci-count-in">0</div>
+        <div class="ci-stat__label">Checked In</div>
+      </div>
+      <div class="ci-stat">
+        <div class="ci-stat__num" id="ci-count-total">—</div>
+        <div class="ci-stat__label">Total Tickets</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Result overlay -->
+<div class="ci-result" id="ci-result">
+  <div class="ci-result__card">
+    <div class="ci-result__icon" id="ci-result-icon">✅</div>
+    <div class="ci-result__title" id="ci-result-title">Welcome!</div>
+    <div class="ci-result__name" id="ci-result-name"></div>
+    <div class="ci-result__ticket" id="ci-result-ticket"></div>
+    <div class="ci-result__msg" id="ci-result-msg"></div>
+    <button class="ci-result__close" onclick="closeResult()">Scan Next</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script>
+const EVENT_ID = '{{ event.id }}';
+const EVENT_SLUG = '{{ event.slug }}';
+let scanning = true;
+let checkedIn = 0;
+
+// ── Camera setup ──────────────────────────────────────────────
+const video = document.getElementById('ci-video');
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    video.srcObject = stream;
+    video.play();
+    requestAnimationFrame(scanFrame);
+  } catch(e) {
+    console.warn('Camera not available:', e);
+  }
+}
+
+function scanFrame() {
+  if (!scanning) { requestAnimationFrame(scanFrame); return; }
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+    if (code && code.data) {
+      scanning = false;
+      processCode(code.data);
+    }
+  }
+  requestAnimationFrame(scanFrame);
+}
+
+startCamera();
+
+// ── Manual input ──────────────────────────────────────────────
+document.getElementById('ci-manual-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitCode();
+});
+
+function submitCode() {
+  const val = document.getElementById('ci-manual-input').value.trim();
+  if (!val) return;
+  document.getElementById('ci-manual-input').value = '';
+  processCode(val);
+}
+
+// ── Process scan ──────────────────────────────────────────────
+async function processCode(code) {
+  try {
+    const res = await fetch(`/api/v1/tickets/public-scan/${EVENT_SLUG}/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, client_scanned_at: new Date().toISOString() })
+    });
+    const data = await res.json();
+    showResult(data);
+    if (data.result === 'success') {
+      checkedIn++;
+      document.getElementById('ci-count-in').textContent = checkedIn;
+    }
+  } catch(e) {
+    showResult({ result: 'error', message: 'Network error. Please try again.', holder_name: '', ticket_type: '' });
+  }
+}
+
+// ── Show result ──────────────────────────────────────────────
+function showResult(data) {
+  const overlay = document.getElementById('ci-result');
+  const icon = document.getElementById('ci-result-icon');
+  const title = document.getElementById('ci-result-title');
+  const name = document.getElementById('ci-result-name');
+  const ticket = document.getElementById('ci-result-ticket');
+  const msg = document.getElementById('ci-result-msg');
+
+  overlay.className = 'ci-result show';
+
+  if (data.result === 'success') {
+    overlay.classList.add('ci-result--success');
+    icon.textContent = '✅';
+    title.textContent = 'Welcome!';
+    name.textContent = data.holder_name || '';
+    ticket.textContent = data.ticket_type || '';
+    msg.textContent = 'Enjoy the event!';
+    // Auto close after 3 seconds
+    setTimeout(closeResult, 3000);
+    // Vibrate on success
+    navigator.vibrate?.([100, 50, 100]);
+  } else if (data.result === 'duplicate') {
+    overlay.classList.add('ci-result--warning');
+    icon.textContent = '⚠️';
+    title.textContent = 'Already Checked In';
+    name.textContent = data.holder_name || '';
+    ticket.textContent = '';
+    msg.textContent = data.message || 'This ticket was already scanned.';
+    setTimeout(closeResult, 4000);
+  } else {
+    overlay.classList.add('ci-result--error');
+    icon.textContent = '❌';
+    title.textContent = 'Invalid Ticket';
+    name.textContent = '';
+    ticket.textContent = '';
+    msg.textContent = data.message || 'This ticket is not valid for this event.';
+    setTimeout(closeResult, 4000);
+    navigator.vibrate?.([300]);
+  }
+}
+
+function closeResult() {
+  const overlay = document.getElementById('ci-result');
+  overlay.className = 'ci-result';
+  scanning = true;
+}
+
+// ── Load stats ──────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res = await fetch(`/api/v1/analytics/event/${EVENT_ID}/`);
+    if (res.ok) {
+      const data = await res.json();
+      checkedIn = data.checked_in || 0;
+      document.getElementById('ci-count-in').textContent = checkedIn;
+      document.getElementById('ci-count-total').textContent = data.tickets_sold || '—';
+    }
+  } catch(e) {}
+}
+loadStats();
+</script>
+{% endblock %}

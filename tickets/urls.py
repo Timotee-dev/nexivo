@@ -24,5 +24,6 @@ urlpatterns = [
     path("<str:ticket_code>/transfer/", InitiateTransferView.as_view(), name="initiate_transfer"),
 ]
 # Added after initial build
-from tickets.views import DownloadTicketPDFView
+from tickets.views import DownloadTicketPDFView, PublicScanView
 urlpatterns.append(path("<str:ticket_code>/download/", DownloadTicketPDFView.as_view(), name="download_pdf"))
+urlpatterns.append(path("public-scan/<slug:slug>/", PublicScanView.as_view(), name="public_scan"))

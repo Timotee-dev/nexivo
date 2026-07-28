@@ -81,4 +81,5 @@ urlpatterns = [
 
     # ── QR Scanner ────────────────────────────────────────────────────────
     path("dashboard/scanner/<uuid:event_id>/", scanner_view, name="scanner"),
+    path("checkin/<slug:slug>/", public_checkin, name="public_checkin"),
 ]

@@ -177,3 +177,14 @@ def admin_dashboard(request):
 def scanner_view(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     return render(request, "frontend/scanner.html", {"event": event})
+
+# Add this function to frontend/views.py
+
+def public_checkin(request, slug):
+    from events.models import Event
+    try:
+        event = Event.objects.get(slug=slug, status='published')
+    except Event.DoesNotExist:
+        from django.http import Http404
+        raise Http404
+    return render(request, 'frontend/checkin.html', {'event': event})

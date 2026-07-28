@@ -235,3 +235,40 @@ class DownloadTicketPDFView(APIView):
             ticket = attach_pdf_to_ticket(ticket)
         return FileResponse(ticket.pdf_file.open("rb"), content_type="application/pdf",
                             as_attachment=True, filename=f"ticket-{ticket.ticket_code}.pdf")
+
+
+class PublicScanView(APIView):
+    """
+    POST /api/v1/tickets/public-scan/<event_slug>/
+    Public check-in endpoint — no authentication required.
+    Anyone can scan tickets at the door.
+    Returns holder name and ticket type for the welcome screen.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, slug):
+        from events.models import Event
+        try:
+            event = Event.objects.get(slug=slug, status='published')
+        except Event.DoesNotExist:
+            return Response({"result": "error", "message": "Event not found."}, status=404)
+
+        code = request.data.get("code", "").strip()
+        if not code:
+            return Response({"result": "error", "message": "No code provided."}, status=400)
+
+        result = process_scan(
+            event=event,
+            code=code,
+            scanned_by=None,
+            client_scanned_at=request.data.get("client_scanned_at"),
+        )
+
+        ticket = result.get("ticket")
+        return Response({
+            "result": result["result"],
+            "message": result["message"],
+            "holder_name": ticket.holder_name if ticket else "",
+            "ticket_type": ticket.ticket_type.name if ticket else "",
+            "checked_in_at": result.get("checked_in_at"),
+        })

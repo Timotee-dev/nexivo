@@ -85,9 +85,10 @@ def process_scan(*, event, code, scanned_by, client_scanned_at=None, device_id=N
 
     _log_scan(event, code, TicketScanLog.Result.SUCCESS, scanned_by, client_scanned_at, device_id, was_offline_sync, ticket=ticket)
 
+    name = ticket.holder_name or "Guest"
     return {
         "result": TicketScanLog.Result.SUCCESS,
-        "message": f"Checked in: {ticket.holder_name} ({ticket.ticket_type.name}).",
+        "message": f"Checked in: {name} ({ticket.ticket_type.name}).",
         "ticket": ticket,
         "checked_in_at": check_in_time,
         "previously_scanned_by": None,
@@ -95,13 +96,16 @@ def process_scan(*, event, code, scanned_by, client_scanned_at=None, device_id=N
 
 
 def _log_scan(event, scanned_code, result, scanned_by, client_scanned_at, device_id, was_offline_sync, ticket):
-    TicketScanLog.objects.create(
-        ticket=ticket,
-        event=event,
-        scanned_code=scanned_code[:40],
-        result=result,
-        scanned_by=scanned_by,
-        client_scanned_at=client_scanned_at,
-        was_offline_sync=was_offline_sync,
-        device_id=device_id,
-    )
+    try:
+        TicketScanLog.objects.create(
+            ticket=ticket,
+            event=event,
+            scanned_code=scanned_code[:40],
+            result=result,
+            scanned_by=scanned_by,
+            client_scanned_at=client_scanned_at,
+            was_offline_sync=was_offline_sync,
+            device_id=device_id,
+        )
+    except Exception:
+        pass  # Don't fail the scan if logging fails
