@@ -153,12 +153,7 @@ if CLOUDINARY_CLOUD_NAME:
         api_secret=CLOUDINARY_API_SECRET,
         secure=True,
     )
-    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-    sf_idx = next((i for i, a in enumerate(INSTALLED_APPS) if a == "django.contrib.staticfiles"), len(INSTALLED_APPS))
-    if "cloudinary_storage" not in INSTALLED_APPS:
-        INSTALLED_APPS.insert(sf_idx, "cloudinary_storage")
-    if "cloudinary" not in INSTALLED_APPS:
-        INSTALLED_APPS.append("cloudinary")
+    DEFAULT_FILE_STORAGE = "core.storage.CloudinaryStorage"
 
 # Keep S3 support as fallback
 USE_S3 = config("USE_S3", default=False, cast=bool)
