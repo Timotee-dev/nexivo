@@ -97,7 +97,7 @@ async function loadTickets() {
                 <button class="btn btn--gold btn--sm" onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')">
                   📱 Show QR Code
                 </button>
-                <a href="${t.qr_image}" download="nexivo-ticket-${t.ticket_code}.png" class="btn btn--outline btn--sm">
+                <a href="/api/v1/tickets/${t.ticket_code}/download-qr/" download="nexivo-ticket-${t.ticket_code}.png" class="btn btn--outline btn--sm">
                   ⬇ Download QR
                 </a>` : ''}
               ${t.pdf_file ? `
@@ -141,12 +141,7 @@ function showQR(code, qrUrl, eventTitle) {
 
 async function downloadQR(url, filename) {
   try {
-    // Add Cloudinary fl_attachment flag to force download
-    let downloadUrl = url;
-    if (url.includes('cloudinary.com')) {
-      downloadUrl = url.replace('/upload/', '/upload/fl_attachment/');
-    }
-    const res = await fetch(downloadUrl, { mode: 'cors' });
+    const res = await fetch(url);
     const blob = await res.blob();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

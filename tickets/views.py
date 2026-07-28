@@ -272,3 +272,24 @@ class PublicScanView(APIView):
             "ticket_type": ticket.ticket_type.name if ticket else "",
             "checked_in_at": result.get("checked_in_at"),
         })
+
+class DownloadQRView(APIView):
+    """GET /api/v1/tickets/<ticket_code>/download-qr/ — proxy downloads QR image."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, ticket_code):
+        import requests as http_requests
+        from django.http import HttpResponse
+        ticket = generics.get_object_or_404(Ticket, ticket_code=ticket_code, holder=request.user)
+        if not ticket.qr_image:
+            return HttpResponse("QR not yet generated", status=404)
+        try:
+            url = ticket.qr_image.url if hasattr(ticket.qr_image, 'url') else str(ticket.qr_image)
+            resp = http_requests.get(url, timeout=10)
+            resp.raise_for_status()
+            response = HttpResponse(resp.content, content_type="image/png")
+            response["Content-Disposition"] = f'attachment; filename="nexivo-ticket-{ticket_code}.png"'
+            return response
+        except Exception as e:
+            return HttpResponse(f"Failed to download QR: {e}", status=500)
