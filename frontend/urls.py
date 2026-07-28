@@ -35,6 +35,7 @@ from frontend.views import (
     admin_dashboard,
     # Scanner
     scanner_view,
+    public_checkin,
 )
 
 app_name = "frontend"
