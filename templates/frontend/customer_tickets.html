@@ -141,7 +141,12 @@ function showQR(code, qrUrl, eventTitle) {
 
 async function downloadQR(url, filename) {
   try {
-    const res = await fetch(url);
+    // Add Cloudinary fl_attachment flag to force download
+    let downloadUrl = url;
+    if (url.includes('cloudinary.com')) {
+      downloadUrl = url.replace('/upload/', '/upload/fl_attachment/');
+    }
+    const res = await fetch(downloadUrl, { mode: 'cors' });
     const blob = await res.blob();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
