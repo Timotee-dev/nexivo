@@ -71,11 +71,16 @@ class PaystackClient(BaseGatewayClient):
         }
 
     def create_subaccount(self, *, host_profile):
+        # account_number is encrypted — use the decrypted accessor
+        try:
+            account_number = host_profile.decrypted_account_number
+        except Exception:
+            account_number = host_profile.account_number
         payload = {
-            "business_name": host_profile.business_name or host_profile.user.username,
+            "business_name": host_profile.business_name or host_profile.user.get_full_name() or host_profile.user.username,
             "settlement_bank": host_profile.bank_code,
-            "account_number": host_profile.account_number,
-            "percentage_charge": 0,  # we control the split per-transaction via transaction_charge instead
+            "account_number": account_number,
+            "percentage_charge": 5,  # platform takes 5%
         }
         data = self._request("POST", "/subaccount", json=payload)
         result = data.get("data", {})
