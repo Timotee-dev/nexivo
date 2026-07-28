@@ -42,8 +42,8 @@ class Ticket(models.Model):
     ticket_code = models.CharField(max_length=40, unique=True, db_index=True)
     barcode_value = models.CharField(max_length=40, unique=True, db_index=True)
 
-    qr_image = models.ImageField(upload_to="ticket_qr/%Y/%m/", blank=True, null=True)
-    pdf_file = models.FileField(upload_to="ticket_pdf/%Y/%m/", blank=True, null=True)
+    qr_image = models.ImageField(upload_to="ticket_qr/%Y/%m/", blank=True, null=True, max_length=500)
+    pdf_file = models.FileField(upload_to="ticket_pdf/%Y/%m/", blank=True, null=True, max_length=500)
 
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.VALID, db_index=True
