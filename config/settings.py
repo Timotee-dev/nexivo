@@ -145,7 +145,7 @@ CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY", default="")
 CLOUDINARY_API_SECRET = config("CLOUDINARY_API_SECRET", default="")
 CLOUDINARY_URL = config("CLOUDINARY_URL", default="")
 
-if CLOUDINARY_CLOUD_NAME:
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
     import cloudinary
     cloudinary.config(
         cloud_name=CLOUDINARY_CLOUD_NAME,
