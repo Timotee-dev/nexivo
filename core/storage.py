@@ -1,5 +1,5 @@
 """
-Custom Cloudinary storage backend that inherits from Django's Storage base class.
+Custom Cloudinary storage backend for Django 6.
 """
 import logging
 import os
@@ -10,26 +10,35 @@ logger = logging.getLogger("nexivo")
 
 
 class CloudinaryStorage(Storage):
-    """
-    Django storage backend that uploads files to Cloudinary.
-    """
 
     def _save(self, name, content):
         try:
+            import cloudinary
             import cloudinary.uploader
-            content.seek(0)
+            
+            logger.info("CloudinaryStorage._save called for: %s", name)
+            logger.info("Cloudinary config: cloud=%s", cloudinary.config().cloud_name)
+            
+            # Read file content as bytes
+            if hasattr(content, 'seek'):
+                content.seek(0)
+            data = content.read() if hasattr(content, 'read') else content
+
             folder = os.path.dirname(name) or "nexivo"
+            
             result = cloudinary.uploader.upload(
-                content.read(),
+                data,
                 folder=folder,
                 resource_type="auto",
                 overwrite=True,
+                use_filename=True,
+                unique_filename=True,
             )
             url = result.get("secure_url", "")
-            logger.info("Cloudinary upload success: %s -> %s", name, url)
+            logger.info("Cloudinary upload SUCCESS: %s", url)
             return url
         except Exception as e:
-            logger.error("Cloudinary upload FAILED for %s: %s", name, e)
+            logger.error("Cloudinary upload FAILED: %s", e)
             raise
 
     def url(self, name):
@@ -41,13 +50,7 @@ class CloudinaryStorage(Storage):
         return False
 
     def delete(self, name):
-        try:
-            import cloudinary.uploader
-            if "cloudinary.com" in str(name):
-                public_id = name.split("/upload/")[-1].rsplit(".", 1)[0]
-                cloudinary.uploader.destroy(public_id)
-        except Exception:
-            pass
+        pass
 
     def _open(self, name, mode='rb'):
         import urllib.request
@@ -57,18 +60,6 @@ class CloudinaryStorage(Storage):
 
     def size(self, name):
         return 0
-
-    def get_accessed_time(self, name):
-        from django.utils import timezone
-        return timezone.now()
-
-    def get_created_time(self, name):
-        from django.utils import timezone
-        return timezone.now()
-
-    def get_modified_time(self, name):
-        from django.utils import timezone
-        return timezone.now()
 
     def listdir(self, path):
         return [], []
