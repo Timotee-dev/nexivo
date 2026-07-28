@@ -100,7 +100,7 @@ class Event(models.Model):
     end_datetime = models.DateTimeField()
     timezone_name = models.CharField(max_length=64, default="Africa/Lagos")
 
-    banner_image = models.ImageField(upload_to="event_banners/%Y/%m/", blank=True, null=True)
+    banner_image = models.ImageField(upload_to="event_banners/%Y/%m/", blank=True, null=True, max_length=500)
 
     is_featured = models.BooleanField(default=False, db_index=True)
     featured_until = models.DateTimeField(blank=True, null=True)
@@ -218,7 +218,7 @@ class EventGallery(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="gallery_images")
-    image = models.ImageField(upload_to="event_gallery/%Y/%m/")
+    image = models.ImageField(upload_to="event_gallery/%Y/%m/", max_length=500)
     caption = models.CharField(max_length=255, blank=True, null=True)
     display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
