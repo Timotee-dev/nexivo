@@ -17,9 +17,9 @@ def home(request):
     return render(request, "frontend/home.html", {
         "steps": [
             "Create your event and set ticket tiers",
-            "Verify your identity with NIN",
             "Add your bank account for payouts",
             "Publish and start selling instantly",
+            "Customers book and pay securely",
             "Earn automatically — 95% goes to you",
         ]
     })
