@@ -3,20 +3,28 @@ from decouple import config
 
 
 class Command(BaseCommand):
-    help = "Create the initial Nexivo super admin if none exists."
+    help = "Create or update the Nexivo super admin account."
 
     def handle(self, *args, **options):
         from accounts.models import User
-        email = config("SUPERADMIN_EMAIL", default="admin@nexivo.com")
+        email = config("SUPERADMIN_EMAIL", default="")
         password = config("SUPERADMIN_PASSWORD", default="")
 
-        if not password:
-            self.stdout.write("SUPERADMIN_PASSWORD is not set. Skipping.")
+        if not email or not password:
+            self.stdout.write("SUPERADMIN_EMAIL or SUPERADMIN_PASSWORD not set. Skipping.")
             return
 
-        if User.objects.filter(email=email).exists():
-            self.stdout.write(self.style.WARNING(f"User {email} already exists. Skipping."))
-            return
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={"username": "superadmin", "role": "super_admin"}
+        )
+        user.set_password(password)
+        user.is_staff = True
+        user.is_superuser = True
+        user.role = "super_admin"
+        user.save()
 
-        user = User.objects.create_superuser(email=email, password=password, username="admin")
-        self.stdout.write(self.style.SUCCESS(f"Super admin created: {user.email}"))
+        if created:
+            self.stdout.write(self.style.SUCCESS(f"Super admin created: {email}"))
+        else:
+            self.stdout.write(self.style.SUCCESS(f"Super admin updated: {email}"))
