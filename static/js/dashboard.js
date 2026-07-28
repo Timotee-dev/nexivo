@@ -257,6 +257,8 @@ async function loadPlatformDashboard() {
   Auth.requireAuth();
 
   try {
+    const user = JSON.parse(localStorage.getItem('nexivo_user') || 'null');
+    if (!user || user.role !== 'super_admin') return;
     const data = await Api.get('/analytics/platform/');
     document.getElementById('stat-gmv').textContent = `₦${Number(data.total_gmv).toLocaleString()}`;
     document.getElementById('stat-platform-rev').textContent = `₦${Number(data.total_platform_revenue).toLocaleString()}`;
