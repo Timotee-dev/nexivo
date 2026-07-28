@@ -1,38 +1,27 @@
 """
-Custom Cloudinary storage backend.
-Uses the cloudinary SDK directly for reliable file uploads.
+Custom Cloudinary storage backend that inherits from Django's Storage base class.
 """
-import io
 import logging
 import os
+
+from django.core.files.storage import Storage
 
 logger = logging.getLogger("nexivo")
 
 
-class CloudinaryStorage:
-    def __init__(self):
-        try:
-            import cloudinary
-            import cloudinary.uploader
-            import cloudinary.api
-            self._cloudinary = cloudinary
-            self._uploader = cloudinary.uploader
-            self._api = cloudinary.api
-            logger.info("CloudinaryStorage initialized: cloud=%s", cloudinary.config().cloud_name)
-        except Exception as e:
-            logger.error("CloudinaryStorage init failed: %s", e)
-            self._cloudinary = None
+class CloudinaryStorage(Storage):
+    """
+    Django storage backend that uploads files to Cloudinary.
+    """
 
     def _save(self, name, content):
-        if not self._cloudinary:
-            logger.error("Cloudinary not configured — cannot save %s", name)
-            return name
         try:
+            import cloudinary.uploader
             content.seek(0)
-            folder = os.path.dirname(name)
-            result = self._uploader.upload(
-                content,
-                folder=folder or "nexivo",
+            folder = os.path.dirname(name) or "nexivo"
+            result = cloudinary.uploader.upload(
+                content.read(),
+                folder=folder,
                 resource_type="auto",
                 overwrite=True,
             )
@@ -40,8 +29,8 @@ class CloudinaryStorage:
             logger.info("Cloudinary upload success: %s -> %s", name, url)
             return url
         except Exception as e:
-            logger.error("Cloudinary upload failed for %s: %s", name, e)
-            return name
+            logger.error("Cloudinary upload FAILED for %s: %s", name, e)
+            raise
 
     def url(self, name):
         if not name:
@@ -53,35 +42,36 @@ class CloudinaryStorage:
 
     def delete(self, name):
         try:
-            if self._cloudinary and "cloudinary.com" in str(name):
+            import cloudinary.uploader
+            if "cloudinary.com" in str(name):
                 public_id = name.split("/upload/")[-1].rsplit(".", 1)[0]
-                self._uploader.destroy(public_id)
+                cloudinary.uploader.destroy(public_id)
         except Exception:
             pass
 
+    def _open(self, name, mode='rb'):
+        import urllib.request
+        from django.core.files.base import ContentFile
+        with urllib.request.urlopen(name) as r:
+            return ContentFile(r.read(), name=name)
+
     def size(self, name):
         return 0
+
+    def get_accessed_time(self, name):
+        from django.utils import timezone
+        return timezone.now()
+
+    def get_created_time(self, name):
+        from django.utils import timezone
+        return timezone.now()
+
+    def get_modified_time(self, name):
+        from django.utils import timezone
+        return timezone.now()
 
     def listdir(self, path):
         return [], []
 
     def path(self, name):
         raise NotImplementedError("CloudinaryStorage does not support path()")
-
-    def open(self, name, mode='rb'):
-        import urllib.request
-        from django.core.files.base import ContentFile
-        try:
-            with urllib.request.urlopen(name) as r:
-                return ContentFile(r.read())
-        except Exception:
-            raise FileNotFoundError(name)
-
-    def save(self, name, content, max_length=None):
-        return self._save(name, content)
-
-    def get_available_name(self, name, max_length=None):
-        return name
-
-    def generate_filename(self, filename):
-        return filename
