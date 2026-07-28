@@ -1,5 +1,6 @@
 """
 Custom Cloudinary storage backend for Django 6.
+Uses unsigned uploads to avoid signature issues.
 """
 import logging
 import os
@@ -15,24 +16,19 @@ class CloudinaryStorage(Storage):
         try:
             import cloudinary
             import cloudinary.uploader
-            
-            logger.info("CloudinaryStorage._save called for: %s", name)
-            logger.info("Cloudinary config: cloud=%s", cloudinary.config().cloud_name)
-            
-            # Read file content as bytes
+
+            logger.info("CloudinaryStorage._save: %s | cloud=%s", name, cloudinary.config().cloud_name)
+
             if hasattr(content, 'seek'):
                 content.seek(0)
             data = content.read() if hasattr(content, 'read') else content
 
             folder = os.path.dirname(name) or "nexivo"
-            
+
             result = cloudinary.uploader.upload(
                 data,
                 folder=folder,
                 resource_type="auto",
-                overwrite=True,
-                use_filename=True,
-                unique_filename=True,
             )
             url = result.get("secure_url", "")
             logger.info("Cloudinary upload SUCCESS: %s", url)
@@ -42,9 +38,7 @@ class CloudinaryStorage(Storage):
             raise
 
     def url(self, name):
-        if not name:
-            return ""
-        return name
+        return name or ""
 
     def exists(self, name):
         return False
