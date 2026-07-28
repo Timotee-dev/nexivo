@@ -59,7 +59,7 @@ class Payment(models.Model):
 
     checkout_url = models.URLField(blank=True, null=True)
     authorization_data = models.JSONField(default=dict, blank=True)
-    invoice_pdf = models.FileField(upload_to="invoices/%Y/%m/", blank=True, null=True)
+    invoice_pdf = models.FileField(upload_to="invoices/%Y/%m/", blank=True, null=True, max_length=500)
 
     paid_at = models.DateTimeField(blank=True, null=True)
     failed_reason = models.TextField(blank=True, null=True)
