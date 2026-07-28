@@ -36,23 +36,10 @@ class TicketTypeSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "quantity_remaining", "created_at"]
-        extra_kwargs = {
-            "description": {"required": False, "allow_blank": True, "default": ""},
-            "is_free": {"required": False, "default": False},
-            "currency": {"required": False, "default": "NGN"},
-            "max_per_order": {"required": False, "default": 10},
-            "sales_start": {"required": False, "allow_null": True, "default": None},
-            "sales_end": {"required": False, "allow_null": True, "default": None},
-            "is_early_bird": {"required": False, "default": False},
-            "early_bird_deadline": {"required": False, "allow_null": True, "default": None},
-            "perks": {"required": False, "default": list},
-            "is_active": {"required": False, "default": True},
-            "display_order": {"required": False, "default": 0},
-        }
 
     def validate(self, attrs):
-        price = float(attrs.get("price", 0) or 0)
-        attrs["is_free"] = price == 0
+        if attrs.get("price", 0) == 0:
+            attrs["is_free"] = True
         sales_start = attrs.get("sales_start")
         sales_end = attrs.get("sales_end")
         if sales_start and sales_end and sales_end <= sales_start:
@@ -143,11 +130,10 @@ class EventDetailSerializer(serializers.ModelSerializer):
 
         if event_type in (Event.EventType.PHYSICAL, Event.EventType.HYBRID):
             venue = attrs.get("venue_name", getattr(self.instance, "venue_name", None))
-            address = attrs.get("address", getattr(self.instance, "address", None))
             city = attrs.get("city", getattr(self.instance, "city", None))
-            if not (venue and address and city):
+            if not (venue and city):
                 raise serializers.ValidationError(
-                    "Venue name, address, and city are required for physical/hybrid events."
+                    "Venue name and city are required for physical/hybrid events."
                 )
 
         if event_type in (Event.EventType.VIRTUAL, Event.EventType.HYBRID):
