@@ -17,7 +17,7 @@ from payments.serializers import (
     VerifyPaymentSerializer,
     WebhookEventSerializer,
 )
-from payments.services import approve_refund, process_webhook, request_refund, verify_and_finalize_payment
+from payments.services import process_webhook, request_refund, verify_and_finalize_payment
 
 
 class MyPaymentsView(generics.ListAPIView):
@@ -134,7 +134,10 @@ class RefundDecisionView(APIView):
         serializer.is_valid(raise_exception=True)
 
         if serializer.validated_data["approve"]:
-            refund = approve_refund(refund=refund, approved_by=request.user)
+            from payments.models import Refund
+            refund.status = Refund.Status.APPROVED
+            refund.approved_by = request.user
+            refund.save(update_fields=["status", "approved_by"])
         else:
             refund.status = Refund.Status.REJECTED
             refund.rejection_reason = serializer.validated_data.get("rejection_reason", "")
