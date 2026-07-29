@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket Verification — Nexivo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0f;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 24px;
+      padding: 40px 32px;
+      text-align: center;
+      animation: pop .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes pop {
+      from { transform: scale(.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .card--loading { background: #1a1a2e; }
+    .card--success { background: linear-gradient(135deg, #065f46, #047857); }
+    .card--used { background: linear-gradient(135deg, #92400e, #b45309); }
+    .card--invalid { background: linear-gradient(135deg, #7f1d1d, #991b1b); }
+
+    .nexivo-logo {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #C9A84C;
+      letter-spacing: -.02em;
+      margin-bottom: 32px;
+    }
+    .nexivo-logo span { color: rgba(255,255,255,.5); }
+
+    .icon { font-size: 5rem; margin-bottom: 20px; line-height: 1; }
+
+    .status { font-size: 1rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: rgba(255,255,255,.6); margin-bottom: 12px; }
+
+    .name { font-size: 2.5rem; font-weight: 900; color: #fff;
+      letter-spacing: -.03em; line-height: 1.1; margin-bottom: 8px; }
+
+    .ticket-type { font-size: 1.125rem; color: rgba(255,255,255,.75);
+      margin-bottom: 8px; }
+
+    .event-name { font-size: .9375rem; color: rgba(255,255,255,.5);
+      margin-bottom: 32px; }
+
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,.15);
+      margin: 24px 0; }
+
+    .meta { font-size: .8125rem; color: rgba(255,255,255,.4); }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid rgba(255,255,255,.1);
+      border-top-color: #C9A84C;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text { color: rgba(255,255,255,.5); font-size: 1rem; }
+
+    .msg { font-size: 1.125rem; color: rgba(255,255,255,.85);
+      line-height: 1.5; margin-bottom: 8px; }
+
+    .powered {
+      margin-top: 32px;
+      font-size: .75rem;
+      color: rgba(255,255,255,.3);
+    }
+    .powered strong { color: #C9A84C; }
+  </style>
+</head>
+<body>
+
+<div class="card card--loading" id="card">
+  <div class="nexivo-logo">Nexiv<span>o</span></div>
+  <div class="spinner"></div>
+  <div class="loading-text">Verifying ticket…</div>
+</div>
+
+<script>
+const payload = '{{ payload }}';
+const eventSlug = '{{ event_slug }}';
+
+async function verify() {
+  try {
+    const res = await fetch(`/api/v1/tickets/public-scan/${eventSlug}/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: payload })
+    });
+    const data = await res.json();
+    showResult(data);
+  } catch(e) {
+    showError('Network error. Please try again.');
+  }
+}
+
+function showResult(data) {
+  const card = document.getElementById('card');
+
+  if (data.result === 'success') {
+    card.className = 'card card--success';
+    card.innerHTML = `
+      <div class="nexivo-logo">Nexiv<span>o</span></div>
+      <div class="icon">✅</div>
+      <div class="status">Valid Ticket</div>
+      <div class="name">${data.holder_name || 'Guest'}</div>
+      <div class="ticket-type">${data.ticket_type || ''}</div>
+      <hr class="divider">
+      <div class="msg">Welcome! Enjoy the event 🎉</div>
+      <div class="powered">Powered by <strong>Nexivo</strong></div>
+    `;
+  } else if (data.result === 'duplicate') {
+    card.className = 'card card--used';
+    card.innerHTML = `
+      <div class="nexivo-logo">Nexiv<span>o</span></div>
+      <div class="icon">⚠️</div>
+      <div class="status">Already Used</div>
+      <div class="name">${data.holder_name || ''}</div>
+      <hr class="divider">
+      <div class="msg">This ticket has already been checked in.</div>
+      <div class="powered">Powered by <strong>Nexivo</strong></div>
+    `;
+  } else {
+    showError(data.message || 'This ticket is not valid.');
+  }
+}
+
+function showError(msg) {
+  const card = document.getElementById('card');
+  card.className = 'card card--invalid';
+  card.innerHTML = `
+    <div class="nexivo-logo">Nexiv<span>o</span></div>
+    <div class="icon">❌</div>
+    <div class="status">Invalid Ticket</div>
+    <hr class="divider">
+    <div class="msg">${msg}</div>
+    <div class="powered">Powered by <strong>Nexivo</strong></div>
+  `;
+}
+
+verify();
+</script>
+</body>
+</html>

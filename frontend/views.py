@@ -188,3 +188,26 @@ def public_checkin(request, slug):
         from django.http import Http404
         raise Http404
     return render(request, 'frontend/checkin.html', {'event': event})
+
+def ticket_verify(request, payload):
+    """
+    Public ticket verification page — opened when anyone scans a Nexivo QR code.
+    Shows a beautiful welcome/invalid screen without requiring login.
+    """
+    from tickets.qr import verify_qr_payload
+
+    ticket_code = verify_qr_payload(payload)
+    event_slug = ''
+
+    if ticket_code:
+        try:
+            from tickets.models import Ticket
+            ticket = Ticket.objects.select_related('ticket_type__event').get(ticket_code=ticket_code)
+            event_slug = ticket.ticket_type.event.slug
+        except Exception:
+            pass
+
+    return render(request, 'frontend/ticket_verify.html', {
+        'payload': payload,
+        'event_slug': event_slug,
+    })

@@ -19,11 +19,17 @@ def _integrity_stamp(ticket_code: str) -> str:
 
 
 def build_qr_payload(ticket_code: str) -> str:
-    return f"{ticket_code}.{_integrity_stamp(ticket_code)}"
+    """Encode a URL so any phone camera opens the welcome page directly."""
+    stamp = _integrity_stamp(ticket_code)
+    frontend_url = getattr(settings, 'FRONTEND_URL', 'https://nexivo-vkt5.onrender.com')
+    return f"{frontend_url}/checkin/verify/{ticket_code}.{stamp}/"
 
 
 def verify_qr_payload(payload: str) -> str | None:
     """Returns the ticket_code if the integrity stamp matches, else None."""
+    # Handle both URL format and raw format for backwards compatibility
+    if '/checkin/verify/' in payload:
+        payload = payload.split('/checkin/verify/')[-1].rstrip('/')
     try:
         code, stamp = payload.rsplit(".", 1)
     except ValueError:

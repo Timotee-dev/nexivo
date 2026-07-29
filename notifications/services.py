@@ -91,8 +91,20 @@ def notify_booking_confirmed(booking):
     for t in tickets:
         try:
             if t.pdf_file and t.pdf_file.name:
-                with open(t.pdf_file.path, "rb") as f:
-                    attachments.append((f"ticket-{t.ticket_code}.pdf", f.read(), "application/pdf"))
+                try:
+                    # Try Cloudinary URL fetch first
+                    import urllib.request
+                    url = t.pdf_file.url if hasattr(t.pdf_file, 'url') else str(t.pdf_file)
+                    if url.startswith('http'):
+                        with urllib.request.urlopen(url, timeout=10) as resp:
+                            attachments.append((f"ticket-{t.ticket_code}.pdf", resp.read(), "application/pdf"))
+                    else:
+                        with open(t.pdf_file.path, "rb") as f:
+                            attachments.append((f"ticket-{t.ticket_code}.pdf", f.read(), "application/pdf"))
+                except Exception:
+                    from tickets.pdf import generate_ticket_pdf
+                    pdf = generate_ticket_pdf(t)
+                    attachments.append((f"ticket-{t.ticket_code}.pdf", pdf.read(), "application/pdf"))
             else:
                 from tickets.pdf import generate_ticket_pdf
                 pdf = generate_ticket_pdf(t)
