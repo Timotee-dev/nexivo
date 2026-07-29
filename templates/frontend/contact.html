@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Contact Us{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto;padding:48px 20px">
+  <h1 style="font-size:2rem;font-weight:800;margin-bottom:8px">Contact Us</h1>
+  <p style="color:var(--muted);margin-bottom:40px">We typically respond within 24 hours</p>
+
+  <div style="background:var(--surface);border-radius:var(--radius-lg);padding:32px;margin-bottom:32px">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:1.5rem">📧</span>
+        <div>
+          <p style="font-weight:600;margin-bottom:2px">Email</p>
+          <a href="mailto:teetimo29@gmail.com" style="color:var(--gold)">teetimo29@gmail.com</a>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:1.5rem">💬</span>
+        <div>
+          <p style="font-weight:600;margin-bottom:2px">WhatsApp</p>
+          <a href="https://wa.me/2347072240810" style="color:var(--gold)" target="_blank">+234 707 224 0810</a>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:1.5rem">🐦</span>
+        <div>
+          <p style="font-weight:600;margin-bottom:2px">Twitter/X</p>
+          <a href="https://twitter.com/nexivo_ng" style="color:var(--gold)" target="_blank">@nexivo_ng</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface);border-radius:var(--radius-lg);padding:32px">
+    <h2 style="font-size:1.125rem;font-weight:700;margin-bottom:20px">Send us a message</h2>
+    <div id="contact-form">
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Your Name</label>
+        <input class="form-input" id="cf-name" type="text" placeholder="Timothy Arifalo">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" id="cf-email" type="email" placeholder="you@example.com">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Subject</label>
+        <input class="form-input" id="cf-subject" type="text" placeholder="How can we help?">
+      </div>
+      <div class="form-group" style="margin-bottom:20px">
+        <label class="form-label">Message</label>
+        <textarea class="form-input" id="cf-message" rows="5" placeholder="Describe your issue or question..."></textarea>
+      </div>
+      <button class="btn btn--gold btn--full" onclick="submitContact()">Send Message</button>
+      <p id="cf-status" style="margin-top:12px;text-align:center;display:none"></p>
+    </div>
+  </div>
+</div>
+<script>
+function submitContact() {
+  const name = document.getElementById('cf-name').value.trim();
+  const email = document.getElementById('cf-email').value.trim();
+  const subject = document.getElementById('cf-subject').value.trim();
+  const message = document.getElementById('cf-message').value.trim();
+  const status = document.getElementById('cf-status');
+  if (!name || !email || !message) { Toast.error('Please fill in all required fields.'); return; }
+  // Send via mailto as simple fallback
+  window.location.href = `mailto:teetimo29@gmail.com?subject=${encodeURIComponent(subject || 'Support Request')}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`;
+  status.style.display = '';
+  status.style.color = 'var(--success)';
+  status.textContent = '✅ Opening your email client...';
+}
+</script>
+{% endblock %}

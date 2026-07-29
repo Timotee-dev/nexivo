@@ -3,6 +3,10 @@ from django.urls import path
 from frontend.views import (
     # Core pages
     home,
+    help_centre,
+    contact_view,
+    terms_view,
+    privacy_view,
     events_list,
     event_detail,
     event_create,
@@ -84,5 +88,9 @@ urlpatterns = [
     # ── QR Scanner ────────────────────────────────────────────────────────
     path("dashboard/scanner/<uuid:event_id>/", scanner_view, name="scanner"),
     path("checkin/<slug:slug>/", public_checkin, name="public_checkin"),
+    path("help/", help_centre, name="help"),
+    path("contact/", contact_view, name="contact"),
+    path("terms/", terms_view, name="terms"),
+    path("privacy/", privacy_view, name="privacy"),
     path("checkin/verify/<str:payload>/", ticket_verify, name="ticket_verify"),
 ]
