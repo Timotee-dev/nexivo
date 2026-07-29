@@ -145,7 +145,7 @@ CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY", default="")
 CLOUDINARY_API_SECRET = config("CLOUDINARY_API_SECRET", default="")
 CLOUDINARY_URL = config("CLOUDINARY_URL", default="")
 
-if CLOUDINARY_CLOUD_NAME:
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
     import cloudinary
     cloudinary.config(
         cloud_name=CLOUDINARY_CLOUD_NAME,
@@ -153,12 +153,14 @@ if CLOUDINARY_CLOUD_NAME:
         api_secret=CLOUDINARY_API_SECRET,
         secure=True,
     )
-    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-    sf_idx = next((i for i, a in enumerate(INSTALLED_APPS) if a == "django.contrib.staticfiles"), len(INSTALLED_APPS))
-    if "cloudinary_storage" not in INSTALLED_APPS:
-        INSTALLED_APPS.insert(sf_idx, "cloudinary_storage")
-    if "cloudinary" not in INSTALLED_APPS:
-        INSTALLED_APPS.append("cloudinary")
+    STORAGES = {
+        "default": {
+            "BACKEND": "core.storage.CloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
 
 # Keep S3 support as fallback
 USE_S3 = config("USE_S3", default=False, cast=bool)
