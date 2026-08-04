@@ -158,13 +158,23 @@ const Toast = (() => {
 const Modal = (() => {
   function open(id) {
     document.getElementById(id)?.classList.add('is-open');
+    document.body.classList.add('modal-open');
   }
   function close(id) {
     document.getElementById(id)?.classList.remove('is-open');
+    // Only remove modal-open if no other modals are open
+    if (!document.querySelector('.modal-backdrop.is-open')) {
+      document.body.classList.remove('modal-open');
+    }
   }
   // Close on backdrop click
   document.addEventListener('click', e => {
-    if (e.target.matches('.modal-backdrop')) e.target.classList.remove('is-open');
+    if (e.target.matches('.modal-backdrop')) {
+      e.target.classList.remove('is-open');
+      if (!document.querySelector('.modal-backdrop.is-open')) {
+        document.body.classList.remove('modal-open');
+      }
+    }
   });
   return { open, close };
 })();

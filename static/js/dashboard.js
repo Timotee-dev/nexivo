@@ -125,7 +125,6 @@ async function loadHostEvents() {
         <td>${event.tickets_sold_count}</td>
         <td>
           <div class="flex gap-8" style="flex-wrap:wrap">
-            <a href="/dashboard/events/${event.slug}/edit/" class="btn btn--outline btn--sm">Edit</a>
             ${event.status === 'draft'
               ? `<button class="btn btn--gold btn--sm" onclick="publishEvent('${event.slug}', this)">Publish</button>`
               : `<a href="/events/${event.slug}/" class="btn btn--ghost btn--sm" target="_blank">View</a>`}

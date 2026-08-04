@@ -5,7 +5,10 @@
   {% include "frontend/_customer_sidebar.html" with active="overview" %}
 
   <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">My Tickets</h1>
+    <div class="flex-between" style="margin-bottom:8px">
+      <h1 class="font-display" style="font-size:1.75rem">My Tickets</h1>
+      <button class="btn btn--outline btn--sm" style="color:var(--error);border-color:var(--error)" onclick="Modal.open('delete-account-modal')">🗑 Delete Account</button>
+    </div>
     <p class="text-muted" style="margin-bottom:32px">Your upcoming and past event tickets</p>
     <div id="my-tickets">
       <div class="spinner" style="margin:40px auto"></div>
@@ -32,8 +35,39 @@
   </div>
 </div>
 
+<!-- Delete Account Modal -->
+<div class="modal-backdrop" id="delete-account-modal">
+  <div class="modal" style="position:relative;text-align:center">
+    <button class="modal__close" onclick="Modal.close('delete-account-modal')">×</button>
+    <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
+    <h2 class="modal__title">Delete Account</h2>
+    <p class="text-muted" style="margin-bottom:20px">This will permanently delete your account and all your data. This cannot be undone.</p>
+    <div class="form-group" style="margin-bottom:20px;text-align:left">
+      <label class="form-label">Type <strong>DELETE</strong> to confirm</label>
+      <input class="form-input" id="delete-confirm-input" type="text" placeholder="DELETE">
+    </div>
+    <button class="btn btn--full" style="background:#ef4444;color:#fff;font-weight:700" onclick="confirmDeleteAccount()">Yes, Delete My Account</button>
+    <button class="btn btn--outline btn--full" style="margin-top:10px" onclick="Modal.close('delete-account-modal')">Cancel</button>
+  </div>
+</div>
+
 <script src="/static/js/dashboard.js"></script>
 <script>
+async function confirmDeleteAccount() {
+  const input = document.getElementById('delete-confirm-input').value.trim();
+  if (input !== 'DELETE') {
+    Toast.error('Please type DELETE to confirm.');
+    return;
+  }
+  try {
+    await Api.delete('/auth/account/');
+    Toast.success('Account deleted. Goodbye!');
+    setTimeout(() => { Auth.logout(); }, 1500);
+  } catch(err) {
+    Toast.error(err?.detail || 'Failed to delete account. Please contact support.');
+  }
+}
+
 async function submitTransfer() {
   const code = document.getElementById('transfer-ticket-code').value;
   const toEmail = document.getElementById('transfer-to-email').value;

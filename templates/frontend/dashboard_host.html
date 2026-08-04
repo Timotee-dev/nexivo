@@ -10,8 +10,27 @@
         <h1 class="font-display" style="font-size:1.75rem">Host Dashboard</h1>
         <p class="text-muted">Welcome back! Here's your performance overview.</p>
       </div>
-      <a href="/events/create/" class="btn btn--gold">+ New Event</a>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+        <a href="/events/create/" class="btn btn--gold">+ New Event</a>
+        <button class="btn btn--outline btn--sm" style="color:var(--error);border-color:var(--error)" onclick="Modal.open('delete-account-modal')">🗑 Delete Account</button>
+      </div>
     </div>
+
+<!-- Delete Account Modal -->
+<div class="modal-backdrop" id="delete-account-modal">
+  <div class="modal" style="position:relative;text-align:center">
+    <button class="modal__close" onclick="Modal.close('delete-account-modal')">×</button>
+    <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
+    <h2 class="modal__title">Delete Account</h2>
+    <p class="text-muted" style="margin-bottom:20px">This will permanently delete your host account and all your events. This cannot be undone.</p>
+    <div class="form-group" style="margin-bottom:20px;text-align:left">
+      <label class="form-label">Type <strong>DELETE</strong> to confirm</label>
+      <input class="form-input" id="delete-confirm-input" type="text" placeholder="DELETE">
+    </div>
+    <button class="btn btn--full" style="background:#ef4444;color:#fff;font-weight:700" onclick="confirmDeleteAccount()">Yes, Delete My Account</button>
+    <button class="btn btn--outline btn--full" style="margin-top:10px" onclick="Modal.close('delete-account-modal')">Cancel</button>
+  </div>
+</div>
 
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-card__label">Total Events</div><div class="stat-card__value" id="stat-events">—</div></div>
@@ -40,9 +59,9 @@
     <div class="chart-card">
       <div class="flex-between" style="margin-bottom:20px">
         <div class="chart-card__title">My Events</div>
-        <div class="flex gap-8">
-          <a href="/dashboard/coupons/" class="btn btn--outline btn--sm">🏷️ Promo Codes</a>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
           <a href="/events/create/" class="btn btn--primary btn--sm">+ Create New</a>
+          <a href="/dashboard/coupons/" class="btn btn--outline btn--sm">🏷️ Promo Codes</a>
         </div>
       </div>
       <div class="table-wrap">
@@ -55,4 +74,20 @@
   </main>
 </div>
 <script src="/static/js/dashboard.js"></script>
+<script>
+async function confirmDeleteAccount() {
+  const input = document.getElementById('delete-confirm-input').value.trim();
+  if (input !== 'DELETE') {
+    Toast.error('Please type DELETE to confirm.');
+    return;
+  }
+  try {
+    await Api.delete('/auth/account/');
+    Toast.success('Account deleted. Goodbye!');
+    setTimeout(() => { Auth.logout(); }, 1500);
+  } catch(err) {
+    Toast.error(err?.detail || 'Failed to delete account. Please contact support.');
+  }
+}
+</script>
 {% endblock %}

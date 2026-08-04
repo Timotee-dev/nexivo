@@ -360,12 +360,15 @@ input, textarea, select { font-family: inherit; }
   position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
   display: flex; align-items: center; justify-content: center;
   padding: 24px; opacity: 0; pointer-events: none; transition: opacity .2s;
+  overflow-y: auto;
 }
 .modal-backdrop.is-open { opacity: 1; pointer-events: all; }
+body.modal-open { overflow: hidden; }
 .modal {
   background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
   width: 100%; max-width: 520px; padding: 40px;
   transform: translateY(20px); transition: transform .25s var(--transition);
+  max-height: 90vh; overflow-y: auto;
 }
 .modal-backdrop.is-open .modal { transform: translateY(0); }
 .modal__title { font-family: var(--font-display); font-size: 1.375rem; margin-bottom: 8px; }

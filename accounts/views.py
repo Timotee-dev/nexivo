@@ -313,3 +313,27 @@ class AppleOAuthView(APIView):
             {"user": UserSerializer(user).data, **_tokens_for_user(user), "created": created},
             status=201 if created else 200,
         )
+        
+        # Add this to accounts/views.py (at the bottom, before the last line)
+
+class DeleteAccountView(APIView):
+    """
+    DELETE /api/v1/auth/account/
+    Permanently deletes the authenticated user's account.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        # Log out first
+        try:
+            from rest_framework_simplejwt.tokens import RefreshToken
+            refresh = request.data.get('refresh')
+            if refresh:
+                token = RefreshToken(refresh)
+                token.blacklist()
+        except Exception:
+            pass
+        # Delete the user
+        user.delete()
+        return Response({"detail": "Account deleted successfully."}, status=204)

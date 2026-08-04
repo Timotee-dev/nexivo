@@ -5,6 +5,7 @@ from accounts.views import (
     AppleOAuthView,
     CaptchaVerifyView,
     ChangePasswordView,
+    DeleteAccountView,
     GoogleOAuthView,
     HostProfileView,
     LoginView,
@@ -26,6 +27,7 @@ urlpatterns = [
     # Profile
     path("me/",                  MeView.as_view(),            name="me"),
     path("change-password/",     ChangePasswordView.as_view(), name="change_password"),
+    path("account/",             DeleteAccountView.as_view(),  name="delete_account"),
     # Host
     path("host-profile/",        HostProfileView.as_view(),   name="host_profile"),
     path("host-profile/verify-nin/",   SubmitNINView.as_view(),       name="verify_nin"),
