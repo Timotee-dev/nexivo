@@ -234,7 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (user) {
       footer.innerHTML =
         '<div class="mob-user-info">Signed in as <strong>' + name + '</strong></div>' +
-        '<button class="mob-signout" onclick="Auth.logout()">🚪 Sign Out</button>';
+        '<button class="mob-signout" onclick="Auth.logout()">🚪 Sign Out</button>' +
+        '<button onclick="deleteAccountFromDrawer()" style="display:block;width:100%;padding:13px;margin-top:10px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:8px;font-size:.9375rem;cursor:pointer;font-weight:600">🗑 Delete Account</button>';
     } else {
       footer.innerHTML =
         '<a href="/auth/register/" class="mob-btn-primary">Get Started — Free</a>' +
@@ -256,6 +257,21 @@ document.addEventListener('DOMContentLoaded', function() {
   if (openBtn) openBtn.addEventListener('click', openDrawer);
   if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
 });
+
+function deleteAccountFromDrawer() {
+  if (!confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) return;
+  fetch('/api/v1/auth/account/', {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('nexivo_access') }
+  }).then(function(r) {
+    if (r.ok || r.status === 204) {
+      localStorage.clear();
+      window.location.href = '/';
+    } else {
+      alert('Failed to delete account. Please contact support.');
+    }
+  }).catch(function() { alert('Network error. Please try again.'); });
+}
 </script>
 {% block extra_js %}{% endblock %}
 </body>
