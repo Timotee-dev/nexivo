@@ -13,30 +13,6 @@
       <a href="/events/create/" class="btn btn--gold">+ New Event</a>
     </div>
 
-    <!-- Quick Actions -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:32px">
-      <a href="/events/create/" style="background:var(--gold);color:#111;border-radius:var(--radius-lg);padding:20px;text-align:center;text-decoration:none;font-weight:700;display:block">
-        <div style="font-size:1.5rem;margin-bottom:6px">➕</div>
-        Create Event
-      </a>
-      <a href="/dashboard/coupons/" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;text-decoration:none;font-weight:700;display:block">
-        <div style="font-size:1.5rem;margin-bottom:6px">🏷️</div>
-        Promo Codes
-      </a>
-      <a href="/dashboard/scanner/" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;text-decoration:none;font-weight:700;display:block">
-        <div style="font-size:1.5rem;margin-bottom:6px">📷</div>
-        QR Scanner
-      </a>
-      <a href="/dashboard/bank-account/" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;text-decoration:none;font-weight:700;display:block">
-        <div style="font-size:1.5rem;margin-bottom:6px">🏦</div>
-        Bank Account
-      </a>
-      <a href="/dashboard/earnings/" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;text-decoration:none;font-weight:700;display:block">
-        <div style="font-size:1.5rem;margin-bottom:6px">💰</div>
-        Earnings
-      </a>
-    </div>
-
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-card__label">Total Events</div><div class="stat-card__value" id="stat-events">—</div></div>
       <div class="stat-card"><div class="stat-card__label">Tickets Sold</div><div class="stat-card__value" id="stat-tickets">—</div></div>
@@ -64,7 +40,10 @@
     <div class="chart-card">
       <div class="flex-between" style="margin-bottom:20px">
         <div class="chart-card__title">My Events</div>
-        <a href="/events/create/" class="btn btn--primary btn--sm">Create New</a>
+        <div class="flex gap-8">
+          <a href="/dashboard/coupons/" class="btn btn--outline btn--sm">🏷️ Promo Codes</a>
+          <a href="/events/create/" class="btn btn--primary btn--sm">+ Create New</a>
+        </div>
       </div>
       <div class="table-wrap">
         <table class="table">
