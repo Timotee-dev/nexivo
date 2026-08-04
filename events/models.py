@@ -120,6 +120,7 @@ class Event(models.Model):
     minimum_age = models.PositiveSmallIntegerField(blank=True, null=True)
 
     refund_policy = models.TextField(blank=True, null=True)
+    marketer_referral_code = models.CharField(max_length=20, blank=True, null=True)
     terms_and_conditions = models.TextField(blank=True, null=True)
 
     published_at = models.DateTimeField(blank=True, null=True)

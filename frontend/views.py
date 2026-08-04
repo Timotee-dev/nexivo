@@ -248,3 +248,7 @@ def privacy_view(request):
         {"title": "Your Rights", "content": "You can delete your account anytime from your dashboard. For data deletion email teetimo29@gmail.com"},
     ]
     return render(request, "frontend/privacy.html", {"sections": sections})
+
+
+def marketer_dashboard(request):
+    return render(request, "frontend/marketer_dashboard.html")

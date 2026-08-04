@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "disputes",
     "analytics",
     "frontend",
+    "marketers",
 ]
 
 # ── Middleware ─────────────────────────────────────────────────────────────
