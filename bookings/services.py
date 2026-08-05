@@ -146,6 +146,25 @@ def confirm_booking(booking: Booking):
     Event.objects.filter(pk=booking.event_id).update(
         tickets_sold_count=F("tickets_sold_count") + booking.ticket_count
     )
+
+    # Send confirmation email
+    try:
+        from notifications.services import notify_booking_confirmed
+        notify_booking_confirmed(booking)
+    except Exception as e:
+        import logging
+        logging.getLogger("nexivo").error("Failed to send booking confirmation email: %s", e)
+
+    # Credit marketer commission if event was referred
+    try:
+        from decimal import Decimal
+        from marketers.services import credit_marketer_commission
+        nexivo_cut = booking.total_amount * Decimal('0.05')
+        credit_marketer_commission(booking, nexivo_cut)
+    except Exception as e:
+        import logging
+        logging.getLogger("nexivo").error("Marketer commission failed: %s", e)
+
     return booking
 
 
