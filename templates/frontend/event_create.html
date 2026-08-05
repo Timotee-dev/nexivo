@@ -143,6 +143,12 @@
       <textarea class="form-textarea" id="f-refund" placeholder="e.g. Full refund up to 48 hours before the event, no refunds after."></textarea>
     </div>
 
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Marketer Referral Code <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+      <input class="form-input" id="f-referral-code" type="text" placeholder="e.g. NXM2026AB" style="text-transform:uppercase" autocomplete="off">
+      <p style="font-size:.8125rem;color:var(--muted);margin-top:4px">If someone referred you to Nexivo enter their code here so they earn commission from your ticket sales</p>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Terms & Conditions</label>
       <textarea class="form-textarea" id="f-terms" placeholder="Any age restrictions, dress code, prohibited items…"></textarea>
@@ -394,6 +400,9 @@ async function submitEvent() {
 
   const terms = document.getElementById('f-terms').value.trim();
   if (terms) fd.append('terms_and_conditions', terms);
+
+  const referralCode = document.getElementById('f-referral-code').value.trim().toUpperCase();
+  if (referralCode) fd.append('marketer_referral_code', referralCode);
 
   if (type !== 'virtual') {
     fd.append('venue_name', document.getElementById('f-venue').value.trim());
