@@ -216,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
       html += '<a href="/dashboard/favorites/" class="mob-link"><span class="mi">❤️</span> Saved Events</a>';
       html += '<a href="/dashboard/notifications/" class="mob-link"><span class="mi">🔔</span> Notifications</a>';
       html += '<a href="/dashboard/my-profile/" class="mob-link"><span class="mi">👤</span> Profile</a>';
+      html += '<a href="/dashboard/marketer/" class="mob-link"><span class="mi">🤝</span> Marketer Program</a>';
     }
 
     if (user && (role === 'host' || role === 'super_admin')) {
@@ -227,6 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
       html += '<a href="/dashboard/earnings/" class="mob-link"><span class="mi">💰</span> Earnings</a>';
       html += '<a href="/dashboard/scanner/" class="mob-link"><span class="mi">📷</span> QR Scanner</a>';
       html += '<a href="/dashboard/bank-account/" class="mob-link"><span class="mi">🏦</span> Bank Account</a>';
+      html += '<a href="/dashboard/marketer/" class="mob-link"><span class="mi">🤝</span> Marketer Dashboard</a>';
     }
 
     body.innerHTML = html;
