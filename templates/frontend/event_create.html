@@ -419,6 +419,24 @@ async function submitEvent() {
   if (bannerFile) fd.append('banner_image', bannerFile);
 
   try {
+    // Refresh token first to avoid 401 errors on long forms
+    try {
+      const refresh = localStorage.getItem('nexivo_refresh');
+      if (refresh) {
+        const refreshRes = await fetch('/api/v1/auth/token/refresh/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh }),
+        });
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          if (refreshData.access) {
+            localStorage.setItem('nexivo_access', refreshData.access);
+          }
+        }
+      }
+    } catch(e) {}
+
     // Step 1: Create the event
     const token = Api.getToken();
     const res = await fetch('/api/v1/events/mine/', {
