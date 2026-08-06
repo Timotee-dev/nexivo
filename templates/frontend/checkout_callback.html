@@ -23,20 +23,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
   try {
-    const data = await Api.post('/payments/verify/', { reference });
+    // Use fetch directly to support guest users without JWT token
+    const token = localStorage.getItem('nexivo_access');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch('/api/v1/payments/verify/', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ reference }),
+    });
+    const data = await res.json();
+
     if (data.status === 'successful') {
       titleEl.textContent = '🎉 Booking Confirmed!';
-      subEl.textContent = 'Your tickets are ready. Redirecting…';
-      setTimeout(() => location.href = '/dashboard/customer/', 2500);
+      if (token) {
+        subEl.textContent = 'Your tickets are ready. Redirecting to My Tickets…';
+        setTimeout(() => location.href = '/dashboard/my-tickets/', 2500);
+      } else {
+        subEl.textContent = 'Your QR code ticket has been sent to your email. Check your inbox! 📧';
+        setTimeout(() => location.href = '/', 5000);
+      }
     } else {
       titleEl.textContent = 'Payment not completed';
       subEl.textContent = `Status: ${data.status}. If you were charged, contact support.`;
-      setTimeout(() => location.href = '/dashboard/customer/', 4000);
+      setTimeout(() => location.href = '/', 4000);
     }
   } catch {
     titleEl.textContent = 'Verification failed';
-    subEl.textContent = 'Could not verify payment. Please check your bookings or contact support.';
-    setTimeout(() => location.href = '/dashboard/customer/', 4000);
+    subEl.textContent = 'Could not verify payment. Please check your email for your ticket or contact support.';
+    setTimeout(() => location.href = '/', 4000);
   }
 });
 </script>
