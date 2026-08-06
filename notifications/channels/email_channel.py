@@ -8,11 +8,12 @@ from django.utils.html import strip_tags
 logger = logging.getLogger("nexivo")
 
 
-def send_email(*, to_email, subject, body, html_body=None, template=None,
-               context=None, attachments=None):
+def send_email(*, to_email, subject, body, html_body=None, template=None, context=None, attachments=None):
     """
-    Sends an email with optional HTML template and file attachments.
-    attachments: list of (filename, content_bytes, mimetype) tuples
+    Sends an email. If `template` is provided, renders it with `context`
+    for the HTML version and strips tags for the plain-text fallback.
+    Falls back to `html_body` if provided, or plain `body` otherwise.
+    Optionally attach files via `attachments` list of (filename, content, mimetype) tuples.
     """
     try:
         if template and context:
@@ -28,13 +29,11 @@ def send_email(*, to_email, subject, body, html_body=None, template=None,
         )
         if html_body:
             email.attach_alternative(html_body, "text/html")
-
-        # Attach PDF tickets or any other files
-        for attachment in (attachments or []):
-            filename, content, mimetype = attachment
-            email.attach(filename, content, mimetype)
-
+        if attachments:
+            for filename, content, mimetype in attachments:
+                email.attach(filename, content, mimetype)
         email.send(fail_silently=False)
+        logger.info("Email sent successfully to %s: %s", to_email, subject)
         return True, None
     except Exception as exc:
         logger.exception("Failed to send email to %s: %s", to_email, exc)
