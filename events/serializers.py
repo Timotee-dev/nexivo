@@ -105,12 +105,12 @@ class EventDetailSerializer(serializers.ModelSerializer):
             "terms_and_conditions", "ticket_types", "gallery_images",
             "is_upcoming", "is_live", "is_past", "is_sold_out", "is_physical",
             "is_virtual", "total_tickets_remaining", "is_favorited",
-            "published_at", "created_at", "updated_at", "marketer_referral_code",
+            "published_at", "created_at", "updated_at",
         ]
         read_only_fields = [
             "id", "host", "slug", "status", "view_count", "tickets_sold_count",
             "favorite_count", "average_rating", "review_count",
-            "published_at", "created_at", "updated_at", "marketer_referral_code",
+            "published_at", "created_at", "updated_at",
         ]
 
     def get_is_favorited(self, obj):
@@ -162,11 +162,7 @@ class EventCreateSerializer(EventDetailSerializer):
     """
 
     ticket_types = TicketTypeInputSerializer(many=True, required=False)
-
-    class Meta(EventDetailSerializer.Meta):
-        extra_kwargs = {
-            'marketer_referral_code': {'required': False, 'allow_blank': True},
-        }
+    marketer_referral_code = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     @transaction.atomic
     def create(self, validated_data):
