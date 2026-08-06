@@ -69,7 +69,6 @@ class CheckoutView(APIView):
         payment_init = initialize_payment(
             booking=booking,
             gateway=data["gateway"],
-            customer_email=guest_email or user.email,
         )
 
         return Response(
