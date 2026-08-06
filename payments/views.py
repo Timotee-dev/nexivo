@@ -47,15 +47,18 @@ class VerifyPaymentView(APIView):
     yet by the time the customer returns from the gateway's hosted page).
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # Allow guest checkout verification
 
     def post(self, request):
         serializer = VerifyPaymentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         payment = generics.get_object_or_404(Payment, gateway_reference=serializer.validated_data["reference"])
-        if payment.customer != request.user and not request.user.is_super_admin:
-            raise PermissionDenied("This payment does not belong to you.")
+
+        # Allow if authenticated and owns payment, or if guest (no auth)
+        if request.user.is_authenticated:
+            if payment.customer != request.user and not request.user.is_super_admin:
+                raise PermissionDenied("This payment does not belong to you.")
 
         payment = verify_and_finalize_payment(payment)
         return Response(PaymentSerializer(payment).data)
