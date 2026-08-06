@@ -239,7 +239,7 @@ const EventDetail = (() => {
     modal._items = items;
   }
 
-  async function proceedAsGuest() {
+  window.proceedAsGuest = async function proceedAsGuest() {
     const firstName = document.getElementById('guest-firstname').value.trim();
     const lastName = document.getElementById('guest-lastname').value.trim();
     const email = document.getElementById('guest-email').value.trim();
