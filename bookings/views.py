@@ -14,21 +14,50 @@ from core.permissions import IsSuperAdmin
 class CheckoutView(APIView):
     """
     POST /api/v1/bookings/checkout/
-    Creates a PENDING booking with inventory reserved for 15 minutes, then
-    hands off to the payments app to initialize the chosen gateway's payment
-    session. Returns the booking plus a payment redirect/reference.
+    Supports both authenticated users and guest checkout.
+    Guest checkout: pass guest_first_name, guest_last_name, guest_email.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = []  # Allow unauthenticated for guest checkout
 
     def post(self, request):
+        # Handle guest checkout
+        guest_email = request.data.get('guest_email', '').strip()
+        guest_first_name = request.data.get('guest_first_name', '').strip()
+        guest_last_name = request.data.get('guest_last_name', '').strip()
+
+        if not request.user.is_authenticated:
+            if not guest_email or not guest_first_name or not guest_last_name:
+                return Response(
+                    {"detail": "Please sign in or provide your name and email to continue."},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+            # Get or create guest user
+            from accounts.models import User
+            import secrets
+            user, created = User.objects.get_or_create(
+                email=guest_email,
+                defaults={
+                    'first_name': guest_first_name,
+                    'last_name': guest_last_name,
+                    'username': guest_email.split('@')[0] + '_' + secrets.token_hex(4),
+                    'role': 'customer',
+                }
+            )
+            if not created:
+                user.first_name = user.first_name or guest_first_name
+                user.last_name = user.last_name or guest_last_name
+                user.save(update_fields=['first_name', 'last_name'])
+        else:
+            user = request.user
+
         serializer = CheckoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         try:
             booking = create_booking(
-                customer=request.user,
+                customer=user,
                 event_id=data["event_id"],
                 items=data["items"],
                 coupon_code=data.get("coupon_code") or None,
@@ -37,7 +66,11 @@ class CheckoutView(APIView):
             raise ValidationError(exc.messages if hasattr(exc, "messages") else str(exc))
 
         from payments.services import initialize_payment
-        payment_init = initialize_payment(booking=booking, gateway=data["gateway"])
+        payment_init = initialize_payment(
+            booking=booking,
+            gateway=data["gateway"],
+            customer_email=guest_email or user.email,
+        )
 
         return Response(
             {

@@ -183,14 +183,92 @@ const EventDetail = (() => {
   }
 
   async function submitCheckout() {
-    if (!Auth.isLoggedIn()) { Auth.requireAuth(); return; }
-
     const items = Object.entries(selections)
       .filter(([,s]) => s.qty > 0)
       .map(([id, s]) => ({ ticket_type_id: id, quantity: s.qty }));
 
     if (!items.length) { Toast.error('Please select at least one ticket.'); return; }
 
+    // If logged in proceed normally
+    if (Auth.isLoggedIn()) {
+      await processCheckout(items);
+      return;
+    }
+
+    // Guest checkout — show modal for name and email
+    showGuestModal(items);
+  }
+
+  function showGuestModal(items) {
+    // Create guest modal if it doesn't exist
+    let modal = document.getElementById('guest-checkout-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'guest-checkout-modal';
+      modal.className = 'modal-backdrop';
+      modal.innerHTML = `
+        <div class="modal" style="position:relative;max-width:420px">
+          <button class="modal__close" onclick="document.getElementById('guest-checkout-modal').classList.remove('is-open');document.body.classList.remove('modal-open')">×</button>
+          <h2 class="modal__title" style="margin-bottom:4px">Almost there! 🎟️</h2>
+          <p class="text-muted" style="margin-bottom:20px;font-size:.875rem">Enter your details to receive your ticket</p>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">First Name *</label>
+            <input class="form-input" id="guest-firstname" type="text" placeholder="Your first name">
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Last Name *</label>
+            <input class="form-input" id="guest-lastname" type="text" placeholder="Your last name">
+          </div>
+          <div class="form-group" style="margin-bottom:20px">
+            <label class="form-label">Email Address *</label>
+            <input class="form-input" id="guest-email" type="email" placeholder="you@example.com">
+            <p class="text-muted" style="font-size:.8125rem;margin-top:4px">Your QR code ticket will be sent here</p>
+          </div>
+          <p id="guest-error" style="color:var(--error);font-size:.875rem;margin-bottom:12px;display:none"></p>
+          <button class="btn btn--gold btn--full" id="guest-proceed-btn" onclick="proceedAsGuest()">Continue to Payment 🔒</button>
+          <div style="text-align:center;margin-top:16px">
+            <span class="text-muted" style="font-size:.8125rem">Already have an account? </span>
+            <a href="/auth/login/" style="font-size:.8125rem;color:var(--gold)">Sign in</a>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+    modal.classList.add('is-open');
+    document.body.classList.add('modal-open');
+    // Store items for later use
+    modal._items = items;
+  }
+
+  async function proceedAsGuest() {
+    const firstName = document.getElementById('guest-firstname').value.trim();
+    const lastName = document.getElementById('guest-lastname').value.trim();
+    const email = document.getElementById('guest-email').value.trim();
+    const errEl = document.getElementById('guest-error');
+    errEl.style.display = 'none';
+
+    if (!firstName || !lastName || !email) {
+      errEl.textContent = 'Please fill in all fields.';
+      errEl.style.display = '';
+      return;
+    }
+    if (!email.includes('@')) {
+      errEl.textContent = 'Please enter a valid email address.';
+      errEl.style.display = '';
+      return;
+    }
+
+    const btn = document.getElementById('guest-proceed-btn');
+    btn.disabled = true; btn.textContent = 'Processing…';
+
+    const modal = document.getElementById('guest-checkout-modal');
+    const items = modal._items;
+
+    await processCheckout(items, { first_name: firstName, last_name: lastName, email });
+
+    btn.disabled = false; btn.textContent = 'Continue to Payment 🔒';
+  }
+
+  async function processCheckout(items, guestDetails = null) {
     const gateway = document.querySelector('input[name="gateway"]:checked')?.value || 'paystack';
     const couponCode = document.getElementById('coupon-input')?.value || '';
     const eventId = document.getElementById('event-id')?.value;
@@ -199,9 +277,16 @@ const EventDetail = (() => {
     btn.disabled = true; btn.textContent = 'Processing…';
 
     try {
-      const data = await Api.post('/bookings/checkout/', {
-        event_id: eventId, items, gateway, coupon_code: couponCode || undefined,
-      });
+      const payload = {
+        event_id: eventId, items, gateway,
+        coupon_code: couponCode || undefined,
+      };
+      if (guestDetails) {
+        payload.guest_first_name = guestDetails.first_name;
+        payload.guest_last_name = guestDetails.last_name;
+        payload.guest_email = guestDetails.email;
+      }
+      const data = await Api.post('/bookings/checkout/', payload);
       if (data.payment?.checkout_url) {
         window.location.href = data.payment.checkout_url;
       } else {
