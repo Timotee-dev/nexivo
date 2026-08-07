@@ -8,7 +8,7 @@ from django.utils.html import strip_tags
 logger = logging.getLogger("nexivo")
 
 
-def send_email(*, to_email, subject, body, html_body=None, template=None, context=None):
+def send_email(*, to_email, subject, body, html_body=None, template=None, context=None, attachments=None):
     """
     Sends an email. If `template` is provided, renders it with `context`
     for the HTML version and strips tags for the plain-text fallback.
@@ -28,6 +28,9 @@ def send_email(*, to_email, subject, body, html_body=None, template=None, contex
         )
         if html_body:
             email.attach_alternative(html_body, "text/html")
+        if attachments:
+            for fname, fcontent, fmime in (attachments or []):
+                email.attach(fname, fcontent, fmime)
         email.send(fail_silently=False)
         return True, None
     except Exception as exc:
