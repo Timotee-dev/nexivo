@@ -13,6 +13,7 @@ from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+BREVO_API_KEY = config("BREVO_API_KEY", default="")
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-CHANGE-THIS-IN-PRODUCTION")
 DEBUG = config("DEBUG", default=True, cast=bool)
 
