@@ -264,3 +264,6 @@ def host_affiliates(request, slug):
     except Event.DoesNotExist:
         raise Http404
     return render(request, 'frontend/host_affiliates.html', {'event': event})
+
+def host_affiliates(request, slug):
+    return render(request, 'frontend/host_affiliates.html', {'event_slug': slug})
