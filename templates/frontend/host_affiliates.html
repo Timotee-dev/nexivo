@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Affiliate Program{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="affiliates" %}
+  <main class="dashboard__main">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div>
+        <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:4px">Affiliate Program</h1>
+        <p class="text-muted">Let others sell tickets for your event and earn commission</p>
+      </div>
+      <button class="btn btn--gold" onclick="Modal.open('add-affiliate-modal')">+ Add Affiliate</button>
+    </div>
+
+    <!-- How it works -->
+    <div style="background:var(--surface);border-radius:var(--radius-lg);padding:20px;margin-bottom:24px;border:1px solid rgba(201,168,76,.2)">
+      <h3 style="font-weight:700;color:var(--gold);margin-bottom:12px">How it works</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+        <div>
+          <div style="font-size:1.5rem;margin-bottom:6px">1️⃣</div>
+          <p style="font-size:.875rem;color:var(--muted)">Add an affiliate and set their commission rate</p>
+        </div>
+        <div>
+          <div style="font-size:1.5rem;margin-bottom:6px">2️⃣</div>
+          <p style="font-size:.875rem;color:var(--muted)">They share their unique link to your event</p>
+        </div>
+        <div>
+          <div style="font-size:1.5rem;margin-bottom:6px">3️⃣</div>
+          <p style="font-size:.875rem;color:var(--muted)">When tickets sell via their link they earn commission from your cut automatically</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="affiliates-list"><div class="spinner" style="margin:40px auto"></div></div>
+  </main>
+</div>
+
+<!-- Add Affiliate Modal -->
+<div class="modal-backdrop" id="add-affiliate-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('add-affiliate-modal')">×</button>
+    <h2 class="modal__title">Add Affiliate</h2>
+    <p class="text-muted" style="margin-bottom:20px">Add someone who will promote your event and earn commission</p>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Full Name *</label>
+      <input class="form-input" id="aff-name" type="text" placeholder="e.g. Chukwuemeka John">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Email Address</label>
+      <input class="form-input" id="aff-email" type="email" placeholder="affiliate@email.com">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Phone Number</label>
+      <input class="form-input" id="aff-phone" type="tel" placeholder="08012345678">
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label class="form-label">Commission Rate (%) *</label>
+      <input class="form-input" id="aff-rate" type="number" min="1" max="50" placeholder="e.g. 10">
+      <p class="text-muted" style="font-size:.8125rem;margin-top:4px">
+        This comes from YOUR cut — not from Nexivo's fee. Max 50%.
+      </p>
+    </div>
+
+    <p id="aff-error" style="color:var(--error);font-size:.875rem;margin-bottom:12px;display:none"></p>
+    <button class="btn btn--gold btn--full" onclick="addAffiliate()">Add Affiliate</button>
+  </div>
+</div>
+
+<!-- Affiliate Link Modal -->
+<div class="modal-backdrop" id="link-modal">
+  <div class="modal" style="position:relative;text-align:center">
+    <button class="modal__close" onclick="Modal.close('link-modal')">×</button>
+    <div style="font-size:3rem;margin-bottom:12px">🔗</div>
+    <h2 class="modal__title">Affiliate Link Created!</h2>
+    <p class="text-muted" style="margin-bottom:16px">Share this link with your affiliate:</p>
+    <div id="link-display" style="background:var(--surface-2);border-radius:8px;padding:12px;font-size:.8125rem;word-break:break-all;margin-bottom:16px;font-family:monospace"></div>
+    <button class="btn btn--gold btn--full" onclick="copyLink()">📋 Copy Link</button>
+  </div>
+</div>
+
+<script src="/static/js/nexivo.js"></script>
+<script>
+const EVENT_SLUG = '{{ event_slug }}';
+let currentLink = '';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  await loadAffiliates();
+});
+
+async function loadAffiliates() {
+  const el = document.getElementById('affiliates-list');
+  try {
+    const data = await Api.get(`/affiliates/events/${EVENT_SLUG}/`);
+    const affiliates = data.results || [];
+
+    if (!affiliates.length) {
+      el.innerHTML = `
+        <div style="text-align:center;padding:48px 20px;background:var(--surface);border-radius:var(--radius-lg)">
+          <div style="font-size:3rem;margin-bottom:12px">🤝</div>
+          <h3 style="font-size:1.125rem;font-weight:700;margin-bottom:8px">No affiliates yet</h3>
+          <p class="text-muted" style="margin-bottom:20px">Add people who will promote your event and earn commission when tickets sell</p>
+          <button class="btn btn--gold" onclick="Modal.open('add-affiliate-modal')">Add Your First Affiliate</button>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--surface-2)">
+              <th style="padding:12px 16px;text-align:left;font-size:.8125rem;font-weight:600">Affiliate</th>
+              <th style="padding:12px 16px;text-align:left;font-size:.8125rem;font-weight:600">Commission</th>
+              <th style="padding:12px 16px;text-align:left;font-size:.8125rem;font-weight:600">Earned</th>
+              <th style="padding:12px 16px;text-align:left;font-size:.8125rem;font-weight:600">Balance</th>
+              <th style="padding:12px 16px;text-align:left;font-size:.8125rem;font-weight:600">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${affiliates.map(a => `
+            <tr style="border-top:1px solid var(--border)">
+              <td style="padding:14px 16px">
+                <div style="font-weight:600">${a.affiliate_name}</div>
+                <div style="font-size:.8125rem;color:var(--muted)">${a.affiliate_email || ''}</div>
+              </td>
+              <td style="padding:14px 16px;font-size:.875rem">${a.commission_rate}%</td>
+              <td style="padding:14px 16px;font-size:.875rem;color:var(--success)">₦${Number(a.total_earned).toLocaleString()}</td>
+              <td style="padding:14px 16px;font-size:.875rem;font-weight:600">₦${Number(a.wallet_balance).toLocaleString()}</td>
+              <td style="padding:14px 16px">
+                <button class="btn btn--outline btn--sm" onclick="showLink('${a.affiliate_link}')">🔗 Link</button>
+                <button class="btn btn--outline btn--sm" style="margin-left:6px;color:var(--error)" onclick="removeAffiliate('${a.id}')">Remove</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<p class="text-muted" style="text-align:center;padding:32px">Could not load affiliates.</p>';
+  }
+}
+
+async function addAffiliate() {
+  const name = document.getElementById('aff-name').value.trim();
+  const email = document.getElementById('aff-email').value.trim();
+  const phone = document.getElementById('aff-phone').value.trim();
+  const rate = document.getElementById('aff-rate').value;
+  const errEl = document.getElementById('aff-error');
+  errEl.style.display = 'none';
+
+  if (!name) { errEl.textContent = 'Please enter the affiliate name.'; errEl.style.display = ''; return; }
+  if (!rate) { errEl.textContent = 'Please enter a commission rate.'; errEl.style.display = ''; return; }
+
+  try {
+    const data = await Api.post(`/affiliates/events/${EVENT_SLUG}/`, {
+      affiliate_name: name,
+      affiliate_email: email,
+      affiliate_phone: phone,
+      commission_rate: rate,
+    });
+
+    Toast.success('Affiliate added!');
+    Modal.close('add-affiliate-modal');
+    ['aff-name','aff-email','aff-phone','aff-rate'].forEach(id => document.getElementById(id).value = '');
+
+    // Show the affiliate link
+    showLink(data.affiliate_link);
+    await loadAffiliates();
+  } catch(err) {
+    errEl.textContent = err?.detail || 'Failed to add affiliate.';
+    errEl.style.display = '';
+  }
+}
+
+function showLink(link) {
+  currentLink = link;
+  document.getElementById('link-display').textContent = link;
+  Modal.open('link-modal');
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(currentLink).then(() => {
+    Toast.success('Link copied! 🔥');
+  });
+}
+
+async function removeAffiliate(id) {
+  if (!confirm('Remove this affiliate? They will no longer earn commission from new sales.')) return;
+  try {
+    await Api.delete(`/affiliates/${id}/`);
+    Toast.success('Affiliate removed.');
+    await loadAffiliates();
+  } catch(e) {
+    Toast.error('Failed to remove affiliate.');
+  }
+}
+</script>
+{% endblock %}
