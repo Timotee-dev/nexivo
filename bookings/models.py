@@ -42,6 +42,7 @@ class Booking(models.Model):
     total_amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3, default="NGN")
 
+    affiliate_code = models.CharField(max_length=20, blank=True, null=True)
     coupon = models.ForeignKey(
         "coupons.Coupon", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="bookings",

@@ -61,6 +61,7 @@ class CheckoutView(APIView):
                 event_id=data["event_id"],
                 items=data["items"],
                 coupon_code=data.get("coupon_code") or None,
+                affiliate_code=request.data.get("affiliate_code") or None,
             )
         except DjangoValidationError as exc:
             raise ValidationError(exc.messages if hasattr(exc, "messages") else str(exc))

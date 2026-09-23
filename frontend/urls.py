@@ -42,6 +42,7 @@ from frontend.views import (
     public_checkin,
     ticket_verify,
     marketer_dashboard,
+    host_affiliates,
 )
 
 app_name = "frontend"
@@ -94,5 +95,6 @@ urlpatterns = [
     path("terms/", terms_view, name="terms"),
     path("privacy/", privacy_view, name="privacy"),
     path("checkin/verify/<str:payload>/", ticket_verify, name="ticket_verify"),
+    path("dashboard/events/<slug:slug>/affiliates/", host_affiliates, name="host_affiliates"),
     path("dashboard/marketer/", marketer_dashboard, name="marketer_dashboard"),
 ]

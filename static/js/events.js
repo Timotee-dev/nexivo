@@ -280,6 +280,7 @@ const EventDetail = (() => {
       const payload = {
         event_id: eventId, items, gateway,
         coupon_code: couponCode || undefined,
+        affiliate_code: localStorage.getItem(`aff_${eventId}`) || undefined,
       };
       if (guestDetails) {
         payload.guest_first_name = guestDetails.first_name;
@@ -329,6 +330,19 @@ const EventDetail = (() => {
     });
 
     document.getElementById('checkout-btn')?.addEventListener('click', submitCheckout);
+
+  // Track affiliate referral
+  const urlParams = new URLSearchParams(window.location.search);
+  const ref = urlParams.get('ref');
+  const eventSlug = document.getElementById('event-slug')?.value;
+  if (ref && eventSlug) {
+    localStorage.setItem(`aff_${eventSlug}`, ref);
+    fetch('/api/v1/affiliates/track/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: ref, event_slug: eventSlug }),
+    }).catch(() => {});
+  }
 
     const favBtn = document.getElementById('favorite-btn');
     const slug = document.getElementById('event-slug')?.value;

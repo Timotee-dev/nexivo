@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "analytics",
     "frontend",
     "marketers",
+    "affiliates",
 ]
 
 # ── Middleware ─────────────────────────────────────────────────────────────

@@ -252,3 +252,15 @@ def privacy_view(request):
 
 def marketer_dashboard(request):
     return render(request, "frontend/marketer_dashboard.html")
+
+def host_affiliates(request, slug):
+    """Host manages affiliates for a specific event."""
+    if not request.user.is_authenticated:
+        return redirect('/auth/login/')
+    from events.models import Event
+    from django.http import Http404
+    try:
+        event = Event.objects.get(slug=slug, host=request.user)
+    except Event.DoesNotExist:
+        raise Http404
+    return render(request, 'frontend/host_affiliates.html', {'event': event})

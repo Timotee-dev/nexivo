@@ -37,7 +37,7 @@ def apply_coupon(coupon, subtotal: Decimal) -> Decimal:
 
 
 @transaction.atomic
-def create_booking(*, customer, event_id, items, coupon_code=None):
+def create_booking(*, customer, event_id, items, coupon_code=None, affiliate_code=None, **kwargs):
     """
     items: list of {"ticket_type_id": <uuid>, "quantity": <int>}
     Locks each TicketType row (select_for_update) to prevent oversell under
@@ -164,6 +164,16 @@ def confirm_booking(booking: Booking):
     except Exception as e:
         import logging
         logging.getLogger("nexivo").error("Marketer commission failed: %s", e)
+
+    # Credit affiliate commission if booking came via affiliate link
+    try:
+        affiliate_code = getattr(booking, 'affiliate_code', None)
+        if affiliate_code:
+            from affiliates.services import credit_affiliate_commission
+            credit_affiliate_commission(booking, affiliate_code)
+    except Exception as e:
+        import logging
+        logging.getLogger("nexivo").error("Affiliate commission failed: %s", e)
 
     return booking
 

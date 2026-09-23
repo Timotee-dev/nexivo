@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/v1/disputes/",      include("disputes.urls")),
     path("api/v1/analytics/",     include("analytics.urls")),
     path("api/v1/marketers/",     include("marketers.urls")),
+    path("api/v1/affiliates/",    include("affiliates.urls")),
 
     # ── API docs ───────────────────────────────────────────────────────────
     path("api/v1/schema/", SpectacularAPIView.as_view(),         name="schema"),
@@ -37,4 +38,3 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
- 
