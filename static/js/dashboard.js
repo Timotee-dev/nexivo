@@ -114,23 +114,18 @@ async function loadHostEvents() {
 
   try {
     const data = await Api.get('/events/mine/');
-    if (!data.results.length) {
-      container.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No events yet. <a href="/events/create/" class="text-gold">Create your first event →</a></td></tr>';
-      return;
-    }
     container.innerHTML = data.results.map(event => `
       <tr>
         <td><strong>${event.title}</strong><br><small class="text-muted">${new Date(event.start_datetime).toLocaleDateString()}</small></td>
         <td><span class="badge badge--${statusBadge(event.status)}">${event.status}</span></td>
         <td>${event.tickets_sold_count}</td>
-        <td>
-          <div class="flex gap-8" style="flex-wrap:wrap">
-            ${event.status === 'draft'
-              ? `<button class="btn btn--gold btn--sm" onclick="publishEvent('${event.slug}', this)">Publish</button>`
-              : `<a href="/events/${event.slug}/" class="btn btn--ghost btn--sm" target="_blank">View</a>`}
-            <button class="btn btn--sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)" onclick="deleteEvent('${event.slug}', '${event.title.replace(/'/g,"\'")}')">Delete</button>
-          </div>
-        </td>
+        <td><div class="flex gap-8" style="flex-wrap:wrap">
+          ${event.status === 'draft'
+            ? `<button class="btn btn--gold btn--sm" onclick="publishEvent('${event.slug}', this)">Publish</button>`
+            : `<a href="/events/${event.slug}/" class="btn btn--ghost btn--sm" target="_blank">View</a>`}
+          <a href="/dashboard/events/${event.slug}/affiliates/" class="btn btn--outline btn--sm">🤝 Affiliates</a>
+          <button class="btn btn--sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)" onclick="deleteEvent('${event.slug}', '${event.title.replace(/'/g,"\''")}')">Delete</button>
+        </div></td>
       </tr>`).join('');
   } catch { Toast.error('Failed to load your events.'); }
 }
@@ -144,17 +139,6 @@ async function publishEvent(slug, btn) {
   } catch(err) {
     Toast.error(err?.detail || 'Could not publish event.');
     btn.disabled = false; btn.textContent = 'Publish';
-  }
-}
-
-async function deleteEvent(slug, title) {
-  if (!confirm(`Are you sure you want to delete "${title}"? This cannot be undone and will remove all associated tickets and data.`)) return;
-  try {
-    await Api.delete(`/events/${slug}/`);
-    Toast.success('Event deleted successfully.');
-    loadHostEvents();
-  } catch(err) {
-    Toast.error(err?.detail || 'Could not delete event.');
   }
 }
 
