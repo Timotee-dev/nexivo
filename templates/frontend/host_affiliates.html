@@ -85,8 +85,15 @@ const EVENT_SLUG = '{{ event_slug }}';
 let currentLink = '';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  Auth.requireAuth();
-  await loadAffiliates();
+  // Wait for nexivo.js to initialize
+  setTimeout(async () => {
+    const token = localStorage.getItem('nexivo_access');
+    if (!token) {
+      window.location.href = '/auth/login/?next=' + encodeURIComponent(window.location.pathname);
+      return;
+    }
+    await loadAffiliates();
+  }, 100);
 });
 
 async function loadAffiliates() {
@@ -130,6 +137,7 @@ async function loadAffiliates() {
               <td style="padding:14px 16px;font-size:.875rem;font-weight:600">₦${Number(a.wallet_balance).toLocaleString()}</td>
               <td style="padding:14px 16px">
                 <button class="btn btn--outline btn--sm" onclick="showLink('${a.affiliate_link}')">🔗 Link</button>
+                <a href="/affiliate/${a.id}/" class="btn btn--outline btn--sm" style="margin-left:6px" target="_blank">📊 Dashboard</a>
                 <button class="btn btn--outline btn--sm" style="margin-left:6px;color:var(--error)" onclick="removeAffiliate('${a.id}')">Remove</button>
               </td>
             </tr>`).join('')}

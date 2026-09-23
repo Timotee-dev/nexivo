@@ -267,3 +267,9 @@ def host_affiliates(request, slug):
 
 def host_affiliates(request, slug):
     return render(request, 'frontend/host_affiliates.html', {'event_slug': slug})
+
+def affiliate_dashboard(request, affiliate_id):
+    """Public affiliate dashboard — no login needed."""
+    return render(request, 'frontend/affiliate_dashboard.html', {
+        'affiliate_id': affiliate_id,
+    })

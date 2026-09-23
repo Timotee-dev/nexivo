@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Affiliate Dashboard{% endblock %}
+{% block content %}
+
+<style>
+.aff-wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px; }
+.wallet-card {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: 20px; padding: 32px; color: #fff;
+  margin-bottom: 24px; position: relative; overflow: hidden;
+}
+.wallet-card::before {
+  content: ''; position: absolute; top: -50%; right: -20%;
+  width: 300px; height: 300px;
+  background: rgba(201,168,76,.1); border-radius: 50%;
+}
+.wallet-balance { font-size: 2.5rem; font-weight: 900; color: #C9A84C; letter-spacing: -.03em; }
+.wallet-label { font-size: .875rem; color: rgba(255,255,255,.5); margin-bottom: 4px; }
+.ref-box {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px; padding: 14px 18px; margin-top: 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.ref-code { font-family: monospace; font-size: 1.1rem; font-weight: 700; color: #C9A84C; letter-spacing: .1em; }
+</style>
+
+<div class="aff-wrap">
+  <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:4px">Affiliate Dashboard</h1>
+  <p class="text-muted" style="margin-bottom:24px">Track your commissions and withdraw your earnings</p>
+
+  <div id="aff-content"><div class="spinner" style="margin:40px auto"></div></div>
+</div>
+
+<!-- Bank Account Modal -->
+<div class="modal-backdrop" id="bank-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('bank-modal')">×</button>
+    <h2 class="modal__title">Add Bank Account</h2>
+    <p class="text-muted" style="margin-bottom:20px">Required to withdraw your earnings</p>
+    <div class="form-group" style="margin-bottom:14px">
+      <label class="form-label">Bank</label>
+      <select class="form-input" id="bank-select"><option value="">Select bank...</option></select>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label class="form-label">Account Number</label>
+      <input class="form-input" id="bank-acct" type="text" maxlength="10" placeholder="10-digit account number">
+    </div>
+    <p id="bank-err" style="color:var(--error);font-size:.875rem;margin-bottom:12px;display:none"></p>
+    <button class="btn btn--gold btn--full" onclick="saveBankAccount()">Save Bank Account</button>
+  </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div class="modal-backdrop" id="withdraw-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('withdraw-modal')">×</button>
+    <h2 class="modal__title">Withdraw Earnings</h2>
+    <p class="text-muted" style="margin-bottom:20px">Money sent directly to your bank via Paystack</p>
+    <div class="form-group" style="margin-bottom:20px">
+      <label class="form-label">Amount (₦)</label>
+      <input class="form-input" id="withdraw-amount" type="number" min="100" placeholder="Enter amount">
+      <p class="text-muted" style="font-size:.8125rem;margin-top:4px">Minimum: ₦100</p>
+    </div>
+    <p id="withdraw-err" style="color:var(--error);font-size:.875rem;margin-bottom:12px;display:none"></p>
+    <button class="btn btn--gold btn--full" onclick="submitWithdraw()">Withdraw Now</button>
+  </div>
+</div>
+
+<script src="/static/js/nexivo.js"></script>
+<script>
+const AFFILIATE_ID = '{{ affiliate_id }}';
+const REFERRAL_CODE = '{{ referral_code }}';
+let affData = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadDashboard();
+  await loadBanks();
+});
+
+async function loadDashboard() {
+  const el = document.getElementById('aff-content');
+  try {
+    const res = await fetch(`/api/v1/affiliates/${AFFILIATE_ID}/dashboard/`);
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+    affData = data;
+    renderDashboard(data);
+  } catch(e) {
+    el.innerHTML = '<p class="text-muted" style="text-align:center;padding:32px">Could not load dashboard. Please check your link or contact the event organizer.</p>';
+  }
+}
+
+function renderDashboard(data) {
+  const hasBank = data.has_bank_account;
+  document.getElementById('aff-content').innerHTML = `
+    <div class="wallet-card">
+      <div class="wallet-label">Your Balance</div>
+      <div class="wallet-balance">₦${Number(data.wallet_balance).toLocaleString()}</div>
+      <div style="color:rgba(255,255,255,.4);font-size:.875rem;margin-top:4px">
+        Total earned: ₦${Number(data.total_earned).toLocaleString()} · Withdrawn: ₦${Number(data.total_withdrawn).toLocaleString()}
+      </div>
+      <div class="ref-box">
+        <div>
+          <p style="font-size:.75rem;color:rgba(255,255,255,.4);margin-bottom:2px">Your Referral Code</p>
+          <div class="ref-code">${data.referral_code}</div>
+        </div>
+        <button onclick="copyLink('${data.affiliate_link}')" style="background:rgba(201,168,76,.2);color:#C9A84C;border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:.875rem">📋 Copy Link</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn btn--gold" style="flex:1" onclick="Modal.open('withdraw-modal')" ${!hasBank ? 'disabled' : ''}>
+          💸 Withdraw
+        </button>
+        <button class="btn btn--outline" style="flex:1;border-color:rgba(255,255,255,.2);color:#fff" onclick="Modal.open('bank-modal')">
+          🏦 ${hasBank ? 'Update Bank' : 'Add Bank Account'}
+        </button>
+      </div>
+      ${!hasBank ? '<p style="color:rgba(255,165,0,.8);font-size:.8125rem;margin-top:10px;text-align:center">⚠️ Add your bank account to enable withdrawals</p>' : ''}
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+      <div style="background:var(--surface);border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:1.5rem;font-weight:800;color:var(--gold)">${data.total_sales}</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Tickets Sold</div>
+      </div>
+      <div style="background:var(--surface);border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:1.5rem;font-weight:800;color:var(--gold)">${data.commission_rate}%</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Your Commission</div>
+      </div>
+    </div>
+
+    <!-- Event info -->
+    <div style="background:var(--surface);border-radius:var(--radius-lg);padding:20px;margin-bottom:24px">
+      <h3 style="font-weight:700;margin-bottom:8px">Event</h3>
+      <p style="color:var(--muted);font-size:.875rem">${data.event_title}</p>
+      <p style="font-size:.8125rem;color:var(--muted);margin-top:8px">
+        Your link: <span style="color:var(--gold);word-break:break-all">${data.affiliate_link}</span>
+      </p>
+    </div>
+
+    <!-- Recent commissions -->
+    <div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+        <h3 style="font-weight:700">Recent Commissions</h3>
+      </div>
+      ${data.recent_commissions.length ? `
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--surface-2)">
+            <th style="padding:10px 16px;text-align:left;font-size:.8125rem;font-weight:600">Ticket Revenue</th>
+            <th style="padding:10px 16px;text-align:left;font-size:.8125rem;font-weight:600">Your Commission</th>
+            <th style="padding:10px 16px;text-align:left;font-size:.8125rem;font-weight:600">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.recent_commissions.map(c => `
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:12px 16px;font-size:.875rem">₦${Number(c.ticket_revenue).toLocaleString()}</td>
+            <td style="padding:12px 16px;font-size:.875rem;color:var(--success);font-weight:600">+₦${Number(c.commission_amount).toLocaleString()}</td>
+            <td style="padding:12px 16px;font-size:.8125rem;color:var(--muted)">${new Date(c.created_at).toLocaleDateString()}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>` : `
+      <div style="padding:32px;text-align:center;color:var(--muted)">
+        No commissions yet. Share your link to start earning 🔥
+      </div>`}
+    </div>`;
+}
+
+function copyLink(link) {
+  navigator.clipboard.writeText(link).then(() => Toast.success('Link copied! 🔥'));
+}
+
+async function loadBanks() {
+  try {
+    const r = await fetch('https://api.paystack.co/bank?country=nigeria&perPage=200');
+    const data = await r.json();
+    const select = document.getElementById('bank-select');
+    (data.data || []).forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.code; opt.textContent = b.name;
+      select.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function saveBankAccount() {
+  const bankCode = document.getElementById('bank-select').value;
+  const accountNumber = document.getElementById('bank-acct').value.trim();
+  const errEl = document.getElementById('bank-err');
+  errEl.style.display = 'none';
+
+  if (!bankCode) { errEl.textContent = 'Please select a bank.'; errEl.style.display = ''; return; }
+  if (!accountNumber || accountNumber.length !== 10) { errEl.textContent = 'Enter a valid 10-digit account number.'; errEl.style.display = ''; return; }
+
+  try {
+    const res = await fetch(`/api/v1/affiliates/${AFFILIATE_ID}/bank-account/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bank_code: bankCode, account_number: accountNumber }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw data;
+    Toast.success(`Bank account saved: ${data.account_name} ✅`);
+    Modal.close('bank-modal');
+    await loadDashboard();
+  } catch(err) {
+    errEl.textContent = err?.detail || 'Could not save bank account.';
+    errEl.style.display = '';
+  }
+}
+
+async function submitWithdraw() {
+  const amount = document.getElementById('withdraw-amount').value;
+  const errEl = document.getElementById('withdraw-err');
+  errEl.style.display = 'none';
+
+  if (!amount || Number(amount) < 100) { errEl.textContent = 'Minimum withdrawal is ₦100.'; errEl.style.display = ''; return; }
+  if (Number(amount) > Number(affData?.wallet_balance || 0)) { errEl.textContent = 'Insufficient balance.'; errEl.style.display = ''; return; }
+
+  try {
+    const res = await fetch(`/api/v1/affiliates/${AFFILIATE_ID}/withdraw/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: Number(amount) }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw data;
+    Toast.success(data.detail || 'Withdrawal successful!');
+    Modal.close('withdraw-modal');
+    document.getElementById('withdraw-amount').value = '';
+    await loadDashboard();
+  } catch(err) {
+    errEl.textContent = err?.detail || 'Withdrawal failed. Please try again.';
+    errEl.style.display = '';
+  }
+}
+</script>
+{% endblock %}

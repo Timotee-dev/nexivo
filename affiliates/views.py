@@ -133,6 +133,47 @@ class EventAffiliateDetailView(APIView):
         return Response({"detail": "Affiliate removed."}, status=204)
 
 
+# ── Individual affiliate dashboard (no login needed) ─────────────────────────
+
+class AffiliateSelfDashboardView(APIView):
+    """
+    GET /api/v1/affiliates/<affiliate_id>/dashboard/
+    Public endpoint — affiliate views their own stats using their unique ID
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, affiliate_id):
+        try:
+            affiliate = EventAffiliate.objects.select_related('event').get(id=affiliate_id)
+        except EventAffiliate.DoesNotExist:
+            return Response({"detail": "Affiliate not found."}, status=404)
+
+        recent_commissions = affiliate.commissions.order_by('-created_at')[:10]
+
+        return Response({
+            "referral_code": affiliate.referral_code,
+            "affiliate_name": affiliate.affiliate_name,
+            "event_title": affiliate.event.title,
+            "event_slug": affiliate.event.slug,
+            "commission_rate": str(affiliate.commission_rate),
+            "wallet_balance": str(affiliate.wallet_balance),
+            "total_earned": str(affiliate.total_earned),
+            "total_withdrawn": str(affiliate.total_withdrawn),
+            "total_sales": affiliate.commissions.count(),
+            "has_bank_account": bool(affiliate.account_number),
+            "affiliate_link": affiliate.affiliate_link,
+            "recent_commissions": [
+                {
+                    "ticket_revenue": str(c.ticket_revenue),
+                    "commission_amount": str(c.commission_amount),
+                    "created_at": c.created_at.isoformat(),
+                    "status": c.status,
+                }
+                for c in recent_commissions
+            ],
+        })
+
+
 # ── Affiliate views their own dashboard ──────────────────────────────────────
 
 class AffiliateDashboardView(APIView):
