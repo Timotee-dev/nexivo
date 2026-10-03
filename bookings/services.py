@@ -107,6 +107,7 @@ def create_booking(*, customer, event_id, items, coupon_code=None, affiliate_cod
         customer_name=f"{customer.first_name} {customer.last_name}".strip() or customer.username,
         customer_email=customer.email,
         customer_phone=customer.phone_number,
+        affiliate_code=affiliate_code or '',
     )
 
     for ticket_type, quantity, unit_price, line_total in booking_items_data:
