@@ -280,7 +280,7 @@ const EventDetail = (() => {
       const payload = {
         event_id: eventId, items, gateway,
         coupon_code: couponCode || undefined,
-        affiliate_code: localStorage.getItem(`aff_${document.getElementById('event-slug')?.value}`) || undefined,
+        affiliate_code: localStorage.getItem(`aff_${document.getElementById('event-slug')?.value || eventId}`) || undefined,
       };
       if (guestDetails) {
         payload.guest_first_name = guestDetails.first_name;
