@@ -16,13 +16,29 @@ from events.models import Event, TicketType
 
 RESERVATION_WINDOW_MINUTES = 15
 
+# Paystack's fee: 1.5% + ₦100 flat (capped at ₦2000)
+PAYSTACK_PERCENT = Decimal("1.5")
+PAYSTACK_FIXED = Decimal("100")
+PAYSTACK_CAP = Decimal("2000")
+
+# Nexivo's service fee charged to customer
+NEXIVO_SERVICE_FEE_PERCENT = Decimal("2")
+
 
 def calculate_processing_fee(subtotal: Decimal) -> Decimal:
-    settings_row = PlatformSettings.get_solo()
-    percent = Decimal(str(settings_row.payment_processing_fee_percent))
-    fixed = Decimal(str(settings_row.payment_processing_fee_fixed))
-    percent_fee = (subtotal * percent) / Decimal("100")
-    return (percent_fee + fixed).quantize(Decimal("0.01"))
+    """
+    Total fee added to customer's bill:
+    - Paystack fee: 1.5% + ₦100 (capped at ₦2000)
+    - Nexivo service fee: 2% of subtotal
+    This ensures host gets their full amount and Paystack gets theirs,
+    all funded by the customer.
+    """
+    paystack_fee = (subtotal * PAYSTACK_PERCENT / Decimal("100")) + PAYSTACK_FIXED
+    paystack_fee = min(paystack_fee, PAYSTACK_CAP)
+
+    nexivo_service_fee = subtotal * NEXIVO_SERVICE_FEE_PERCENT / Decimal("100")
+
+    return (paystack_fee + nexivo_service_fee).quantize(Decimal("0.01"))
 
 
 def apply_coupon(coupon, subtotal: Decimal) -> Decimal:
@@ -160,7 +176,7 @@ def confirm_booking(booking: Booking):
     try:
         from decimal import Decimal
         from marketers.services import credit_marketer_commission
-        nexivo_cut = booking.total_amount * Decimal('0.08')
+        nexivo_cut = booking.subtotal * Decimal('0.08')
         credit_marketer_commission(booking, nexivo_cut)
     except Exception as e:
         import logging
