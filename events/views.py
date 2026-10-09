@@ -271,7 +271,6 @@ class MyEventsView(generics.ListCreateAPIView):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         import json
-        # Parse ticket_types without copying request.data (avoids file pickle error)
         tt_raw = request.data.get('ticket_types')
         ticket_types = []
         if isinstance(tt_raw, str):
@@ -286,14 +285,12 @@ class MyEventsView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        from rest_framework.response import Response
         return Response(serializer.data, status=201)
 
     @transaction.atomic
     def perform_create(self, serializer):
         event = serializer.save()
 
-        # Save ticket types parsed in create()
         from events.models import TicketType
         for tt_data in getattr(self.request, '_ticket_types_parsed', []):
             if not tt_data.get('name'):
@@ -330,6 +327,15 @@ class EventPublishView(APIView):
         if event.status not in (Event.Status.DRAFT, Event.Status.PENDING_REVIEW):
             return Response({"detail": f"Cannot publish an event with status '{event.status}'."}, status=400)
 
+        # Block publishing paid events if host has no bank account saved
+        has_paid_tickets = event.ticket_types.filter(is_free=False, price__gt=0).exists()
+        if has_paid_tickets and not request.user.is_super_admin:
+            host_profile = getattr(request.user, "host_profile", None)
+            if not host_profile or not host_profile.paystack_subaccount_code:
+                return Response(
+                    {"detail": "Please save your bank account before publishing a paid event. Go to Dashboard → Bank Account."},
+                    status=400,
+                )
 
         event.publish()
         return Response(EventDetailSerializer(event, context={"request": request}).data)
