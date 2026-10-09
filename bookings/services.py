@@ -160,7 +160,7 @@ def confirm_booking(booking: Booking):
     try:
         from decimal import Decimal
         from marketers.services import credit_marketer_commission
-        nexivo_cut = booking.total_amount * Decimal('0.05')
+        nexivo_cut = booking.total_amount * Decimal('0.08')
         credit_marketer_commission(booking, nexivo_cut)
     except Exception as e:
         import logging
