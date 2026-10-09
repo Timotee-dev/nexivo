@@ -88,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ── Helpers ─────────────────────────────────────────────────────────── */
   function dashboardUrl(role) {
+    const next = new URLSearchParams(location.search).get('next');
+    if (next) return next;
     if (role === 'super_admin') return '/admin-dashboard/';
     if (role === 'host') return '/dashboard/host/';
     return '/dashboard/customer/';
