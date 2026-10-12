@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Load REAL analytics from API ──────────────────────
   let stats = null;
   try {
-    stats = await Api.get('/analytics/');
+    stats = await Api.get('/analytics/host/');
   } catch(e) {
     console.warn('Analytics API error:', e);
   }

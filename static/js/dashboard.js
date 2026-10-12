@@ -142,6 +142,39 @@ async function publishEvent(slug, btn) {
   }
 }
 
+async function deleteEvent(slug, title) {
+  // Show inline confirmation instead of browser confirm() which is blocked in artifacts
+  const confirmed = await new Promise(resolve => {
+    const backdrop = document.createElement('div');
+    backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    backdrop.innerHTML = `
+      <div style="background:var(--surface-1,#1c1c1c);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:32px;max-width:400px;width:100%;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:12px">🗑️</div>
+        <h3 style="margin:0 0 8px;font-size:1.125rem">Delete Event?</h3>
+        <p style="color:var(--text-mute,#888);font-size:.875rem;margin:0 0 24px">"${title}" will be permanently deleted along with all its ticket types. This cannot be undone.</p>
+        <div style="display:flex;gap:12px;justify-content:center">
+          <button id="_del-cancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:transparent;color:inherit;cursor:pointer;font-size:.875rem">Cancel</button>
+          <button id="_del-confirm" style="flex:1;padding:10px;border-radius:8px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-size:.875rem;font-weight:600">Yes, Delete</button>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+    backdrop.querySelector('#_del-cancel').onclick  = () => { backdrop.remove(); resolve(false); };
+    backdrop.querySelector('#_del-confirm').onclick = () => { backdrop.remove(); resolve(true); };
+    backdrop.onclick = e => { if (e.target === backdrop) { backdrop.remove(); resolve(false); } };
+  });
+
+  if (!confirmed) return;
+
+  try {
+    await Api.delete(`/events/${slug}/`);
+    Toast.success('Event deleted.');
+    loadHostEvents();
+  } catch(err) {
+    Toast.error(err?.detail || 'Could not delete event. It may have active bookings.');
+  }
+}
+window.deleteEvent = deleteEvent;
+
 
 /* ── Customer tickets ────────────────────────────────────────────────────── */
 async function loadMyTickets() {
