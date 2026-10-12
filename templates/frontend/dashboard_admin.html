@@ -3,31 +3,74 @@
 {% block content %}
 <div class="dashboard" id="admin-dashboard">
   <aside class="sidebar">
+    <div style="padding:20px 16px 8px"><span class="font-display text-gold fw-700" style="font-size:1.25rem;letter-spacing:-.02em">Nexivo</span><span class="text-muted" style="font-size:.75rem;display:block;margin-top:2px">Admin</span></div>
     <div class="sidebar__section">
       <p class="sidebar__label">Platform</p>
-      <a href="/admin-dashboard/" class="sidebar__link sidebar__link--active">📊 Overview</a>
-      <a href="/admin/accounts/user/" class="sidebar__link">👥 Users</a>
-      <a href="/admin/events/event/" class="sidebar__link">🎪 Events</a>
-      <a href="/admin/bookings/booking/" class="sidebar__link">📋 Bookings</a>
+      <a href="/admin-dashboard/" class="sidebar__link sidebar__link--active">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Overview
+      </a>
+      <a href="/admin/accounts/user/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+      </a>
+      <a href="/admin/events/event/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Events
+      </a>
+      <a href="/admin/bookings/booking/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Bookings
+      </a>
     </div>
     <div class="sidebar__section">
       <p class="sidebar__label">Finance</p>
-      <a href="/admin/payments/payment/" class="sidebar__link">💳 Payments</a>
-      <a href="/admin/payouts/payout/" class="sidebar__link">🏦 Payouts</a>
-      <a href="/admin/payments/refund/" class="sidebar__link">↩ Refunds</a>
-      <a href="/admin/disputes/dispute/" class="sidebar__link">⚠ Disputes</a>
+      <a href="/admin/payments/payment/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Payments
+      </a>
+      <a href="/admin/payouts/payout/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Payouts
+      </a>
+      <a href="/admin/payments/refund/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        Refunds
+      </a>
+      <a href="/admin/disputes/dispute/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Disputes
+      </a>
     </div>
     <div class="sidebar__section">
       <p class="sidebar__label">Content</p>
-      <a href="/admin/events/category/" class="sidebar__link">🏷 Categories</a>
-      <a href="/admin/coupons/coupon/" class="sidebar__link">🎟 Coupons</a>
-      <a href="/admin/reviews/review/" class="sidebar__link">⭐ Reviews</a>
-      <a href="/admin/core/announcement/" class="sidebar__link">📢 Announcements</a>
+      <a href="/admin/events/category/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        Categories
+      </a>
+      <a href="/admin/coupons/coupon/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"/></svg>
+        Coupons
+      </a>
+      <a href="/admin/reviews/review/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Reviews
+      </a>
+      <a href="/admin/core/announcement/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Announcements
+      </a>
     </div>
     <div class="sidebar__section">
       <p class="sidebar__label">System</p>
-      <a href="/admin/core/platformsettings/" class="sidebar__link">⚙ Settings</a>
-      <a href="/admin/accounts/auditlog/" class="sidebar__link">📜 Audit Log</a>
+      <a href="/admin/core/platformsettings/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Settings
+      </a>
+      <a href="/admin/accounts/auditlog/" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Audit Log
+      </a>
     </div>
   </aside>
 

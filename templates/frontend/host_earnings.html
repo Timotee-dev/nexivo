@@ -4,13 +4,30 @@
 <div class="dashboard">
   {% include "frontend/_host_sidebar.html" with active="earnings" %}
   <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:28px">Earnings</h1>
+    <div class="flex-between" style="margin-bottom:28px">
+      <div>
+        <h1 class="font-display" style="font-size:1.75rem">Earnings</h1>
+        <p class="text-muted">Your revenue and transaction history</p>
+      </div>
+    </div>
 
     <div class="stat-grid" style="margin-bottom:32px">
-      <div class="stat-card stat-card--gold"><div class="stat-card__label">Total Revenue</div><div class="stat-card__value" id="e-total">—</div></div>
-      <div class="stat-card"><div class="stat-card__label">Last 30 Days</div><div class="stat-card__value" id="e-30d">—</div></div>
-      <div class="stat-card"><div class="stat-card__label">Current Balance</div><div class="stat-card__value" id="e-balance">—</div></div>
-      <div class="stat-card"><div class="stat-card__label">Tickets Sold</div><div class="stat-card__value" id="e-tickets">—</div></div>
+      <div class="stat-card stat-card--gold">
+        <div class="stat-card__label">Total Revenue</div>
+        <div class="stat-card__value" id="e-total">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Last 30 Days</div>
+        <div class="stat-card__value" id="e-30d">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Current Balance</div>
+        <div class="stat-card__value" id="e-balance">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Tickets Sold</div>
+        <div class="stat-card__value" id="e-tickets">—</div>
+      </div>
     </div>
 
     <div class="chart-card" style="margin-bottom:28px">
@@ -21,6 +38,7 @@
     <div class="chart-card">
       <div class="flex-between" style="margin-bottom:16px">
         <div class="chart-card__title">Transaction Ledger</div>
+        <a href="/dashboard/payouts/" class="btn btn--ghost btn--sm">View Payouts →</a>
       </div>
       <div class="table-wrap">
         <table class="table">

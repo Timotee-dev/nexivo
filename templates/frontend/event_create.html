@@ -106,10 +106,10 @@
       <button class="btn btn--outline btn--sm" onclick="addTicket()">+ Add Ticket Type</button>
     </div>
     <div id="ticket-list"></div>
-    <div id="no-tickets" style="text-align:center;padding:32px;color:var(--muted)">
-      <div style="font-size:2rem;margin-bottom:8px">🎫</div>
-      <p>No ticket types yet.</p>
-      <p style="font-size:.875rem;margin-top:4px">Click <strong>Add Ticket Type</strong> to get started.</p>
+    <div id="no-tickets" style="text-align:center;padding:40px;color:var(--muted)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto 12px;display:block;opacity:.6"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"/><path d="M13 5v14"/></svg>
+      <p class="fw-600" style="margin-bottom:4px">No ticket types yet</p>
+      <p style="font-size:.875rem">Click <strong>Add Ticket Type</strong> to get started</p>
     </div>
   </div>
 
@@ -120,7 +120,7 @@
          onclick="document.getElementById('banner-file').click()"
          style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:48px;text-align:center;cursor:pointer;transition:border-color .2s">
       <div id="banner-placeholder">
-        <div style="font-size:2.5rem;margin-bottom:10px">🖼</div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto 12px;display:block;opacity:.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <p style="font-weight:600">Click to upload banner image</p>
         <p style="color:var(--muted);font-size:.875rem;margin-top:4px">JPG, PNG or WebP · Recommended 1600×900px</p>
       </div>

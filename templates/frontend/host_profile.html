@@ -4,7 +4,10 @@
 <div class="dashboard">
   {% include "frontend/_host_sidebar.html" with active="profile" %}
   <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:28px">My Profile</h1>
+    <div style="margin-bottom:28px">
+      <h1 class="font-display" style="font-size:1.75rem">My Profile</h1>
+      <p class="text-muted">Manage your personal and business details</p>
+    </div>
     <div style="max-width:560px">
       <div class="chart-card">
         <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:20px">Personal Information</h2>
@@ -15,12 +18,14 @@
         <div class="form-group"><label class="form-label">Bio</label><textarea class="form-textarea" id="p-bio" placeholder="Tell attendees about yourself or your organisation…" style="min-height:100px"></textarea></div>
         <button class="btn btn--primary" onclick="saveProfile()">Save Changes</button>
       </div>
+
       <div class="chart-card mt-24">
         <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:20px">Business Details</h2>
         <div class="form-group"><label class="form-label">Business / Organisation Name</label><input class="form-input" id="hp-biz-name" placeholder="Your event company or organisation"></div>
         <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="hp-biz-desc" style="min-height:80px"></textarea></div>
         <button class="btn btn--outline" onclick="saveHostProfile()">Save Business Details</button>
       </div>
+
       <div class="chart-card mt-24">
         <h2 style="font-size:1.125rem;font-weight:600;margin-bottom:16px">Change Password</h2>
         <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" id="pw-old"></div>

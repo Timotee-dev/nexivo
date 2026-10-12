@@ -4,8 +4,10 @@
 <div class="dashboard">
   {% include "frontend/_customer_sidebar.html" with active="tickets" %}
   <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">My Tickets</h1>
-    <p class="text-muted" style="margin-bottom:28px">Your upcoming and past event tickets</p>
+    <div style="margin-bottom:28px">
+      <h1 class="font-display" style="font-size:1.75rem">My Tickets</h1>
+      <p class="text-muted">Your upcoming and past event tickets</p>
+    </div>
     <div id="my-tickets"><div class="spinner" style="margin:40px auto"></div></div>
   </main>
 </div>
@@ -38,7 +40,7 @@
     <img id="qr-modal-img" style="width:220px;height:auto;margin:0 auto;border-radius:8px;display:block">
     <p class="text-muted" style="font-size:.8125rem;margin-top:12px">Show this QR code at the entrance</p>
     <a id="qr-modal-download" href="#" download class="btn btn--gold btn--sm" style="margin-top:12px;display:inline-flex">
-      ⬇ Download QR Code
+      Download QR Code
     </a>
   </div>
 </div>
@@ -60,11 +62,11 @@ async function loadTickets() {
 
     if (!tickets.length) {
       el.innerHTML = `
-        <div style="text-align:center;padding:56px 20px;color:var(--muted)">
-          <div style="font-size:3rem;margin-bottom:12px">🎫</div>
-          <h3 style="font-size:1.125rem;color:var(--text);margin-bottom:6px">No tickets yet</h3>
-          <p>Book an event to get your first ticket</p>
-          <a href="/events/" class="btn btn--gold" style="margin-top:16px;display:inline-flex">Browse Events</a>
+        <div style="text-align:center;padding:64px 20px;background:var(--surface);border-radius:var(--radius-lg)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:56px;height:56px;margin:0 auto 16px;display:block;opacity:.3"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
+          <h3 style="font-size:1.125rem;margin-bottom:6px">No tickets yet</h3>
+          <p class="text-muted" style="margin-bottom:16px">Book an event to get your first ticket</p>
+          <a href="/events/" class="btn btn--gold">Browse Events</a>
         </div>`;
       return;
     }
@@ -76,54 +78,54 @@ async function loadTickets() {
       const isPast = event.start_datetime && new Date(event.start_datetime) < new Date();
 
       return `
-        <div style="background:var(--bg);border:1.5px solid ${isUsed ? 'var(--border)' : 'var(--gold)'};border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;opacity:${isUsed ? '.6' : '1'}">
-          <div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div class="ticket-card" style="margin-bottom:16px;opacity:${isUsed ? '.65' : '1'}">
+          <div class="ticket-card__event">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
               <span style="font-size:1.0625rem;font-weight:700">${event.title || 'Event'}</span>
-              <span style="padding:2px 10px;border-radius:40px;font-size:.75rem;font-weight:600;background:${isUsed ? 'var(--surface-2)' : isPast ? 'var(--surface-2)' : '#e8f5e9'};color:${isUsed ? 'var(--muted)' : isPast ? 'var(--muted)' : 'var(--success)'}">
+              <span class="badge badge--${isUsed ? 'grey' : isPast ? 'grey' : 'green'}">
                 ${isUsed ? 'Used' : isPast ? 'Past' : 'Valid'}
               </span>
             </div>
-            <div style="color:var(--muted);font-size:.875rem;margin-bottom:6px">
-              ${event.start_datetime ? '📅 ' + new Date(event.start_datetime).toLocaleDateString('en-NG', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) : ''}
-              ${event.city ? ' &nbsp;📍 ' + (event.venue_name || event.city) : ''}
+            <div class="ticket-card__meta">
+              ${event.start_datetime ? '<span>' + new Date(event.start_datetime).toLocaleDateString('en-NG', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) + '</span>' : ''}
+              ${event.city ? '<span>' + (event.venue_name || event.city) + '</span>' : ''}
             </div>
-            <div style="color:var(--muted);font-size:.875rem;margin-bottom:12px">
-              ${t.ticket_type?.name || ''} &nbsp;·&nbsp;
-              <span style="font-family:monospace;background:var(--surface-2);padding:2px 8px;border-radius:4px;font-size:.8125rem">${t.ticket_code}</span>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              ${t.qr_image ? `
-                <button class="btn btn--gold btn--sm" onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')">
-                  📱 Show QR Code
-                </button>
-                <a href="/api/v1/tickets/${t.ticket_code}/download-qr/" download="nexivo-ticket-${t.ticket_code}.png" class="btn btn--outline btn--sm">
-                  ⬇ Download QR
-                </a>` : ''}
-              ${t.pdf_file ? `
-                <a href="${t.pdf_file}" download class="btn btn--outline btn--sm">
-                  📄 Download PDF
-                </a>` : ''}
-              ${!isUsed && !isPast ? `
-                <button class="btn btn--outline btn--sm" onclick="openTransfer('${t.ticket_code}')">
-                  ↗ Transfer
-                </button>` : ''}
+            <div style="margin-top:8px;font-size:.875rem" class="text-muted">
+              ${t.ticket_type?.name || ''}
+              &nbsp;·&nbsp;
+              <code style="background:var(--surface-2);padding:2px 8px;border-radius:4px;font-size:.8125rem">${t.ticket_code}</code>
             </div>
           </div>
           ${t.qr_image ? `
-            <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
+            <div class="ticket-card__qr">
               <img src="${t.qr_image}"
                    style="width:80px;height:80px;border-radius:8px;cursor:pointer;border:2px solid var(--border);flex-shrink:0"
                    onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')"
                    alt="QR Code"
                    onerror="this.style.display='none'">
-              <p style="font-size:.75rem;color:var(--muted)">Tap QR to enlarge<br>Show at entrance</p>
             </div>` : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--border)">
+            ${t.qr_image ? `
+              <button class="btn btn--gold btn--sm" onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')">
+                Show QR Code
+              </button>
+              <a href="/api/v1/tickets/${t.ticket_code}/download-qr/" download="nexivo-ticket-${t.ticket_code}.png" class="btn btn--outline btn--sm">
+                Download QR
+              </a>` : ''}
+            ${t.pdf_file ? `
+              <a href="${t.pdf_file}" download class="btn btn--outline btn--sm">
+                Download PDF
+              </a>` : ''}
+            ${!isUsed && !isPast ? `
+              <button class="btn btn--outline btn--sm" onclick="openTransfer('${t.ticket_code}')">
+                Transfer
+              </button>` : ''}
+          </div>
         </div>`;
     }).join('');
 
   } catch (e) {
-    el.innerHTML = '<p style="color:var(--muted)">Could not load tickets. Please refresh.</p>';
+    el.innerHTML = '<p class="text-muted text-center" style="padding:32px">Could not load tickets. Please refresh.</p>';
   }
 }
 

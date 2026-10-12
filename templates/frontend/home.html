@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Discover Events{% endblock %}
+{% block title %}Discover Events — Nexivo{% endblock %}
 {% block content %}
 
 <section class="hero">
-  <div class="hero__eyebrow">Nigeria's Premium Event Platform</div>
-  <h1 class="hero__title">Experiences worth <em>showing up for</em></h1>
-  <p class="hero__sub">Discover, book, and attend the events that matter — concerts, conferences, workshops, and more.</p>
+  <div class="hero__eyebrow">Nigeria's Premier Event Platform</div>
+  <h1 class="hero__title">Real Events.<br><em>Unforgettable Moments.</em></h1>
+  <p class="hero__sub">Discover, book, and experience the events worth showing up for — concerts, conferences, weddings, and more.</p>
   <div class="hero__actions">
-    <a href="/events/" class="btn btn--gold btn--lg">Browse Events</a>
-    <a href="/auth/register/?role=host" class="btn btn--outline btn--lg" style="border-color:rgba(255,255,255,.4);color:#fff">Host an Event</a>
+    <a href="/events/" class="btn btn--gold btn--lg">Explore Events</a>
+    <a href="/auth/register/?role=host" class="btn btn--outline btn--lg">Host an Event</a>
   </div>
   <div class="hero__search">
-    <input type="text" placeholder="Search events, artists, venues…" id="hero-search" autocomplete="off"
+    <input type="text" placeholder="Search events, artists, venues, cities…" id="hero-search" autocomplete="off"
            onkeydown="if(event.key==='Enter') window.location='/events/?search='+this.value">
     <button class="btn btn--gold" onclick="window.location='/events/?search='+document.getElementById('hero-search').value">Search</button>
   </div>
@@ -19,62 +19,93 @@
 
 <div class="filter-bar">
   <div class="filter-bar__inner" id="category-chips">
-    <span class="filter-chip filter-chip--active" data-category="">All</span>
+    <span class="filter-chip filter-chip--active" data-category="">All Events</span>
   </div>
 </div>
 
 <div class="container">
+
   <section class="section">
     <div class="section__header">
       <h2 class="section__title section__title--serif">Featured Events</h2>
       <a href="/events/?is_featured=true" class="btn btn--ghost btn--sm">View all →</a>
     </div>
-    <div class="grid-3" id="featured-grid"><div class="spinner" style="margin:40px auto"></div></div>
+    <div class="grid-3" id="featured-grid">
+      <div style="grid-column:1/-1;display:flex;justify-content:center;padding:40px 0"><div class="spinner"></div></div>
+    </div>
   </section>
 
   <section class="section" style="padding-top:0">
     <div class="section__header">
-      <h2 class="section__title">Trending this week</h2>
+      <h2 class="section__title">Trending This Week</h2>
       <a href="/events/" class="btn btn--ghost btn--sm">All events →</a>
     </div>
-    <div class="grid-4" id="trending-grid"><div class="spinner" style="margin:40px auto"></div></div>
+    <div class="grid-4" id="trending-grid">
+      <div style="grid-column:1/-1;display:flex;justify-content:center;padding:40px 0"><div class="spinner"></div></div>
+    </div>
   </section>
 
-  <section class="section" style="background:var(--surface-2);border-radius:var(--radius-lg);padding:56px 48px;margin-bottom:64px">
-    <div class="grid-2" style="align-items:center;gap:56px">
-      <div>
-        <p style="font-size:.875rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:16px">For Event Organisers</p>
-        <h2 class="font-display" style="font-size:2rem;margin-bottom:16px">Sell tickets in minutes</h2>
-        <p class="text-sub" style="margin-bottom:28px;line-height:1.8">Create your event, set ticket tiers, and start selling. Nexivo handles payments and automatically transfers your earnings. 95% of revenue goes directly to you.</p>
-        <div class="flex gap-16" style="flex-wrap:wrap">
-          <div><span style="font-size:1.75rem;font-weight:700;font-family:var(--font-display)">95%</span><p class="text-muted" style="font-size:.875rem">Earnings to you</p></div>
-          <div><span style="font-size:1.75rem;font-weight:700;font-family:var(--font-display)">3</span><p class="text-muted" style="font-size:.875rem">Payment gateways</p></div>
-          <div><span style="font-size:1.75rem;font-weight:700;font-family:var(--font-display)">∞</span><p class="text-muted" style="font-size:.875rem">Ticket types</p></div>
-        </div>
-        <a href="/auth/register/?role=host" class="btn btn--primary btn--lg" style="margin-top:28px">Start Hosting →</a>
-      </div>
-      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:32px;border:1px solid var(--border)">
-        <div style="display:flex;flex-direction:column;gap:16px">
-          {% for label in steps %}
-          <div style="display:flex;align-items:center;gap:14px">
-            <span style="width:32px;height:32px;border-radius:50%;background:var(--gold);color:#111;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.875rem;flex-shrink:0">{{ forloop.counter }}</span>
-            <span class="text-sub" style="font-size:.9375rem">{{ label }}</span>
+  <!-- Organizer CTA -->
+  <section class="section" style="padding-top:0">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:56px 52px;position:relative;overflow:hidden">
+      <!-- Subtle gold accent top-right -->
+      <div style="position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(212,175,70,.12) 0%,transparent 70%);pointer-events:none"></div>
+
+      <div class="grid-2" style="align-items:center;gap:60px">
+        <div>
+          <p style="font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;display:inline-flex;align-items:center;gap:8px">
+            <span style="display:block;width:24px;height:1px;background:var(--gold)"></span>
+            For Event Organisers
+          </p>
+          <h2 class="font-display" style="font-size:2.25rem;font-weight:700;line-height:1.15;margin-bottom:16px;letter-spacing:-.02em">
+            Sell tickets.<br>Keep what you earn.
+          </h2>
+          <p class="text-sub" style="margin-bottom:32px;line-height:1.8;font-size:.9375rem">
+            Create your event, configure ticket tiers, and start selling in minutes. Nexivo handles payments, delivers digital tickets, and gives you powerful tools to manage your event — from first sale to check-in.
+          </p>
+          <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:36px">
+            <div>
+              <span style="font-size:2rem;font-weight:700;font-family:var(--font-display);color:var(--gold)">92%</span>
+              <p class="text-muted" style="font-size:.8125rem;margin-top:2px">Revenue to you</p>
+            </div>
+            <div>
+              <span style="font-size:2rem;font-weight:700;font-family:var(--font-display);color:var(--text)">3</span>
+              <p class="text-muted" style="font-size:.8125rem;margin-top:2px">Payment gateways</p>
+            </div>
+            <div>
+              <span style="font-size:2rem;font-weight:700;font-family:var(--font-display);color:var(--text)">∞</span>
+              <p class="text-muted" style="font-size:.8125rem;margin-top:2px">Ticket types</p>
+            </div>
           </div>
-          {% endfor %}
+          <a href="/auth/register/?role=host" class="btn btn--gold btn--lg">Start Hosting →</a>
+        </div>
+
+        <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:32px;border:1px solid var(--border)">
+          <p style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mute);margin-bottom:20px">How it works</p>
+          <div style="display:flex;flex-direction:column;gap:0">
+            {% for label in steps %}
+            <div style="display:flex;align-items:flex-start;gap:16px;padding:14px 0;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+              <span style="width:30px;height:30px;border-radius:50%;background:var(--gold);color:#0a0a0a;font-weight:800;font-size:.8125rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">{{ forloop.counter }}</span>
+              <span class="text-sub" style="font-size:.9375rem;line-height:1.5">{{ label }}</span>
+            </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </div>
   </section>
-</div>
+
+</div><!-- /container -->
 
 <script src="/static/js/events.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-  // Load categories into chips
+
+  /* ── Category chips ─────────────────────────── */
   try {
     const cats = await Api.get('/events/categories/', true);
     const bar = document.getElementById('category-chips');
-    cats.results.forEach(c => {
+    (cats.results || []).forEach(c => {
       const chip = document.createElement('span');
       chip.className = 'filter-chip';
       chip.dataset.category = c.slug;
@@ -84,38 +115,75 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       bar.appendChild(chip);
     });
-  } catch {}
+  } catch (_) {}
 
-  // Load featured
+  /* ── Featured events (3 cards) ──────────────── */
   try {
     const data = await Api.get('/events/featured/?page_size=3', true);
     const grid = document.getElementById('featured-grid');
-    if (!data.results.length) {
-      grid.innerHTML = '<p class="text-muted">No featured events right now.</p>';
+    if (!data.results || !data.results.length) {
+      grid.innerHTML = '<p class="text-muted" style="padding:32px 0">No featured events right now. Check back soon.</p>';
     } else {
       grid.innerHTML = data.results.map(renderCard).join('');
     }
-  } catch { document.getElementById('featured-grid').innerHTML = ''; }
+  } catch (_) {
+    document.getElementById('featured-grid').innerHTML = '<p class="text-muted" style="padding:32px 0">Unable to load featured events.</p>';
+  }
 
-  // Load trending
+  /* ── Trending events (4 cards) ──────────────── */
   try {
     const data = await Api.get('/events/trending/?page_size=4', true);
-    document.getElementById('trending-grid').innerHTML = data.results.map(renderCard).join('');
-  } catch { document.getElementById('trending-grid').innerHTML = ''; }
+    const grid = document.getElementById('trending-grid');
+    if (!data.results || !data.results.length) {
+      grid.innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No trending events right now.</p>';
+    } else {
+      grid.innerHTML = data.results.map(renderCard).join('');
+    }
+  } catch (_) {
+    document.getElementById('trending-grid').innerHTML = '';
+  }
 
+  /* ── Card renderer ──────────────────────────── */
   function renderCard(event) {
-    const price = event.min_price != null
-      ? (parseFloat(event.min_price) === 0 ? 'Free' : `From ₦${Number(event.min_price).toLocaleString()}`)
-      : 'Free';
-    const date = new Date(event.start_datetime).toLocaleDateString('en-NG', {day:'numeric',month:'short',year:'numeric'});
-    return `<a href="/events/${event.slug}/" class="card" style="display:block">
-      <div class="card__media"><img src="${event.banner_image||'/static/img/event-placeholder.svg'}" alt="${event.title}" loading="lazy"></div>
-      <div class="card__body">
-        ${event.is_featured ? '<span class="card__badge card__badge--featured">Featured</span>' : ''}
-        <h3 class="card__title">${event.title}</h3>
-        <div class="card__meta"><span>📅 ${date}</span>${event.city?`<span>📍 ${event.city}</span>`:''}</div>
-        <div class="card__price">${price}</div>
-      </div></a>`;
+    const isFree   = event.min_price == null || parseFloat(event.min_price) === 0;
+    const price    = isFree ? 'Free' : `From ₦${Number(event.min_price).toLocaleString()}`;
+    const priceClass = isFree ? 'style="color:var(--success);font-weight:700"' : 'style="color:var(--gold);font-weight:700"';
+
+    const dateObj  = new Date(event.start_datetime);
+    const dateStr  = dateObj.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
+    const timeStr  = dateObj.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
+
+    const img      = event.banner_image || '/static/img/event-placeholder.svg';
+    const category = event.category_name || '';
+
+    return `
+      <a href="/events/${event.slug}/" class="card" style="display:block;text-decoration:none">
+        <div class="card__media">
+          <img src="${escapeHtml(img)}" alt="${escapeHtml(event.title)}" loading="lazy">
+        </div>
+        <div class="card__body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+            ${event.is_featured ? '<span class="card__badge card__badge--featured">Featured</span>' : category ? `<span class="card__badge">${escapeHtml(category)}</span>` : '<span></span>'}
+            ${isFree ? '<span class="card__badge card__badge--free">Free</span>' : ''}
+          </div>
+          <h3 class="card__title">${escapeHtml(event.title)}</h3>
+          <div class="card__meta">
+            <span>📅 ${escapeHtml(dateStr)}</span>
+            <span>🕐 ${escapeHtml(timeStr)}</span>
+            ${event.city ? `<span>📍 ${escapeHtml(event.city)}</span>` : ''}
+          </div>
+          <div class="card__price" ${priceClass}>${price}</div>
+        </div>
+      </a>`;
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 });
 </script>

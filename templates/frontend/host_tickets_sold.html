@@ -4,13 +4,20 @@
 <div class="dashboard">
   {% include "frontend/_host_sidebar.html" with active="tickets" %}
   <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">Tickets Sold</h1>
-    <p class="text-muted" style="margin-bottom:28px">All confirmed attendees across your events</p>
+    <div class="flex-between" style="margin-bottom:28px">
+      <div>
+        <h1 class="font-display" style="font-size:1.75rem">Tickets Sold</h1>
+        <p class="text-muted">All confirmed attendees across your events</p>
+      </div>
+    </div>
 
-    <div class="form-group" style="max-width:320px;margin-bottom:24px">
-      <select class="form-select" id="event-filter">
-        <option value="">All Events</option>
-      </select>
+    <div class="chart-card" style="margin-bottom:24px;padding:16px 20px">
+      <div class="form-group" style="max-width:320px;margin:0">
+        <label class="form-label">Filter by Event</label>
+        <select class="form-select" id="event-filter">
+          <option value="">All Events</option>
+        </select>
+      </div>
     </div>
 
     <div class="table-wrap">

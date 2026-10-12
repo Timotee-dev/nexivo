@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/static/img/nexivo_favicon.svg">
@@ -12,11 +12,12 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9944727816762967"
      crossorigin="anonymous"></script>
   <style>
+    /* Mobile drawer — dark/gold cinematic */
     #mob-drawer {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: #1a1a2e;
+      background: #0d0d0d;
       z-index: 99999;
       flex-direction: column;
       overflow-y: auto;
@@ -27,79 +28,94 @@
       align-items: center;
       justify-content: space-between;
       padding: 18px 20px;
-      border-bottom: 1px solid rgba(255,255,255,.12);
+      border-bottom: 1px solid rgba(255,255,255,.08);
       flex-shrink: 0;
     }
-    .mob-logo { color:#fff; font-size:1.4rem; font-weight:800; letter-spacing:-.02em; }
-    .mob-logo span { color: #C9A84C; }
+    .mob-logo {
+      color: #F7F5F0;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    .mob-logo span { color: #D4AF46; }
     .mob-close {
-      color: rgba(255,255,255,.7);
-      font-size: 1.5rem;
-      background: none;
+      color: rgba(255,255,255,.5);
+      font-size: 1.25rem;
+      background: rgba(255,255,255,.06);
       border: none;
       cursor: pointer;
       line-height: 1;
-      padding: 4px 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      transition: background .2s;
     }
+    .mob-close:hover { background: rgba(255,255,255,.12); color: #fff; }
     .mob-section {
-      padding: 16px 20px 4px;
-      font-size: .7rem;
+      padding: 16px 20px 6px;
+      font-size: .65rem;
       font-weight: 700;
-      letter-spacing: .1em;
+      letter-spacing: .15em;
       text-transform: uppercase;
-      color: rgba(255,255,255,.35);
+      color: rgba(255,255,255,.3);
     }
     .mob-link {
       display: flex;
       align-items: center;
       gap: 14px;
       padding: 15px 20px;
-      color: rgba(255,255,255,.85);
+      color: rgba(247,245,240,.75);
       font-size: .9375rem;
       font-weight: 500;
       text-decoration: none;
-      border-bottom: 1px solid rgba(255,255,255,.06);
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      transition: background .15s, color .15s;
     }
-    .mob-link:hover, .mob-link:active { background: rgba(255,255,255,.08); }
-    .mob-link .mi { font-size: 1.2rem; width: 26px; flex-shrink: 0; }
+    .mob-link:hover, .mob-link:active {
+      background: rgba(212,175,70,.07);
+      color: #D4AF46;
+    }
+    .mob-link .mi { font-size: 1.1rem; width: 26px; flex-shrink: 0; }
     .mob-footer {
       padding: 20px;
-      border-top: 1px solid rgba(255,255,255,.1);
+      border-top: 1px solid rgba(255,255,255,.08);
       margin-top: auto;
       flex-shrink: 0;
     }
     .mob-signout {
       display: block; width: 100%; padding: 13px;
-      background: rgba(255,255,255,.08);
-      color: rgba(255,255,255,.85);
-      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.06);
+      color: rgba(247,245,240,.85);
+      border: 1px solid rgba(255,255,255,.12);
       border-radius: 8px;
       font-size: .9375rem;
       cursor: pointer;
       font-weight: 600;
       text-align: center;
+      transition: background .2s;
     }
+    .mob-signout:hover { background: rgba(255,255,255,.1); }
     .mob-btn-primary {
       display: block; width: 100%; padding: 13px;
-      background: #C9A84C; color: #111;
+      background: #D4AF46; color: #0a0a0a;
       border-radius: 8px; font-size: .9375rem;
       font-weight: 700; text-align: center;
       text-decoration: none; margin-bottom: 10px;
     }
     .mob-btn-outline {
       display: block; width: 100%; padding: 13px;
-      background: transparent; color: #fff;
-      border: 1px solid rgba(255,255,255,.25);
+      background: transparent; color: rgba(247,245,240,.85);
+      border: 1px solid rgba(255,255,255,.18);
       border-radius: 8px; font-size: .9375rem;
       font-weight: 600; text-align: center;
       text-decoration: none; margin-bottom: 10px;
     }
     .mob-user-info {
-      color: rgba(255,255,255,.5);
+      color: rgba(255,255,255,.4);
       font-size: .8125rem;
       margin-bottom: 12px;
     }
-    .mob-user-info strong { color: rgba(255,255,255,.85); }
+    .mob-user-info strong { color: rgba(247,245,240,.85); }
     @media(max-width: 768px) {
       #user-menu-name { display: none !important; }
       #user-menu .btn--ghost { display: none !important; }
@@ -148,41 +164,42 @@
 
 {% block content %}{% endblock %}
 
-<footer style="border-top:1px solid var(--border);padding:48px 0;margin-top:64px">
+<footer style="background:var(--surface);border-top:1px solid var(--border);padding:56px 0 40px;margin-top:64px">
   <div class="container">
-    <div class="grid-4" style="margin-bottom:40px">
+    <div class="grid-4" style="margin-bottom:48px">
       <div>
-        <div class="nav__logo" style="margin-bottom:16px">Nexiv<span style="color:var(--gold)">o</span></div>
-        <p class="text-sub" style="font-size:.875rem;line-height:1.7">The premium marketplace for discovering and booking world-class events in Nigeria and beyond.</p>
+        <div style="font-family:var(--font-display);font-size:1.375rem;font-weight:700;margin-bottom:14px;letter-spacing:-.01em">Nexiv<span style="color:var(--gold)">o</span></div>
+        <p style="font-size:.875rem;line-height:1.8;color:var(--text-mute);max-width:220px">Nigeria's premier platform for discovering and attending extraordinary events.</p>
       </div>
       <div>
-        <p class="fw-600" style="margin-bottom:12px">Discover</p>
-        <div style="display:flex;flex-direction:column;gap:8px;font-size:.875rem">
-          <a href="/events/?event_type=physical" class="text-sub">In-Person Events</a>
-          <a href="/events/?event_type=virtual" class="text-sub">Virtual Events</a>
-          <a href="/events/?is_featured=true" class="text-sub">Featured</a>
+        <p style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mute);margin-bottom:14px">Discover</p>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:.875rem">
+          <a href="/events/?event_type=physical" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">In-Person Events</a>
+          <a href="/events/?event_type=virtual" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Virtual Events</a>
+          <a href="/events/?is_featured=true" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Featured Events</a>
         </div>
       </div>
       <div>
-        <p class="fw-600" style="margin-bottom:12px">Organise</p>
-        <div style="display:flex;flex-direction:column;gap:8px;font-size:.875rem">
-          <a href="/events/create/" class="text-sub">Create an Event</a>
-          <a href="/dashboard/host/" class="text-sub">Host Dashboard</a>
+        <p style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mute);margin-bottom:14px">Organise</p>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:.875rem">
+          <a href="/events/create/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Create an Event</a>
+          <a href="/dashboard/host/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Host Dashboard</a>
+          <a href="/auth/register/?role=host" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Start Hosting</a>
         </div>
       </div>
       <div>
-        <p class="fw-600" style="margin-bottom:12px">Support</p>
-        <div style="display:flex;flex-direction:column;gap:8px;font-size:.875rem">
-          <a href="/help/" class="text-sub">Help Centre</a>
-          <a href="/contact/" class="text-sub">Contact Us</a>
-          <a href="/terms/" class="text-sub">Terms of Service</a>
-          <a href="/privacy/" class="text-sub">Privacy Policy</a>
+        <p style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mute);margin-bottom:14px">Support</p>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:.875rem">
+          <a href="/help/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Help Centre</a>
+          <a href="/contact/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Contact Us</a>
+          <a href="/terms/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Terms of Service</a>
+          <a href="/privacy/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Privacy Policy</a>
         </div>
       </div>
     </div>
-    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:24px">
-      <p class="text-muted" style="font-size:.8125rem">© 2026 Nexivo. All rights reserved.</p>
-      <p class="text-muted" style="font-size:.8125rem">Secure payments by Paystack · Flutterwave · Stripe</p>
+    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:28px;flex-wrap:wrap;gap:12px">
+      <p style="font-size:.8125rem;color:var(--text-mute)">© 2026 Nexivo. All rights reserved.</p>
+      <p style="font-size:.8125rem;color:var(--text-mute)">Secured by Paystack · Flutterwave · Stripe</p>
     </div>
   </div>
 </footer>

@@ -4,43 +4,49 @@
 <div class="dashboard">
   {% include "frontend/_host_sidebar.html" with active="verification" %}
   <main class="dashboard__main">
-    <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:8px">Identity Verification</h1>
-    <p class="text-muted" style="margin-bottom:32px">Your account status on Nexivo</p>
+    <div style="margin-bottom:28px">
+      <h1 class="font-display" style="font-size:1.75rem">Identity Verification</h1>
+      <p class="text-muted">Your account status on Nexivo</p>
+    </div>
 
-    <div class="chart-card" style="max-width:560px">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-        <div style="width:48px;height:48px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;font-size:1.5rem">✅</div>
-        <div>
-          <h2 style="font-size:1.125rem;font-weight:700;margin-bottom:2px">Account Verified</h2>
-          <p class="text-muted" style="font-size:.875rem">You are approved to host events and sell tickets on Nexivo</p>
+    <div style="max-width:560px">
+      <div class="chart-card" style="margin-bottom:24px">
+        <div class="flex gap-16" style="align-items:center;margin-bottom:20px">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(45,154,107,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:24px;height:24px"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <h2 style="font-size:1.125rem;font-weight:700;margin-bottom:2px">Account Verified</h2>
+            <p class="text-muted" style="font-size:.875rem">You are approved to host events and sell tickets on Nexivo</p>
+          </div>
         </div>
+
+        <div style="background:var(--surface-2);border-radius:var(--radius);padding:16px;margin-bottom:20px">
+          <div class="flex-between" style="margin-bottom:12px">
+            <span class="text-muted" style="font-size:.875rem">Host Status</span>
+            <span class="badge badge--green">Active</span>
+          </div>
+          <div class="flex-between" style="margin-bottom:12px">
+            <span class="text-muted" style="font-size:.875rem">Paid Tickets</span>
+            <span class="badge badge--green">Enabled</span>
+          </div>
+          <div class="flex-between">
+            <span class="text-muted" style="font-size:.875rem">Payouts</span>
+            <span id="payout-status" class="badge badge--grey">Checking…</span>
+          </div>
+        </div>
+
+        <div id="bank-prompt" style="display:none;background:rgba(212,175,70,.08);border:1px solid rgba(212,175,70,.2);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+          <p style="font-size:.875rem;font-weight:600;margin-bottom:4px;color:var(--gold)">Bank account required for payouts</p>
+          <p class="text-muted" style="font-size:.8125rem;margin-bottom:10px">Add your bank account to receive your earnings after events.</p>
+          <a href="/dashboard/bank-account/" class="btn btn--gold btn--sm">Add Bank Account</a>
+        </div>
+
+        <p class="text-muted" style="font-size:.8125rem;line-height:1.7">
+          Nexivo has verified your account and you are fully approved to create events, sell tickets, and receive payouts.
+          Your earnings (92% of ticket sales) are automatically transferred to your bank account after each event.
+        </p>
       </div>
-
-      <div style="background:var(--surface-2);border-radius:var(--radius);padding:16px;margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:.875rem;color:var(--muted)">Host Status</span>
-          <span style="background:#e8f5e9;color:var(--success);padding:3px 12px;border-radius:40px;font-size:.8125rem;font-weight:600">Active ✓</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:.875rem;color:var(--muted)">Paid Tickets</span>
-          <span style="background:#e8f5e9;color:var(--success);padding:3px 12px;border-radius:40px;font-size:.8125rem;font-weight:600">Enabled ✓</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:.875rem;color:var(--muted)">Payouts</span>
-          <span id="payout-status" style="padding:3px 12px;border-radius:40px;font-size:.8125rem;font-weight:600;background:var(--surface-2);color:var(--muted)">Checking…</span>
-        </div>
-      </div>
-
-      <div id="bank-prompt" style="display:none;background:#fff8e1;border-radius:var(--radius);padding:14px;margin-bottom:16px">
-        <p style="font-size:.875rem;font-weight:600;margin-bottom:4px">⚠️ Bank account required for payouts</p>
-        <p style="font-size:.8125rem;color:var(--muted);margin-bottom:10px">Add your bank account to receive your earnings after events.</p>
-        <a href="/dashboard/bank-account/" class="btn btn--gold btn--sm">Add Bank Account</a>
-      </div>
-
-      <p style="font-size:.8125rem;color:var(--muted);line-height:1.6">
-        Nexivo has verified your account and you are fully approved to create events, sell tickets, and receive payouts.
-        Your earnings (95% of ticket sales) are automatically transferred to your bank account after each event.
-      </p>
     </div>
   </main>
 </div>
@@ -54,12 +60,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusEl = document.getElementById('payout-status');
     const promptEl = document.getElementById('bank-prompt');
     if (hasBank) {
-      statusEl.style.background = '#e8f5e9';
-      statusEl.style.color = 'var(--success)';
-      statusEl.textContent = 'Enabled ✓';
+      statusEl.className = 'badge badge--green';
+      statusEl.textContent = 'Enabled';
     } else {
-      statusEl.style.background = '#fff8e1';
-      statusEl.style.color = '#b45309';
+      statusEl.className = 'badge badge--gold';
       statusEl.textContent = 'Bank Required';
       promptEl.style.display = '';
     }

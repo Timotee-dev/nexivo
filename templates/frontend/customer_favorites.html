@@ -4,8 +4,15 @@
 <div class="dashboard">
   {% include "frontend/_customer_sidebar.html" with active="favorites" %}
   <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:28px">Saved Events</h1>
-    <div class="grid-3" id="favorites-grid"><div class="spinner" style="margin:40px auto"></div></div>
+    <div style="margin-bottom:28px">
+      <h1 class="font-display" style="font-size:1.75rem">Saved Events</h1>
+      <p class="text-muted">Events you've bookmarked for later</p>
+    </div>
+    <div class="grid-3" id="favorites-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px">
+        <div class="spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
   </main>
 </div>
 <script src="/static/js/events.js"></script>
@@ -20,7 +27,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const data = await Api.get('/events/?page_size=100');
     const favorites = data.results.filter(e => e.is_favorited);
     if (!favorites.length) {
-      grid.innerHTML = '<p class="text-muted" style="grid-column:1/-1">No saved events. Browse events and tap 🤍 to save them here.</p>';
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:56px 20px;background:var(--surface);border-radius:var(--radius-lg)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto 16px;display:block;opacity:.3"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <h3 style="font-weight:700;margin-bottom:6px">No saved events</h3>
+        <p class="text-muted" style="margin-bottom:16px">Browse events and tap the heart to save them here</p>
+        <a href="/events/" class="btn btn--gold">Browse Events</a>
+      </div>`;
       return;
     }
     grid.innerHTML = favorites.map(e => `
@@ -28,7 +40,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="card__media"><img src="${e.banner_image || '/static/img/event-placeholder.svg'}" loading="lazy"></div>
         <div class="card__body">
           <h3 class="card__title">${e.title}</h3>
-          <div class="card__meta"><span>📅 ${new Date(e.start_datetime).toLocaleDateString()}</span>${e.city ? `<span>📍 ${e.city}</span>` : ''}</div>
+          <div class="card__meta">
+            <span>${new Date(e.start_datetime).toLocaleDateString()}</span>
+            ${e.city ? `<span>${e.city}</span>` : ''}
+          </div>
         </div>
       </a>`).join('');
   } catch { Toast.error('Failed to load saved events.'); }

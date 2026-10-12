@@ -4,13 +4,21 @@
 <div class="dashboard">
   {% include "frontend/_host_sidebar.html" with active="payouts" %}
   <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">Payouts</h1>
-    <p class="text-muted" style="margin-bottom:28px">Your earnings transferred to your bank account</p>
-    <div class="table-wrap">
-      <table class="table">
-        <thead><tr><th>Date</th><th>Gateway</th><th>Amount</th><th>Status</th><th>Payments Covered</th></tr></thead>
-        <tbody id="payouts-tbody"><tr><td colspan="5" class="text-center"><div class="spinner" style="margin:24px auto"></div></td></tr></tbody>
-      </table>
+    <div class="flex-between" style="margin-bottom:28px">
+      <div>
+        <h1 class="font-display" style="font-size:1.75rem">Payouts</h1>
+        <p class="text-muted">Your earnings transferred to your bank account</p>
+      </div>
+      <a href="/dashboard/bank-account/" class="btn btn--outline btn--sm">Manage Bank Account</a>
+    </div>
+
+    <div class="chart-card">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Date</th><th>Gateway</th><th>Amount</th><th>Status</th><th>Payments Covered</th></tr></thead>
+          <tbody id="payouts-tbody"><tr><td colspan="5" class="text-center"><div class="spinner" style="margin:24px auto"></div></td></tr></tbody>
+        </table>
+      </div>
     </div>
   </main>
 </div>
@@ -22,7 +30,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const data = await Api.get('/payouts/mine/');
     if (!data.results?.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:32px">No payouts yet. Payouts are released automatically after your events end.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:48px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.3"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <p style="font-weight:600;margin-bottom:4px">No payouts yet</p>
+        <p style="font-size:.875rem">Payouts are released automatically after your events end.</p>
+      </td></tr>`;
       return;
     }
     tbody.innerHTML = data.results.map(p => `

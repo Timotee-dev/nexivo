@@ -4,13 +4,20 @@
 <div class="dashboard">
   {% include "frontend/_host_sidebar.html" with active="refunds" %}
   <main class="dashboard__main">
-    <h1 class="font-display" style="font-size:1.75rem;margin-bottom:8px">Refund Requests</h1>
-    <p class="text-muted" style="margin-bottom:28px">Pending refund requests from your customers</p>
-    <div class="table-wrap">
-      <table class="table">
-        <thead><tr><th>Customer</th><th>Event</th><th>Amount</th><th>Reason</th><th>Requested</th><th>Action</th></tr></thead>
-        <tbody id="refunds-tbody"><tr><td colspan="6" class="text-center"><div class="spinner" style="margin:24px auto"></div></td></tr></tbody>
-      </table>
+    <div class="flex-between" style="margin-bottom:28px">
+      <div>
+        <h1 class="font-display" style="font-size:1.75rem">Refund Requests</h1>
+        <p class="text-muted">Pending refund requests from your customers</p>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Customer</th><th>Event</th><th>Amount</th><th>Reason</th><th>Requested</th><th>Action</th></tr></thead>
+          <tbody id="refunds-tbody"><tr><td colspan="6" class="text-center"><div class="spinner" style="margin:24px auto"></div></td></tr></tbody>
+        </table>
+      </div>
     </div>
   </main>
 </div>
@@ -24,7 +31,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const data = await Api.get('/payments/refunds/pending/');
       if (!data.results?.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:32px">No pending refund requests.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:48px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.3"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.32"/></svg>
+          <p style="font-weight:600;margin-bottom:4px">No pending refund requests</p>
+        </td></tr>`;
         return;
       }
       tbody.innerHTML = data.results.map(r => `
