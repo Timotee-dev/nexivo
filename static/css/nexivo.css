@@ -686,7 +686,19 @@ h1, h2, h3, h4, h5 { line-height: 1.2; text-wrap: balance; }
   border-radius: 0 3px 3px 0;
 }
 .sidebar__icon { width: 18px; height: 18px; opacity: .7; flex-shrink: 0; }
-.dashboard__main { padding: 40px; overflow-x: hidden; }
+.dashboard__main { padding: 32px; overflow-x: visible; min-width: 0; max-width: 100%; }
+/* Chart cards inside dashboard should never overflow their column */
+.dashboard__main .chart-card { min-width: 0; overflow: hidden; }
+.dashboard__main .chart-card__header { flex-wrap: wrap; gap: 8px; }
+/* Collapse the 2-col chart row earlier than the global 1024px breakpoint,
+   because the sidebar (256px) already eats that width */
+.dashboard__main .grid-2 { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1280px) {
+  .dashboard__main .grid-2 { grid-template-columns: 1fr; }
+}
+/* Tables inside chart-cards must scroll, not push layout */
+.dashboard__main .table-wrap { overflow-x: auto; }
+.dashboard__main .table { min-width: 480px; }
 
 /* ── Stat cards ─────────────────────────────────────────────────────── */
 .stat-grid {

@@ -141,6 +141,7 @@ async function publishEvent(slug, btn) {
     btn.disabled = false; btn.textContent = 'Publish';
   }
 }
+window.publishEvent = publishEvent;
 
 async function deleteEvent(slug, title) {
   // Show inline confirmation instead of browser confirm() which is blocked in artifacts
