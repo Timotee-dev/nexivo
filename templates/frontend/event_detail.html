@@ -325,10 +325,34 @@
 .review-stars { color: var(--gold); font-size: .9rem; letter-spacing: 1px; }
 
 @media (max-width: 900px) {
-  .ev-detail-layout { grid-template-columns: 1fr; }
-  .ev-detail-aside { position: static; }
+  .ev-detail-layout {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+    gap: 24px;
+  }
+  .ev-detail-aside { position: static; width: 100%; }
+  .checkout-v2 { width: 100%; }
   .ev-detail-hero { height: 320px; }
-  .ev-detail-hero__content .container { flex-direction: column; align-items: flex-start; }
+  .ev-detail-hero__content .container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .ev-detail-hero__title { text-align: center; }
+  .ev-detail-hero__meta  { justify-content: center; }
+  .ev-detail-date-chip   { justify-content: center; }
+  .ev-rating-row         { justify-content: center; }
+  .ev-detail-hero__actions {
+    position: absolute;
+    top: 16px; right: 16px;
+  }
+}
+@media (max-width: 600px) {
+  .ev-detail-layout { padding: 0 12px; }
+  .ev-detail-hero { height: 260px; }
+  .ev-detail-hero__title { font-size: 1.5rem; }
+  /* Checkout panel hides on tiny phone so sticky bar shows instead */
+  .ev-detail-aside { display: none; }
 }
 </style>
 
@@ -698,6 +722,23 @@
   </div><!-- /ev-detail-layout -->
 </div>
 
+<!-- Mobile sticky checkout bar (only on phones <600px) -->
+<div class="mobile-checkout-bar" id="mobile-checkout-bar" style="display:none">
+  <div class="mobile-checkout-bar__price">
+    <div class="mobile-checkout-bar__label">From</div>
+    <div class="mobile-checkout-bar__amount" id="mobile-bar-price">
+      {% if event.ticket_types.all %}
+        {% with event.ticket_types.first as tt %}
+          {% if tt.is_free %}Free{% else %}₦{{ tt.price|floatformat:0 }}{% endif %}
+        {% endwith %}
+      {% else %}—{% endif %}
+    </div>
+  </div>
+  <button class="btn btn--gold mobile-checkout-bar__btn" id="mobile-bar-btn">
+    Get Tickets →
+  </button>
+</div>
+
 <script src="/static/js/events.js"></script>
 <script>
 // ── Tab switching ──
@@ -743,5 +784,92 @@ function copyToClipboard(text) {
     Toast.success('Event link copied!');
   });
 }
+
+// ── Mobile checkout bar ──
+(function() {
+  function isMobile() { return window.innerWidth < 600; }
+
+  const bar = document.getElementById('mobile-checkout-bar');
+  const mobileBtn = document.getElementById('mobile-bar-btn');
+  const mobilePrice = document.getElementById('mobile-bar-price');
+
+  function toggleBar() {
+    if (!bar) return;
+    if (isMobile()) {
+      bar.style.display = 'flex';
+      document.body.style.paddingBottom = '80px';
+    } else {
+      bar.style.display = 'none';
+      document.body.style.paddingBottom = '';
+    }
+  }
+  toggleBar();
+  window.addEventListener('resize', toggleBar);
+
+  // Scroll down to full checkout panel when mobile bar is tapped
+  if (mobileBtn) {
+    mobileBtn.addEventListener('click', () => {
+      // On small phones the aside is hidden; show it temporarily
+      const aside = document.querySelector('.ev-detail-aside');
+      if (aside) {
+        aside.style.display = 'block';
+        aside.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+
+  // Keep mobile price in sync with checkout-final
+  const observer = new MutationObserver(() => {
+    const finalEl = document.getElementById('checkout-final');
+    if (finalEl && mobilePrice) {
+      const txt = finalEl.textContent.trim();
+      if (txt !== '₦0') mobilePrice.textContent = txt;
+    }
+  });
+  const finalEl = document.getElementById('checkout-final');
+  if (finalEl) observer.observe(finalEl, { childList: true, subtree: true, characterData: true });
+})();
+
+// ── Scroll-reveal (Intersection Observer) ──
+(function() {
+  if (!window.IntersectionObserver) return;
+
+  // Auto-add reveal class to key containers
+  const targets = [
+    '.ev-card', '.cat-chip', '.stat-card-v2', '.chart-card',
+    '.why-item', '.dash-event-row', '.review-item',
+    '.checkout-v2__event-mini', '.ticket-row-v2'
+  ];
+  document.querySelectorAll(targets.join(',')).forEach((el, i) => {
+    if (!el.classList.contains('reveal')) {
+      el.classList.add('reveal');
+      el.style.transitionDelay = (i % 6 * 0.07) + 's';
+    }
+  });
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+
+// ── Checkout button ready state ──
+(function() {
+  const checkoutBtn = document.getElementById('checkout-btn');
+  const finalEl = document.getElementById('checkout-final');
+  if (!checkoutBtn || !finalEl) return;
+  const obs = new MutationObserver(() => {
+    const val = parseFloat((finalEl.textContent || '').replace(/[^0-9.]/g, ''));
+    if (val > 0) checkoutBtn.classList.add('ready');
+    else checkoutBtn.classList.remove('ready');
+  });
+  obs.observe(finalEl, { childList: true, subtree: true, characterData: true });
+})();
 </script>
 {% endblock %}

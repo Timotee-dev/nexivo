@@ -2439,3 +2439,542 @@ body.modal-open { overflow: hidden; }
   .ev-grid { grid-template-columns: 1fr; }
   .hero-v2__title { font-size: 1.875rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NEXIVO v3 — ANIMATIONS, MOBILE FIXES & ENHANCED PALETTE
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── New color tokens: electric depth ──────────────────────────────────── */
+:root {
+  --crimson:      #C0392B;
+  --crimson-dim:  rgba(192,57,43,.15);
+  --electric:     #4F6EF7;
+  --electric-dim: rgba(79,110,247,.12);
+  --teal:         #0FB8A0;
+  --teal-dim:     rgba(15,184,160,.12);
+
+  /* Enhanced glow system */
+  --glow-gold:    0 0 32px rgba(212,175,70,.22), 0 0 80px rgba(212,175,70,.06);
+  --glow-blue:    0 0 32px rgba(79,110,247,.22);
+  --glow-teal:    0 0 32px rgba(15,184,160,.15);
+
+  /* Richer gradient backgrounds */
+  --grad-hero:    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,110,247,.08) 0%, transparent 60%),
+                  radial-gradient(ellipse 60% 40% at 80% 100%, rgba(212,175,70,.06) 0%, transparent 50%);
+}
+
+/* ── @keyframes library ─────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes goldPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,175,70,.0); }
+  50%       { box-shadow: 0 0 0 8px rgba(212,175,70,.12); }
+}
+@keyframes rotate {
+  to { transform: rotate(360deg); }
+}
+@keyframes heroTextReveal {
+  0%   { opacity: 0; transform: translateY(36px) skewY(2deg); }
+  100% { opacity: 1; transform: translateY(0) skewY(0); }
+}
+@keyframes badgePop {
+  0%   { opacity: 0; transform: scale(.7) rotate(-6deg); }
+  70%  { transform: scale(1.08) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes cardHoverGlow {
+  from { box-shadow: var(--shadow-md); }
+  to   { box-shadow: 0 24px 60px rgba(0,0,0,.7), 0 0 40px rgba(212,175,70,.12); }
+}
+@keyframes lineGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes numberCount {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Scroll-reveal utility ──────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity .65s cubic-bezier(.16,1,.3,1), transform .65s cubic-bezier(.16,1,.3,1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal--left {
+  transform: translateX(-32px);
+}
+.reveal--left.visible {
+  transform: translateX(0);
+}
+.reveal--right {
+  transform: translateX(32px);
+}
+.reveal--right.visible {
+  transform: translateX(0);
+}
+.reveal--scale {
+  transform: scale(.95);
+}
+.reveal--scale.visible {
+  transform: scale(1);
+}
+
+/* Stagger children */
+.stagger > * { transition-delay: 0s; }
+.stagger > *:nth-child(1) { transition-delay: .05s; }
+.stagger > *:nth-child(2) { transition-delay: .12s; }
+.stagger > *:nth-child(3) { transition-delay: .19s; }
+.stagger > *:nth-child(4) { transition-delay: .26s; }
+.stagger > *:nth-child(5) { transition-delay: .33s; }
+.stagger > *:nth-child(6) { transition-delay: .40s; }
+
+/* ── Hero v2 — enhanced ─────────────────────────────────────────────── */
+.hero-v2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--grad-hero);
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-v2__inner { position: relative; z-index: 2; }
+.hero-v2__eyebrow { animation: fadeIn .6s both .2s; }
+.hero-v2__title   { animation: heroTextReveal .85s cubic-bezier(.16,1,.3,1) both .35s; }
+.hero-v2__sub     { animation: fadeInUp .7s cubic-bezier(.16,1,.3,1) both .6s; }
+.hero-v2__actions { animation: fadeInUp .7s cubic-bezier(.16,1,.3,1) both .75s; }
+.hero-v2__badges  { animation: fadeIn .6s both .95s; }
+
+/* ── Event cards — enhanced hover + entrance ────────────────────────── */
+.ev-card {
+  transition:
+    transform .35s cubic-bezier(.16,1,.3,1),
+    box-shadow .35s cubic-bezier(.16,1,.3,1),
+    border-color .25s;
+  will-change: transform;
+}
+.ev-card:hover {
+  transform: translateY(-8px) scale(1.012);
+  box-shadow: 0 28px 64px rgba(0,0,0,.72), 0 0 48px rgba(212,175,70,.1);
+  border-color: rgba(212,175,70,.25);
+}
+.ev-card__media {
+  transition: transform .45s cubic-bezier(.16,1,.3,1);
+}
+.ev-card:hover .ev-card__media { transform: scale(1.06); }
+.ev-card__cta {
+  transition: opacity .25s, transform .25s;
+  transform: translateY(8px);
+}
+.ev-card:hover .ev-card__cta { opacity: 1; transform: translateY(0); }
+.ev-card__date-badge { animation: badgePop .5s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── Buttons — press & glow effects ────────────────────────────────── */
+.btn {
+  transition:
+    background .2s,
+    color .2s,
+    border-color .2s,
+    transform .15s cubic-bezier(.16,1,.3,1),
+    box-shadow .25s;
+}
+.btn:active { transform: scale(.96); }
+.btn--gold {
+  transition:
+    background .2s,
+    transform .15s cubic-bezier(.16,1,.3,1),
+    box-shadow .3s;
+}
+.btn--gold:hover {
+  box-shadow: 0 0 28px rgba(212,175,70,.3), 0 8px 24px rgba(0,0,0,.35);
+  transform: translateY(-1px);
+}
+.btn--gold:active { transform: scale(.96); box-shadow: none; }
+.btn--primary:hover {
+  box-shadow: 0 0 24px rgba(212,175,70,.2), 0 6px 18px rgba(0,0,0,.3);
+  transform: translateY(-1px);
+}
+
+/* ── Navigation — entry + link underline ───────────────────────────── */
+.navbar {
+  animation: fadeInDown .5s cubic-bezier(.16,1,.3,1) both;
+}
+.navbar__link { position: relative; }
+.navbar__link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0;
+  width: 100%; height: 1.5px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .25s cubic-bezier(.16,1,.3,1);
+}
+.navbar__link:hover::after,
+.navbar__link.active::after { transform: scaleX(1); }
+
+/* ── Tabs — panel transition ────────────────────────────────────────── */
+.ev-tab-panel {
+  animation: none;
+}
+.ev-tab-panel.active {
+  animation: fadeInUp .4s cubic-bezier(.16,1,.3,1) both;
+}
+.ev-tab {
+  position: relative;
+  transition: color .2s;
+}
+.ev-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0;
+  width: 100%; height: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .25s cubic-bezier(.16,1,.3,1);
+}
+.ev-tab.active::after { transform: scaleX(1); }
+.ev-tab { border-bottom: none !important; }
+
+/* ── Category chips — hover ─────────────────────────────────────────── */
+.cat-chip {
+  transition:
+    transform .25s cubic-bezier(.16,1,.3,1),
+    background .2s,
+    border-color .2s,
+    box-shadow .25s;
+}
+.cat-chip:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212,175,70,.25);
+  box-shadow: 0 8px 24px rgba(0,0,0,.4), 0 0 20px rgba(212,175,70,.08);
+}
+
+/* ── Stat cards — number reveal ─────────────────────────────────────── */
+.stat-card-v2 {
+  transition:
+    transform .3s cubic-bezier(.16,1,.3,1),
+    box-shadow .3s,
+    border-color .2s;
+}
+.stat-card-v2:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(212,175,70,.2);
+}
+.stat-card-v2__value {
+  animation: numberCount .5s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Filter bar ─────────────────────────────────────────────────────── */
+.filter-chip {
+  transition: background .18s, color .18s, border-color .18s, transform .18s;
+}
+.filter-chip:hover {
+  border-color: rgba(212,175,70,.3);
+  color: var(--text-sub);
+  transform: translateY(-1px);
+}
+
+/* ── Checkout panel — entry from right ──────────────────────────────── */
+.ev-detail-aside .checkout-v2 {
+  animation: slideInRight .6s cubic-bezier(.16,1,.3,1) both .15s;
+}
+
+/* ── Dashboard event rows ───────────────────────────────────────────── */
+.dash-event-row {
+  transition: background .18s, border-color .2s, transform .2s;
+}
+.dash-event-row:hover {
+  background: var(--surface-2);
+  border-color: rgba(212,175,70,.15);
+  transform: translateX(3px);
+}
+
+/* ── Skeleton / shimmer loading ─────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+/* ── Modal — scaleIn ────────────────────────────────────────────────── */
+.modal {
+  animation: scaleIn .3s cubic-bezier(.16,1,.3,1) both;
+}
+.modal-backdrop {
+  animation: fadeIn .2s both;
+}
+
+/* ── Toast — slide in from right ────────────────────────────────────── */
+.toast {
+  animation: slideInRight .3s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── qty buttons — micro bounce ─────────────────────────────────────── */
+.qty-v2__btn:active,
+.qty-btn:active {
+  transform: scale(.85);
+  transition: transform .1s;
+}
+
+/* ── Checkout button pulse when ready ───────────────────────────────── */
+#checkout-btn.ready {
+  animation: goldPulse 2.2s infinite;
+}
+
+/* ── ═══ MOBILE FIX — Event Detail ═══ ───────────────────────────────
+   On mobile the checkout panel must be:
+   1. Full-width, centered (no left-shift)
+   2. Sticky bottom CTA bar on phones
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  /* Page layout: single column, checkout below content */
+  .ev-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 0 16px;
+  }
+
+  /* Hero: centered content on mobile */
+  .ev-detail-hero__content .container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .ev-detail-hero__title { text-align: center; }
+  .ev-detail-hero__meta  { justify-content: center; }
+  .ev-detail-date-chip   { justify-content: center; }
+  .ev-rating-row         { justify-content: center; }
+  .ev-detail-hero__actions {
+    position: absolute;
+    top: 16px; right: 16px;
+    flex-direction: row;
+  }
+
+  /* Aside: full-width, not sticky */
+  .ev-detail-aside {
+    position: static;
+    width: 100%;
+  }
+
+  /* Checkout panel: full-width, centered content */
+  .checkout-v2 {
+    width: 100%;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  /* Ticket rows: comfortable on mobile */
+  .ticket-row-v2 { padding: 14px 0; }
+  .ticket-row-v2__info .ticket-row-v2__perks { display: none; }
+
+  /* Total section: clear, centered */
+  .checkout-v2__total { padding: 14px 20px; }
+  .checkout-v2__body  { padding: 16px 20px; }
+
+  /* Payment gateways: full tabs */
+  .pay-tabs { overflow-x: auto; scrollbar-width: none; }
+  .pay-tabs::-webkit-scrollbar { display: none; }
+}
+
+/* Sticky mobile checkout CTA bar at bottom */
+@media (max-width: 600px) {
+  /* Collapse full checkout panel to just show price + CTA on mobile */
+  body.has-event-detail {
+    padding-bottom: 80px; /* space for sticky bar */
+  }
+  .mobile-checkout-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(9,9,9,.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(212,175,70,.15);
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    z-index: 200;
+    animation: fadeInUp .4s cubic-bezier(.16,1,.3,1) both;
+  }
+  .mobile-checkout-bar__price {
+    flex: 1;
+  }
+  .mobile-checkout-bar__label {
+    font-size: .7rem;
+    color: var(--text-mute);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .mobile-checkout-bar__amount {
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1.1;
+  }
+  .mobile-checkout-bar__btn {
+    flex-shrink: 0;
+    min-width: 140px;
+  }
+
+  /* Hero: smaller on phones */
+  .ev-detail-hero { height: 280px; }
+  .ev-detail-hero__title { font-size: 1.5rem; }
+
+  /* Layout: no side padding */
+  .ev-detail-layout { padding: 0 12px; }
+}
+
+/* ── Enhanced home hero for mobile ─────────────────────────────────── */
+@media (max-width: 600px) {
+  .hero-v2 { min-height: 560px; }
+  .hero-v2__title { font-size: 2rem; }
+  .hero-v2__actions { flex-direction: column; width: 100%; }
+  .hero-v2__actions .btn { width: 100%; justify-content: center; }
+}
+
+/* ── Color palette improvements: gradient text, richer accents ──────── */
+.text-gradient {
+  background: linear-gradient(135deg, var(--gold) 0%, #F8E78B 50%, var(--gold-dim) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.text-gradient-blue {
+  background: linear-gradient(135deg, #7E9FFF 0%, var(--electric) 60%, #3D5BD6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Accent bands on section headings — not just gold */
+.section-heading--teal  { border-left-color: var(--teal); }
+.section-heading--blue  { border-left-color: var(--electric); }
+.section-heading--red   { border-left-color: var(--crimson); }
+
+/* VIP ticket type — distinct crimson treatment */
+.ticket-row-v2[data-vip="true"] .ticket-row-v2__icon {
+  background: var(--crimson-dim);
+  color: #E05A4E;
+}
+
+/* ── "Why" grid improvements ─────────────────────────────────────────── */
+.why-item {
+  transition: transform .3s cubic-bezier(.16,1,.3,1), border-color .2s;
+}
+.why-item:hover { transform: translateY(-6px); border-color: rgba(212,175,70,.2); }
+.why-item:nth-child(2) .why-item__icon { color: var(--teal); }
+.why-item:nth-child(3) .why-item__icon { color: var(--electric); }
+.why-item:nth-child(4) .why-item__icon { color: var(--crimson); }
+
+/* ── Animated border glow on focused inputs ─────────────────────────── */
+.form-input:focus,
+.form-select:focus {
+  border-color: rgba(212,175,70,.5);
+  box-shadow: 0 0 0 3px rgba(212,175,70,.08);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+/* ── Review stars hover ─────────────────────────────────────────────── */
+.review-stars { letter-spacing: 2px; }
+
+/* ── Host CTA — electric blue accent ───────────────────────────────── */
+.host-cta {
+  position: relative;
+  overflow: hidden;
+}
+.host-cta::before {
+  content: '';
+  position: absolute;
+  top: -60%; right: -10%;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,110,247,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.host-cta__stat-num {
+  background: linear-gradient(135deg, var(--gold) 0%, #F8E78B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Page transition — body enter ───────────────────────────────────── */
+body {
+  animation: fadeIn .35s both;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────── */
+.empty-state {
+  animation: scaleIn .5s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── Chart card hover ────────────────────────────────────────────────── */
+.chart-card {
+  transition: box-shadow .3s;
+}
+.chart-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+
+/* ── Table row hover animation ───────────────────────────────────────── */
+.table tbody tr {
+  transition: background .15s;
+}
+.table tbody tr:hover { background: rgba(212,175,70,.03); }
+
+/* ── Badge bounce on new events ──────────────────────────────────────── */
+.badge--live {
+  background: var(--crimson);
+  animation: goldPulse 2s infinite;
+}
+
+/* ── Reduce motion for accessibility ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}

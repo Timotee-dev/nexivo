@@ -296,5 +296,56 @@ function deleteAccountFromDrawer() {
 }
 </script>
 {% block extra_js %}{% endblock %}
+<script>
+/* ── Global scroll-reveal (runs on every page) ── */
+(function() {
+  if (!window.IntersectionObserver) return;
+  // Don't double-wire pages that do their own reveal
+  if (window.__revealWired) return;
+  window.__revealWired = true;
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  function scan() {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el => io.observe(el));
+  }
+  // Initial scan + re-scan after dynamic content
+  scan();
+  const mo = new MutationObserver(scan);
+  mo.observe(document.body, { childList: true, subtree: true });
+})();
+
+/* ── Button press ripple ── */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn');
+  if (!btn) return;
+  const r = document.createElement('span');
+  r.style.cssText = `
+    position:absolute;border-radius:50%;
+    width:120px;height:120px;
+    background:rgba(255,255,255,.07);
+    transform:scale(0);
+    animation:ripple .55s linear;
+    pointer-events:none;
+    left:${e.offsetX - 60}px;top:${e.offsetY - 60}px;
+  `;
+  if (getComputedStyle(btn).position === 'static') btn.style.position = 'relative';
+  btn.style.overflow = 'hidden';
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+});
+</script>
+<style>
+@keyframes ripple {
+  to { transform: scale(2.5); opacity: 0; }
+}
+</style>
 </body>
 </html>

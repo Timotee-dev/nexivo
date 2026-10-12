@@ -3,291 +3,624 @@
 {% block content %}
 
 <style>
-/* ── HOME PAGE SPECIFIC ── */
-.hero-v2 {
+/* ══════════════════════════════════════════════════════
+   HOME — CINEMATIC REDESIGN
+   ══════════════════════════════════════════════════════ */
+
+/* ── HERO ────────────────────────────────────────────── */
+.hero {
   position: relative;
-  min-height: 680px;
-  display: flex;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   overflow: hidden;
-  background: #090909;
+  background: #060606;
+  width: 100%;
+  box-sizing: border-box;
 }
-.hero-v2__bg {
+
+/* Canvas behind everything */
+#hero-canvas {
   position: absolute;
   inset: 0;
-  background-image: url('/static/img/hero-bg.jpg');
-  background-size: cover;
-  background-position: center top;
-  opacity: .45;
-  transform: scale(1.04);
-  transition: transform 8s ease;
+  z-index: 0;
+  pointer-events: none;
 }
-.hero-v2__bg-fallback {
+
+/* Radial glow orbs */
+.hero__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+.hero__orb--gold {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(212,175,70,.22) 0%, transparent 70%);
+  top: -100px; left: -100px;
+  animation: orbFloat 12s ease-in-out infinite;
+}
+.hero__orb--blue {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(79,110,247,.14) 0%, transparent 70%);
+  bottom: -80px; left: 38%;
+  animation: orbFloat 15s ease-in-out infinite reverse;
+}
+.hero__orb--deep {
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(192,57,43,.1) 0%, transparent 70%);
+  top: 30%; right: 5%;
+  animation: orbFloat 18s ease-in-out infinite 4s;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33%       { transform: translate(30px,-40px) scale(1.08); }
+  66%       { transform: translate(-20px,20px) scale(.95); }
+}
+
+/* Grid overlay texture */
+.hero::before {
+  content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 120% 80% at 60% 20%, rgba(212,175,70,.18) 0%, transparent 55%),
-    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(180,120,30,.12) 0%, transparent 60%),
-    linear-gradient(160deg, #0e0a02 0%, #090909 40%, #0c0c0c 100%);
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  z-index: 0;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
 }
-.hero-v2__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to right,
-    rgba(9,9,9,.92) 0%,
-    rgba(9,9,9,.7) 45%,
-    rgba(9,9,9,.2) 100%
-  );
-}
-.hero-v2__overlay-bottom {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 200px;
-  background: linear-gradient(to top, #090909, transparent);
-}
-.hero-v2__content {
+
+/* Left column — copy */
+.hero__left {
   position: relative;
   z-index: 2;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-  width: 100%;
-  padding-top: 80px;
-  padding-bottom: 80px;
+  padding: 140px 48px 120px 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
 }
-.hero-v2__eyebrow {
-  display: inline-flex;
+
+/* Right column — floating cards */
+.hero__right {
+  position: relative;
+  z-index: 2;
+  padding: 120px 64px 120px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* HERO TEXT */
+.hero__eyebrow {
+  display: flex;
   align-items: center;
   gap: 10px;
-  font-size: .7rem;
-  font-weight: 700;
+  font-size: .65rem;
+  font-weight: 800;
   letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--gold);
-  margin-bottom: 24px;
-}
-.hero-v2__eyebrow::before {
-  content: '';
-  display: block;
-  width: 28px;
-  height: 1px;
-  background: var(--gold);
-  opacity: .7;
-}
-.hero-v2__title {
-  font-family: var(--font-display);
-  font-size: clamp(2.8rem, 6.5vw, 5rem);
-  font-weight: 700;
-  line-height: 1.04;
-  letter-spacing: -.03em;
-  max-width: 640px;
-  margin-bottom: 22px;
-  color: #F7F5F0;
-}
-.hero-v2__title em {
-  font-style: italic;
-  color: var(--gold);
-}
-.hero-v2__sub {
-  font-size: 1.0625rem;
-  color: rgba(247,245,240,.65);
-  max-width: 480px;
-  line-height: 1.75;
-  margin-bottom: 44px;
-}
-.hero-v2__search-wrap {
-  max-width: 560px;
-}
-.hero-v2__search {
-  display: flex;
-  background: rgba(20,20,20,.9);
-  border: 1.5px solid rgba(255,255,255,.14);
-  border-radius: 12px;
+  margin-bottom: 32px;
+  flex-wrap: nowrap;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0,0,0,.5);
-  backdrop-filter: blur(12px);
-  transition: border-color .2s;
 }
-.hero-v2__search:focus-within {
-  border-color: var(--gold);
-  box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 0 0 3px rgba(212,175,70,.12);
+.hero__eyebrow-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: goldPulse 2s infinite;
+  flex-shrink: 0;
 }
-.hero-v2__search input {
+.hero__eyebrow-line {
+  width: 28px; height: 1px;
+  background: linear-gradient(to right, var(--gold), transparent);
+  flex-shrink: 0;
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 6vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -.04em;
+  color: #FAFAF8;
+  margin-bottom: 28px;
+}
+.hero__title .line { overflow: hidden; display: block; }
+.hero__title .line span {
+  display: block;
+  animation: slideUpIn .9s cubic-bezier(.16,1,.3,1) both;
+}
+.hero__title .line:nth-child(2) span { animation-delay: .12s; }
+.hero__title .line:nth-child(3) span { animation-delay: .24s; }
+
+.hero__title .accent {
+  background: linear-gradient(130deg, #F8E78B 0%, #D4AF46 45%, #B5892A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-style: italic;
+}
+
+.hero__sub {
+  font-size: 1.0625rem;
+  color: rgba(247,245,240,.55);
+  max-width: 460px;
+  line-height: 1.8;
+  margin-bottom: 48px;
+  animation: fadeInUp .8s .4s both;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Search bar */
+.hero__search {
+  display: flex;
+  background: rgba(18,18,18,.9);
+  border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0,0,0,.6), 0 0 0 1px rgba(212,175,70,.06);
+  backdrop-filter: blur(16px);
+  transition: border-color .2s, box-shadow .2s;
+  max-width: 520px;
+  animation: fadeInUp .8s .55s both;
+}
+.hero__search:focus-within {
+  border-color: rgba(212,175,70,.5);
+  box-shadow: 0 12px 48px rgba(0,0,0,.6), 0 0 0 3px rgba(212,175,70,.1);
+}
+.hero__search input {
   flex: 1;
-  padding: 16px 20px;
+  padding: 17px 20px;
   font-size: .9375rem;
   background: transparent;
   color: #F7F5F0;
   border: none;
   outline: none;
 }
-.hero-v2__search input::placeholder { color: rgba(255,255,255,.3); }
-.hero-v2__search button {
+.hero__search input::placeholder { color: rgba(255,255,255,.25); }
+.hero__search button {
   padding: 0 28px;
   background: var(--gold);
-  color: #0a0a0a;
-  font-weight: 700;
-  font-size: .875rem;
-  letter-spacing: .03em;
+  color: #080808;
+  font-weight: 800;
+  font-size: .8125rem;
+  letter-spacing: .05em;
   border: none;
   cursor: pointer;
-  transition: background .2s;
+  transition: background .2s, transform .1s;
   white-space: nowrap;
+  text-transform: uppercase;
 }
-.hero-v2__search button:hover { background: var(--gold-hi); }
-.hero-v2__chips {
+.hero__search button:hover { background: #F0CC5A; }
+.hero__search button:active { transform: scale(.97); }
+
+/* Category chips */
+.hero__chips {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 24px;
+  margin-top: 22px;
+  animation: fadeInUp .8s .7s both;
 }
-.hero-v2__chip {
+.hero__chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.1);
   border-radius: 40px;
-  font-size: .8rem;
+  font-size: .75rem;
   font-weight: 500;
-  color: rgba(247,245,240,.7);
-  background: rgba(255,255,255,.04);
+  color: rgba(247,245,240,.6);
+  background: rgba(255,255,255,.03);
   cursor: pointer;
-  transition: all .2s;
+  transition: all .18s;
   text-decoration: none;
 }
-.hero-v2__chip:hover {
-  border-color: var(--gold);
+.hero__chip:hover {
+  border-color: rgba(212,175,70,.5);
   color: var(--gold);
-  background: rgba(212,175,70,.08);
+  background: rgba(212,175,70,.07);
+  transform: translateY(-2px);
 }
 
-/* ── Event Cards v2 — with photo, date badge, overlay CTA ── */
+/* ── FLOATING PREVIEW CARDS ──────────────────────────── */
+.hero-cards {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.hcard {
+  background: rgba(20,20,20,.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow:
+    0 32px 80px rgba(0,0,0,.7),
+    0 0 0 1px rgba(255,255,255,.04);
+  position: relative;
+}
+.hcard--main {
+  animation: floatCard 6s ease-in-out infinite;
+}
+.hcard--mini {
+  margin-top: 16px;
+  animation: floatCard 8s ease-in-out infinite reverse;
+}
+
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+
+.hcard__img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1a1408, #1c1c1c);
+  margin-bottom: 16px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hcard__img-inner {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(212,175,70,.15) 0%, rgba(79,110,247,.1) 100%);
+}
+.hcard__img-placeholder {
+  font-size: 2.5rem;
+  z-index: 1;
+}
+
+.hcard__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hcard__date-badge {
+  background: rgba(212,175,70,.12);
+  border: 1px solid rgba(212,175,70,.2);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+  flex-shrink: 0;
+  min-width: 48px;
+}
+.hcard__date-badge .day {
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--gold);
+  font-family: var(--font-display);
+  line-height: 1;
+}
+.hcard__date-badge .mon {
+  display: block;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(212,175,70,.6);
+  margin-top: 3px;
+}
+.hcard__info { flex: 1; min-width: 0; }
+.hcard__title {
+  font-size: .9375rem;
+  font-weight: 600;
+  font-family: var(--font-display);
+  color: #F7F5F0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.hcard__meta {
+  font-size: .75rem;
+  color: rgba(247,245,240,.4);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hcard__dot { width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.2); }
+.hcard__price {
+  font-size: .875rem;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+/* Attendees strip */
+.hcard__attendees {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.hcard__avatars {
+  display: flex;
+}
+.hcard__avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid #141414;
+  background: linear-gradient(135deg, #2a2218, #1c1c1c);
+  margin-left: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .6rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.hcard__avatars .hcard__avatar:first-child { margin-left: 0; }
+.hcard__attending-text {
+  font-size: .75rem;
+  color: rgba(247,245,240,.45);
+}
+.hcard__attending-text strong { color: #F7F5F0; }
+
+/* Live badge */
+.hcard__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(192,57,43,.15);
+  border: 1px solid rgba(192,57,43,.25);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #E57373;
+  margin-left: auto;
+}
+.hcard__live::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #E57373;
+  animation: goldPulse 1.4s infinite;
+}
+
+/* Mini card */
+.hcard--mini .hcard__row { gap: 10px; }
+.hcard--mini .hcard__title { font-size: .875rem; }
+.hcard--mini .hcard__meta { font-size: .7rem; }
+
+/* Floating label above cards */
+.hero__right-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+  text-align: center;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.hero__right-label::before,
+.hero__right-label::after {
+  content: '';
+  flex: 1;
+  max-width: 40px;
+  height: 1px;
+  background: rgba(255,255,255,.1);
+}
+
+/* ── STATS STRIP ─────────────────────────────────────── */
+.stats-strip {
+  background: var(--surface);
+  border-top: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.stats-strip__inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.stat-item {
+  padding: 40px 24px;
+  border-right: 1px solid rgba(255,255,255,.06);
+  text-align: center;
+}
+.stat-item:last-child { border-right: none; }
+.stat-item__num {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: -.03em;
+  display: block;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.stat-item__label {
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(247,245,240,.35);
+}
+
+/* ── SECTION COMMON ──────────────────────────────────── */
+.home-section {
+  padding: 96px 0;
+}
+.home-section__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 48px;
+  gap: 16px;
+}
+.home-section__eyebrow {
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.home-section__eyebrow span {
+  display: block;
+  width: 24px;
+  height: 1.5px;
+  border-radius: 2px;
+}
+.home-section__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  color: var(--text);
+}
+.home-section__sub {
+  font-size: .875rem;
+  color: var(--text-mute);
+  margin-top: 6px;
+  line-height: 1.7;
+}
+
+/* ── EVENT CARDS ─────────────────────────────────────── */
 .ev-card {
   position: relative;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   overflow: hidden;
   background: var(--surface);
-  border: 1px solid var(--border);
-  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  border: 1px solid rgba(255,255,255,.07);
+  transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s, border-color .25s;
   text-decoration: none;
   display: block;
   color: inherit;
 }
 .ev-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 20px 60px rgba(0,0,0,.7);
-  border-color: rgba(212,175,70,.4);
+  transform: translateY(-10px) scale(1.012);
+  box-shadow: 0 28px 70px rgba(0,0,0,.75), 0 0 60px rgba(212,175,70,.08);
+  border-color: rgba(212,175,70,.35);
 }
 .ev-card__img-wrap {
   aspect-ratio: 4/3;
   overflow: hidden;
-  background: var(--surface-2);
+  background: #111;
   position: relative;
 }
 .ev-card__img-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform .5s ease;
+  transition: transform .6s cubic-bezier(.16,1,.3,1);
+  will-change: transform;
 }
-.ev-card:hover .ev-card__img-wrap img { transform: scale(1.07); }
+.ev-card:hover .ev-card__img-wrap img { transform: scale(1.09); }
 .ev-card__img-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(9,9,9,.8) 0%, transparent 50%);
-  transition: opacity .25s;
+  background: linear-gradient(to top, rgba(6,6,6,.85) 0%, rgba(6,6,6,.1) 60%, transparent 100%);
+  transition: opacity .3s;
 }
-.ev-card:hover .ev-card__img-overlay { opacity: .6; }
+.ev-card:hover .ev-card__img-overlay { opacity: .7; }
 
-/* Date badge — top left */
+/* Date badge */
 .ev-card__date-badge {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  background: rgba(9,9,9,.85);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 8px;
-  padding: 6px 10px;
+  top: 14px;
+  left: 14px;
+  background: rgba(8,8,8,.82);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  padding: 7px 11px;
   text-align: center;
   line-height: 1;
 }
 .ev-card__date-badge .day {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--gold);
   font-family: var(--font-display);
   display: block;
 }
 .ev-card__date-badge .month {
-  font-size: .625rem;
+  font-size: .6rem;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,.6);
+  color: rgba(255,255,255,.5);
   display: block;
-  margin-top: 2px;
+  margin-top: 3px;
 }
-
-/* Status badge — top right */
 .ev-card__status {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   padding: 4px 10px;
   border-radius: 20px;
-  font-size: .65rem;
-  font-weight: 700;
-  letter-spacing: .06em;
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .07em;
   text-transform: uppercase;
 }
 .ev-card__status--featured { background: var(--gold); color: #0a0a0a; }
-.ev-card__status--trending  { background: rgba(239,68,68,.85); color: #fff; }
-.ev-card__status--free      { background: rgba(45,154,107,.85); color: #fff; }
-.ev-card__status--hot       { background: rgba(239,68,68,.85); color: #fff; }
+.ev-card__status--free      { background: rgba(45,154,107,.9); color: #fff; }
+.ev-card__status--hot       { background: rgba(220,56,56,.85); color: #fff; }
 
-/* Get Tickets overlay — bottom of image */
 .ev-card__cta {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
+  bottom: 14px;
+  right: 14px;
   background: var(--gold);
-  color: #0a0a0a;
-  font-size: .75rem;
-  font-weight: 700;
-  letter-spacing: .04em;
-  padding: 7px 14px;
-  border-radius: 6px;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity .2s ease, transform .2s ease;
-}
-.ev-card:hover .ev-card__cta {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Card body */
-.ev-card__body {
-  padding: 18px 18px 16px;
-}
-.ev-card__cat {
+  color: #060606;
   font-size: .7rem;
-  font-weight: 700;
-  letter-spacing: .08em;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 8px 16px;
+  border-radius: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .22s, transform .22s;
+}
+.ev-card:hover .ev-card__cta { opacity: 1; transform: translateY(0); }
+
+.ev-card__body { padding: 20px 20px 16px; }
+.ev-card__cat {
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--text-mute);
   margin-bottom: 8px;
 }
 .ev-card__title {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.0625rem;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.35;
   color: var(--text);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -296,52 +629,60 @@
 .ev-card__meta {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: .8rem;
+  gap: 14px;
+  font-size: .775rem;
   color: var(--text-mute);
-  margin-bottom: 14px;
   flex-wrap: wrap;
 }
-.ev-card__meta svg {
-  width: 13px; height: 13px;
-  flex-shrink: 0;
-  opacity: .6;
-}
+.ev-card__meta span { display:flex;align-items:center;gap:5px; }
+.ev-card__meta svg { width:13px;height:13px;opacity:.5; }
+
 .ev-card__foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
-  border-top: 1px solid var(--border);
-  background: rgba(255,255,255,.02);
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255,255,255,.05);
+  background: rgba(255,255,255,.015);
 }
 .ev-card__price {
-  font-size: .9375rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--gold);
 }
 .ev-card__price--free { color: var(--success); }
 .ev-card__btn {
-  font-size: .75rem;
-  font-weight: 600;
+  font-size: .72rem;
+  font-weight: 700;
   color: var(--text-sub);
-  padding: 5px 12px;
-  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border: 1px solid rgba(255,255,255,.1);
   border-radius: 6px;
   transition: all .18s;
+  letter-spacing: .03em;
 }
 .ev-card:hover .ev-card__btn {
   border-color: var(--gold);
   color: var(--gold);
+  background: rgba(212,175,70,.07);
 }
 
-/* ── Trending row — wider, shorter aspect ── */
+/* Wider aspect for row cards */
 .ev-card--row .ev-card__img-wrap { aspect-ratio: 16/9; }
 
-/* ── Category chips section ── */
-.cats-section {
-  padding: 48px 0 8px;
+/* ── GRIDS ───────────────────────────────────────────── */
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+/* ── CATEGORY CHIPS ──────────────────────────────────── */
 .cats-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -352,294 +693,495 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 20px 12px;
+  padding: 24px 14px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 16px;
   text-decoration: none;
   color: var(--text-sub);
   font-size: .8125rem;
-  font-weight: 500;
-  transition: all .2s;
+  font-weight: 600;
+  transition: all .25s cubic-bezier(.16,1,.3,1);
   text-align: center;
 }
 .cat-item:hover {
-  border-color: var(--gold);
+  border-color: rgba(212,175,70,.4);
   color: var(--gold);
-  background: rgba(212,175,70,.05);
-  transform: translateY(-3px);
+  background: rgba(212,175,70,.06);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0,0,0,.4);
 }
 .cat-item__icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   background: var(--surface-2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  transition: background .2s;
+  font-size: 1.375rem;
+  transition: background .2s, transform .2s;
 }
-.cat-item:hover .cat-item__icon { background: rgba(212,175,70,.1); }
+.cat-item:hover .cat-item__icon {
+  background: rgba(212,175,70,.12);
+  transform: scale(1.1);
+}
 
-/* ── Organizer CTA band ── */
+/* ── HOST CTA ─────────────────────────────────────────── */
 .host-cta {
   position: relative;
-  border-radius: var(--radius-lg);
+  border-radius: 24px;
   overflow: hidden;
   background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 64px 56px;
+  border: 1px solid rgba(255,255,255,.07);
+  padding: 80px 64px;
 }
 .host-cta__bg {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 80% at 100% 50%, rgba(212,175,70,.07) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 60% at 0% 100%, rgba(212,175,70,.04) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 80% at 100% 50%, rgba(212,175,70,.09) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 70% at 0% 100%, rgba(79,110,247,.05) 0%, transparent 60%);
   pointer-events: none;
 }
-.host-cta__img {
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 45%;
-  background-image: url('/static/img/host-bg.jpg');
-  background-size: cover;
-  background-position: center;
-  opacity: .18;
-}
-.host-cta__img::before {
-  content: '';
+.host-cta__grid-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, var(--surface) 0%, transparent 100%);
+  background-image:
+    linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse 100% 80% at 80% 50%, black, transparent);
 }
+.host-cta__stat-grid {
+  display: flex;
+  gap: 48px;
+  flex-wrap: wrap;
+  margin: 32px 0 44px;
+}
+.host-cta__stat { text-align: left; }
+.host-cta__stat-num {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--gold) 0%, #F8E78B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+.host-cta__stat-label { font-size: .75rem; color: var(--text-mute); font-weight: 500; }
+.host-cta__badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+.host-cta__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  background: rgba(255,255,255,.03);
+}
+.host-cta__badge svg { width:14px;height:14px;color:var(--gold); }
 
-/* ── Why Nexivo bar ── */
+/* ── WHY NEXIVO ──────────────────────────────────────── */
 .why-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 20px;
   overflow: hidden;
   background: var(--surface);
 }
 .why-item {
-  padding: 32px 28px;
-  border-right: 1px solid var(--border);
+  padding: 36px 28px;
+  border-right: 1px solid rgba(255,255,255,.07);
   display: flex;
-  gap: 16px;
+  gap: 18px;
   align-items: flex-start;
+  transition: background .2s;
 }
 .why-item:last-child { border-right: none; }
+.why-item:hover { background: rgba(255,255,255,.025); }
 .why-item__icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 48px; height: 48px;
+  border-radius: 12px;
   background: rgba(212,175,70,.1);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: transform .25s, background .2s;
 }
-.why-item__icon svg { width: 20px; height: 20px; color: var(--gold); }
-.why-item__title {
-  font-size: .9375rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: var(--text);
-}
-.why-item__sub { font-size: .8125rem; color: var(--text-mute); line-height: 1.6; }
+.why-item:hover .why-item__icon { transform: scale(1.08); }
+.why-item__icon svg { width:22px;height:22px;color:var(--gold); }
+.why-item:nth-child(2) .why-item__icon { background: rgba(15,184,160,.1); }
+.why-item:nth-child(2) .why-item__icon svg { color: #0FB8A0; }
+.why-item:nth-child(3) .why-item__icon { background: rgba(79,110,247,.1); }
+.why-item:nth-child(3) .why-item__icon svg { color: #4F6EF7; }
+.why-item:nth-child(4) .why-item__icon { background: rgba(192,57,43,.1); }
+.why-item:nth-child(4) .why-item__icon svg { color: #D94F4F; }
+.why-item__title { font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--text); }
+.why-item__sub { font-size:.8125rem;color:var(--text-mute);line-height:1.7; }
 
-@media (max-width: 900px) {
+/* ── BOTTOM GRADIENT FADE ─────────────────────────────── */
+.bottom-fade {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 320px;
+  background: linear-gradient(to top, #060606, transparent);
+  pointer-events: none;
+}
+
+/* ═══ ANIMATIONS ══════════════════════════════════════ */
+@keyframes slideUpIn {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes goldPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .4; }
+}
+
+/* scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+}
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ═══ RESPONSIVE ══════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .hero { grid-template-columns: 1fr; min-height: auto; }
+  .hero__right { display: none; }
+  .hero__left { padding: 100px 24px 80px; max-width: 100%; box-sizing: border-box; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .cats-grid { grid-template-columns: repeat(4, 1fr); }
   .why-grid { grid-template-columns: repeat(2, 1fr); }
   .why-item:nth-child(2) { border-right: none; }
-  .why-item:nth-child(3) { border-top: 1px solid var(--border); }
-  .why-item:nth-child(4) { border-top: 1px solid var(--border); border-right: none; }
-  .host-cta { padding: 40px 28px; }
-  .host-cta__img { display: none; }
+  .why-item:nth-child(3) { border-top: 1px solid rgba(255,255,255,.07); }
+  .why-item:nth-child(4) { border-top: 1px solid rgba(255,255,255,.07); border-right: none; }
+  .host-cta { padding: 56px 36px; }
+  .stats-strip__inner { grid-template-columns: repeat(2, 1fr); }
+  .stat-item:nth-child(2) { border-right: none; }
+  .stat-item:nth-child(3) { border-top: 1px solid rgba(255,255,255,.06); }
+  .stat-item:nth-child(4) { border-right: none; border-top: 1px solid rgba(255,255,255,.06); }
 }
-@media (max-width: 640px) {
+@media (max-width: 700px) {
+  .hero__title { font-size: clamp(2.4rem, 10vw, 3.6rem); }
+  .grid-4, .grid-3 { grid-template-columns: 1fr; }
   .cats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .why-grid { grid-template-columns: 1fr; }
-  .why-item { border-right: none; border-bottom: 1px solid var(--border); }
+  .why-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,.07); }
   .why-item:last-child { border-bottom: none; }
+  .home-section { padding: 64px 0; }
+  .home-section__head { flex-direction: column; align-items: flex-start; }
+  .host-cta { padding: 40px 24px; }
+  .host-cta__stat-grid { gap: 28px; }
+  .stats-strip__inner { grid-template-columns: repeat(2, 1fr); }
+  .hero__left { padding: 90px 20px 72px; }
+  .hero__sub { max-width: 100%; }
+  .hero__search { max-width: 100%; }
+  .hero__chips { gap: 6px; }
+  .hero__chip { font-size: .7rem; padding: 6px 11px; }
 }
 </style>
 
-<!-- ════════════════════════════════════════════════════════════════
-     HERO
-═════════════════════════════════════════════════════════════════ -->
-<section class="hero-v2">
-  <div class="hero-v2__bg-fallback"></div>
-  <div class="hero-v2__bg" id="hero-bg-img" style="display:none"></div>
-  <div class="hero-v2__overlay"></div>
-  <div class="hero-v2__overlay-bottom"></div>
+<!-- ══════════════════════════════════════════════════════
+     CINEMATIC HERO
+══════════════════════════════════════════════════════ -->
+<section class="hero" id="hero-section">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero__orb hero__orb--gold"></div>
+  <div class="hero__orb hero__orb--blue"></div>
+  <div class="hero__orb hero__orb--deep"></div>
+  <div class="bottom-fade"></div>
 
-  <div class="hero-v2__content">
-    <div class="hero-v2__eyebrow">Nigeria's Premium Event Ticketing Platform</div>
-    <h1 class="hero-v2__title">
-      Real Events.<br>
-      <em>Unforgettable<br>Moments.</em>
+  <!-- LEFT: COPY -->
+  <div class="hero__left">
+    <div class="hero__eyebrow">
+      <span class="hero__eyebrow-dot"></span>
+      Nigeria's #1 Event Platform
+      <span class="hero__eyebrow-line"></span>
+    </div>
+
+    <h1 class="hero__title">
+      <span class="line"><span>Experience</span></span>
+      <span class="line"><span><em class="accent">Unforgettable</em></span></span>
+      <span class="line"><span>Events.</span></span>
     </h1>
-    <p class="hero-v2__sub">Discover, book, and attend the best events — concerts, parties, festivals, conferences, and more.</p>
 
-    <div class="hero-v2__search-wrap">
-      <div class="hero-v2__search">
-        <svg style="margin-left:18px;flex-shrink:0;opacity:.4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Search for events, artists, venues…" id="hero-search" autocomplete="off"
-               onkeydown="if(event.key==='Enter') window.location='/events/?search='+encodeURIComponent(this.value)">
-        <button onclick="window.location='/events/?search='+encodeURIComponent(document.getElementById('hero-search').value)">Search</button>
+    <p class="hero__sub">
+      Discover, book, and attend Nigeria's best concerts, parties, festivals, and conferences — all in one place.
+    </p>
+
+    <div class="hero__search">
+      <svg style="margin-left:18px;flex-shrink:0;opacity:.35" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search events, artists, venues…" id="hero-search" autocomplete="off"
+             onkeydown="if(event.key==='Enter') window.location='/events/?search='+encodeURIComponent(this.value)">
+      <button onclick="window.location='/events/?search='+encodeURIComponent(document.getElementById('hero-search').value)">Search</button>
+    </div>
+
+    <div class="hero__chips">
+      <a href="/events/?event_type=concerts" class="hero__chip">🎵 Concerts</a>
+      <a href="/events/?event_type=parties" class="hero__chip">🎉 Parties</a>
+      <a href="/events/?event_type=festivals" class="hero__chip">🎪 Festivals</a>
+      <a href="/events/?event_type=conferences" class="hero__chip">💼 Conferences</a>
+      <a href="/events/" class="hero__chip">✦ All Events</a>
+    </div>
+  </div>
+
+  <!-- RIGHT: FLOATING PREVIEW CARDS -->
+  <div class="hero__right">
+    <div style="width:100%;max-width:400px">
+      <div class="hero__right-label">Live on Nexivo</div>
+
+      <!-- Main card -->
+      <div class="hcard hcard--main">
+        <div class="hcard__img">
+          <div class="hcard__img-inner"></div>
+          <span class="hcard__img-placeholder">🎵</span>
+        </div>
+        <div class="hcard__row">
+          <div class="hcard__date-badge">
+            <span class="day">18</span>
+            <span class="mon">Nov</span>
+          </div>
+          <div class="hcard__info">
+            <div class="hcard__title">Afrobeats Night Lagos</div>
+            <div class="hcard__meta">
+              <span>Eko Hotel, Lagos</span>
+              <span class="hcard__dot"></span>
+              <span>8:00 PM</span>
+            </div>
+          </div>
+          <div class="hcard__price">₦15K</div>
+        </div>
+        <div class="hcard__attendees">
+          <div class="hcard__avatars">
+            <div class="hcard__avatar">A</div>
+            <div class="hcard__avatar">K</div>
+            <div class="hcard__avatar">T</div>
+            <div class="hcard__avatar">+</div>
+          </div>
+          <span class="hcard__attending-text"><strong>1,240+</strong> attending</span>
+          <span class="hcard__live">Live</span>
+        </div>
       </div>
 
-      <div class="hero-v2__chips" id="category-chips">
-        <a href="/events/?event_type=concerts" class="hero-v2__chip">🎵 Concerts</a>
-        <a href="/events/?event_type=parties" class="hero-v2__chip">🎉 Parties</a>
-        <a href="/events/?event_type=festivals" class="hero-v2__chip">🎪 Festivals</a>
-        <a href="/events/?event_type=conferences" class="hero-v2__chip">💼 Conferences</a>
-        <a href="/events/?event_type=workshops" class="hero-v2__chip">🎓 Workshops</a>
-        <a href="/events/" class="hero-v2__chip">••• More</a>
+      <!-- Mini card -->
+      <div class="hcard hcard--mini" style="margin-top:14px">
+        <div class="hcard__row">
+          <div class="hcard__date-badge">
+            <span class="day">02</span>
+            <span class="mon">Dec</span>
+          </div>
+          <div class="hcard__info">
+            <div class="hcard__title">Tech Summit Abuja 2026</div>
+            <div class="hcard__meta">
+              <span>ICC Abuja</span>
+              <span class="hcard__dot"></span>
+              <span>9:00 AM</span>
+            </div>
+          </div>
+          <div class="hcard__price">Free</div>
+        </div>
+      </div>
+
+      <!-- Third tiny card -->
+      <div class="hcard hcard--mini" style="margin-top:10px;opacity:.75">
+        <div class="hcard__row">
+          <div class="hcard__date-badge">
+            <span class="day">14</span>
+            <span class="mon">Dec</span>
+          </div>
+          <div class="hcard__info">
+            <div class="hcard__title">Detty December Festival</div>
+            <div class="hcard__meta">
+              <span>Victoria Island</span>
+              <span class="hcard__dot"></span>
+              <span>6:00 PM</span>
+            </div>
+          </div>
+          <div class="hcard__price">₦25K</div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- ══ STATS STRIP ════════════════════════════════════ -->
+<div class="stats-strip">
+  <div class="stats-strip__inner">
+    <div class="stat-item reveal">
+      <span class="stat-item__num" data-count="12000">0</span>
+      <span class="stat-item__label">Events Hosted</span>
+    </div>
+    <div class="stat-item reveal">
+      <span class="stat-item__num" data-count="85000">0</span>
+      <span class="stat-item__label">Tickets Sold</span>
+    </div>
+    <div class="stat-item reveal">
+      <span class="stat-item__num" data-count="3200">0</span>
+      <span class="stat-item__label">Organizers</span>
+    </div>
+    <div class="stat-item reveal">
+      <span class="stat-item__num" data-count="36">0</span>
+      <span class="stat-item__label">States Covered</span>
+    </div>
+  </div>
+</div>
+
 <div class="container">
 
-  <!-- ── Trending Events ── -->
-  <section style="padding-top:64px">
-    <div class="flex-between" style="margin-bottom:32px">
+  <!-- ══ TRENDING EVENTS ════════════════════════════════ -->
+  <section class="home-section">
+    <div class="home-section__head">
       <div>
-        <h2 class="font-display" style="font-size:1.625rem;font-weight:700;letter-spacing:-.02em">Trending Events</h2>
-        <p class="text-sub" style="margin-top:4px;font-size:.875rem">The hottest events happening right now.</p>
+        <div class="home-section__eyebrow" style="color:#D94F4F">
+          <span style="background:#D94F4F"></span>
+          Trending Right Now
+        </div>
+        <h2 class="home-section__title">Hot Events</h2>
+        <p class="home-section__sub">The most-booked events happening across Nigeria.</p>
       </div>
       <a href="/events/" class="btn btn--ghost btn--sm">View all →</a>
     </div>
     <div class="grid-4" id="trending-grid">
       {% for i in "1234" %}
-      <div class="ev-card" style="pointer-events:none">
-        <div class="ev-card__img-wrap" style="background:var(--surface-2);display:flex;align-items:center;justify-content:center">
+      <div class="ev-card reveal" style="pointer-events:none">
+        <div class="ev-card__img-wrap" style="display:flex;align-items:center;justify-content:center">
           <div class="spinner"></div>
         </div>
         <div class="ev-card__body">
-          <div style="height:12px;background:var(--surface-2);border-radius:4px;width:60%;margin-bottom:10px"></div>
+          <div style="height:10px;background:var(--surface-2);border-radius:4px;width:55%;margin-bottom:12px"></div>
           <div style="height:16px;background:var(--surface-2);border-radius:4px;margin-bottom:8px"></div>
-          <div style="height:12px;background:var(--surface-2);border-radius:4px;width:80%"></div>
+          <div style="height:10px;background:var(--surface-2);border-radius:4px;width:75%"></div>
         </div>
       </div>
       {% endfor %}
     </div>
   </section>
 
-  <!-- ── Popular Categories ── -->
-  <section class="cats-section">
-    <div class="flex-between" style="margin-bottom:24px">
-      <h2 class="font-display" style="font-size:1.625rem;font-weight:700;letter-spacing:-.02em">Popular Categories</h2>
+  <!-- ══ CATEGORIES ════════════════════════════════════ -->
+  <section style="padding-bottom:96px">
+    <div class="home-section__head">
+      <h2 class="home-section__title">Browse by Category</h2>
       <a href="/events/" class="btn btn--ghost btn--sm">View all →</a>
     </div>
     <div class="cats-grid">
-      <a href="/events/?event_type=concerts" class="cat-item">
-        <div class="cat-item__icon">🎵</div>
-        <span>Concerts</span>
+      <a href="/events/?event_type=concerts" class="cat-item reveal">
+        <div class="cat-item__icon">🎵</div><span>Concerts</span>
       </a>
-      <a href="/events/?event_type=parties" class="cat-item">
-        <div class="cat-item__icon">🎉</div>
-        <span>Parties</span>
+      <a href="/events/?event_type=parties" class="cat-item reveal">
+        <div class="cat-item__icon">🎉</div><span>Parties</span>
       </a>
-      <a href="/events/?event_type=festivals" class="cat-item">
-        <div class="cat-item__icon">🎪</div>
-        <span>Festivals</span>
+      <a href="/events/?event_type=festivals" class="cat-item reveal">
+        <div class="cat-item__icon">🎪</div><span>Festivals</span>
       </a>
-      <a href="/events/?event_type=conferences" class="cat-item">
-        <div class="cat-item__icon">💼</div>
-        <span>Conferences</span>
+      <a href="/events/?event_type=conferences" class="cat-item reveal">
+        <div class="cat-item__icon">💼</div><span>Conferences</span>
       </a>
-      <a href="/events/?event_type=workshops" class="cat-item">
-        <div class="cat-item__icon">🎓</div>
-        <span>Workshops</span>
+      <a href="/events/?event_type=workshops" class="cat-item reveal">
+        <div class="cat-item__icon">🎓</div><span>Workshops</span>
       </a>
-      <a href="/events/?event_type=sports" class="cat-item">
-        <div class="cat-item__icon">⚽</div>
-        <span>Sports</span>
+      <a href="/events/?event_type=sports" class="cat-item reveal">
+        <div class="cat-item__icon">⚽</div><span>Sports</span>
       </a>
-      <a href="/events/" class="cat-item">
-        <div class="cat-item__icon">✦</div>
-        <span>Other</span>
+      <a href="/events/" class="cat-item reveal">
+        <div class="cat-item__icon">✦</div><span>More</span>
       </a>
     </div>
   </section>
 
-  <!-- ── Featured Events ── -->
-  <section style="padding-top:64px">
-    <div class="flex-between" style="margin-bottom:32px">
+  <!-- ══ FEATURED EVENTS ═══════════════════════════════ -->
+  <section style="padding-bottom:96px">
+    <div class="home-section__head">
       <div>
-        <h2 class="font-display" style="font-size:1.625rem;font-weight:700;letter-spacing:-.02em;font-style:italic">Featured Events</h2>
-        <p class="text-sub" style="margin-top:4px;font-size:.875rem">Handpicked experiences worth every moment.</p>
+        <div class="home-section__eyebrow" style="color:#4F6EF7">
+          <span style="background:#4F6EF7"></span>
+          Curated For You
+        </div>
+        <h2 class="home-section__title" style="font-style:italic">Featured Events</h2>
+        <p class="home-section__sub">Handpicked experiences worth every moment.</p>
       </div>
       <a href="/events/?is_featured=true" class="btn btn--ghost btn--sm">View all →</a>
     </div>
     <div class="grid-3" id="featured-grid">
       {% for i in "123" %}
-      <div class="ev-card" style="pointer-events:none">
-        <div class="ev-card__img-wrap" style="background:var(--surface-2)"></div>
+      <div class="ev-card reveal" style="pointer-events:none">
+        <div class="ev-card__img-wrap"></div>
         <div class="ev-card__body">
-          <div style="height:12px;background:var(--surface-2);border-radius:4px;width:50%;margin-bottom:10px"></div>
+          <div style="height:10px;background:var(--surface-2);border-radius:4px;width:45%;margin-bottom:12px"></div>
           <div style="height:18px;background:var(--surface-2);border-radius:4px;margin-bottom:8px"></div>
-          <div style="height:12px;background:var(--surface-2);border-radius:4px;width:70%"></div>
+          <div style="height:10px;background:var(--surface-2);border-radius:4px;width:65%"></div>
         </div>
       </div>
       {% endfor %}
     </div>
   </section>
 
-  <!-- ── Planning an Event CTA ── -->
-  <section style="padding:64px 0">
-    <div class="host-cta">
+  <!-- ══ HOST CTA ══════════════════════════════════════ -->
+  <section style="padding-bottom:96px">
+    <div class="host-cta reveal">
       <div class="host-cta__bg"></div>
-      <div class="host-cta__img"></div>
+      <div class="host-cta__grid-bg"></div>
 
-      <div style="position:relative;z-index:1;max-width:620px">
-        <p style="font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;display:inline-flex;align-items:center;gap:8px">
-          <span style="display:block;width:24px;height:1px;background:var(--gold)"></span>
+      <div style="position:relative;z-index:1;max-width:660px">
+        <div class="home-section__eyebrow" style="color:var(--gold);margin-bottom:20px">
+          <span style="background:var(--gold)"></span>
           For Event Organizers
-        </p>
-        <h2 class="font-display" style="font-size:2.25rem;font-weight:700;line-height:1.15;margin-bottom:16px;letter-spacing:-.02em">
-          Planning an Event?
-        </h2>
-        <p class="text-sub" style="font-size:.9375rem;line-height:1.8;margin-bottom:32px;max-width:520px">
-          Sell your tickets, manage your attendees, and grow your event with Nexivo. Set up in 5 minutes. Keep <strong style="color:var(--gold)">92%</strong> of every sale.
-        </p>
+        </div>
 
-        <div style="display:flex;gap:40px;flex-wrap:wrap;margin-bottom:36px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:8px;background:rgba(212,175,70,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            </div>
-            <div>
-              <div style="font-size:.875rem;font-weight:600;color:var(--text)">Easy Setup</div>
-              <div style="font-size:.75rem;color:var(--text-mute)">In 5 Minutes</div>
-            </div>
+        <h2 class="home-section__title" style="font-size:clamp(1.8rem,3.5vw,2.75rem);margin-bottom:10px">
+          Planning an Event?<br>
+          <span style="color:var(--text-mute);font-weight:400;font-size:.75em;font-style:italic">We've got you covered.</span>
+        </h2>
+
+        <div class="host-cta__stat-grid">
+          <div class="host-cta__stat">
+            <span class="host-cta__stat-num">92%</span>
+            <span class="host-cta__stat-label">Revenue you keep</span>
           </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:8px;background:rgba(212,175,70,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            </div>
-            <div>
-              <div style="font-size:.875rem;font-weight:600;color:var(--text)">Secure Payments</div>
-              <div style="font-size:.75rem;color:var(--text-mute)">Paystack, Flutterwave, Stripe</div>
-            </div>
+          <div class="host-cta__stat">
+            <span class="host-cta__stat-num">5min</span>
+            <span class="host-cta__stat-label">To go live</span>
           </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:8px;background:rgba(212,175,70,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
-            </div>
-            <div>
-              <div style="font-size:.875rem;font-weight:600;color:var(--text)">QR Ticketing</div>
-              <div style="font-size:.75rem;color:var(--text-mute)">& Check-In</div>
-            </div>
+          <div class="host-cta__stat">
+            <span class="host-cta__stat-num">∞</span>
+            <span class="host-cta__stat-label">Ticket types</span>
           </div>
+        </div>
+
+        <div class="host-cta__badges">
+          <span class="host-cta__badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Paystack · Flutterwave · Stripe
+          </span>
+          <span class="host-cta__badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+            QR Check-In
+          </span>
+          <span class="host-cta__badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            Live Analytics
+          </span>
         </div>
 
         <a href="/auth/register/?role=host" class="btn btn--gold btn--lg">Become an Organizer →</a>
@@ -647,44 +1189,46 @@
     </div>
   </section>
 
-  <!-- ── Why Choose Nexivo ── -->
-  <section style="padding-bottom:72px">
-    <h2 class="font-display" style="font-size:1.375rem;font-weight:700;letter-spacing:-.02em;margin-bottom:24px;text-align:center;color:var(--text-sub)">Why Choose Nexivo?</h2>
+  <!-- ══ WHY NEXIVO ═════════════════════════════════════ -->
+  <section style="padding-bottom:96px">
+    <div style="text-align:center;margin-bottom:48px">
+      <h2 class="home-section__title" style="font-size:1.25rem;color:var(--text-mute);font-weight:500">Why Event-Lovers Choose Nexivo</h2>
+    </div>
     <div class="why-grid">
-      <div class="why-item">
+      <div class="why-item reveal">
         <div class="why-item__icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
         <div>
-          <div class="why-item__title">Fast &amp; Easy Booking</div>
-          <div class="why-item__sub">Get your tickets in minutes. Simple, intuitive, and fast.</div>
+          <div class="why-item__title">Fast Booking</div>
+          <div class="why-item__sub">Get your tickets in under 2 minutes. Simple, smooth, and instant.</div>
         </div>
       </div>
-      <div class="why-item">
+      <div class="why-item reveal">
         <div class="why-item__icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         </div>
         <div>
           <div class="why-item__title">Secure Payments</div>
-          <div class="why-item__sub">Paystack, Flutterwave, Stripe — your money is always safe.</div>
+          <div class="why-item__sub">Paystack, Flutterwave, Stripe — your money is always protected.</div>
         </div>
       </div>
-      <div class="why-item">
+      <div class="why-item reveal">
         <div class="why-item__icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
         </div>
         <div>
           <div class="why-item__title">QR Ticketing</div>
-          <div class="why-item__sub">Scan and check in at the door. No paper, no hassle.</div>
+          <div class="why-item__sub">Scan and walk in. No paper, no printing, no hassle.</div>
         </div>
       </div>
-      <div class="why-item">
+      <div class="why-item reveal">
         <div class="why-item__icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
         <div>
-          <div class="why-item__title">Trusted by Organizers</div>
-          <div class="why-item__sub">From small events to big festivals. Nigeria's organizers choose Nexivo.</div>
+          <div class="why-item__title">Trusted Nationwide</div>
+          <div class="why-item__sub">From Lagos to Abuja. Nigeria's organizers and event-goers trust Nexivo.</div>
         </div>
       </div>
     </div>
@@ -694,93 +1238,212 @@
 
 <script src="/static/js/events.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
+// ══ HERO CANVAS — FLOATING PARTICLES ════════════════
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [], lines = [];
+  const GOLD = 'rgba(212,175,70,';
+  const BLUE = 'rgba(79,110,247,';
+  const WHITE = 'rgba(255,255,255,';
 
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function createParticle() {
+    const col = Math.random() < .5 ? GOLD : (Math.random() < .6 ? WHITE : BLUE);
+    return {
+      x: rand(0, W), y: rand(0, H),
+      vx: rand(-.3, .3), vy: rand(-.25, -.05),
+      r: rand(.8, 2.2),
+      alpha: rand(.25, .7),
+      col,
+      twinkle: rand(0, Math.PI * 2),
+      twinkleSpeed: rand(.02, .06),
+    };
+  }
+
+  function init() {
+    const count = Math.min(Math.floor(W * H / 6000), 120);
+    particles = Array.from({ length: count }, createParticle);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    particles.forEach(p => {
+      p.twinkle += p.twinkleSpeed;
+      const a = p.alpha * (.6 + .4 * Math.sin(p.twinkle));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.col + a + ')';
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y < -10) { p.y = H + 10; p.x = rand(0, W); }
+      if (p.x < -10) p.x = W + 10;
+      if (p.x > W + 10) p.x = -10;
+    });
+
+    // Draw lines between close particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < 90) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = GOLD + ((1 - d / 90) * .06) + ')';
+          ctx.lineWidth = .8;
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); init(); });
+  resize();
+  init();
+  draw();
+})();
+
+// ══ COUNTER ANIMATION ════════════════════════════════
+function animateCounter(el, target, suffix) {
+  const dur = 2000;
+  const start = performance.now();
+  const fmt = n => n >= 1000 ? (n/1000).toFixed(n >= 10000 ? 0 : 1) + 'K' : n.toString();
+
+  function tick(now) {
+    const t = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - t, 4);
+    const val = Math.round(ease * target);
+    el.textContent = fmt(val) + (suffix || '');
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = fmt(target) + (suffix || '');
+  }
+  requestAnimationFrame(tick);
+}
+
+// Start counters when in view
+const statEls = document.querySelectorAll('.stat-item__num[data-count]');
+const counterObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const el = e.target;
+      const target = parseInt(el.dataset.count);
+      animateCounter(el, target);
+      counterObs.unobserve(el);
+    }
+  });
+}, { threshold: .5 });
+statEls.forEach(el => counterObs.observe(el));
+
+// ══ SCROLL REVEAL ════════════════════════════════════
+function wireReveal() {
+  if (!window.IntersectionObserver || window.__revealWired) return;
+  window.__revealWired = true;
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.transitionDelay = ((i % 6) * 0.09) + 's';
+    io.observe(el);
+  });
+}
+
+// ══ EVENT CARDS ══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
   function escapeHtml(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-
   function fmtDate(dtStr) {
     const d = new Date(dtStr);
     return {
-      day:   d.toLocaleDateString('en-NG', { day: 'numeric' }),
-      month: d.toLocaleDateString('en-NG', { month: 'short' }),
-      year:  d.toLocaleDateString('en-NG', { year: 'numeric' }),
-      full:  d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }),
-      time:  d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }),
+      day:  d.toLocaleDateString('en-NG', { day: 'numeric' }),
+      month:d.toLocaleDateString('en-NG', { month: 'short' }),
+      full: d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }),
     };
   }
-
-  function renderCard(e, wide) {
+  function renderCard(e) {
     const isFree = e.min_price == null || parseFloat(e.min_price) === 0;
     const price  = isFree ? 'Free' : `From ₦${Number(e.min_price).toLocaleString()}`;
     const dt     = fmtDate(e.start_datetime);
     const img    = e.banner_image || '';
     const cat    = e.category_name || e.event_type || '';
-
-    let statusBadge = '';
-    if (e.is_featured) statusBadge = '<span class="ev-card__status ev-card__status--featured">Featured</span>';
-    else if (isFree)   statusBadge = '<span class="ev-card__status ev-card__status--free">Free</span>';
-
+    let badge = '';
+    if (e.is_featured) badge = '<span class="ev-card__status ev-card__status--featured">Featured</span>';
+    else if (isFree)   badge = '<span class="ev-card__status ev-card__status--free">Free</span>';
     return `
-    <a href="/events/${escapeHtml(e.slug)}/" class="ev-card${wide ? ' ev-card--row' : ''}">
+    <a href="/events/${escapeHtml(e.slug)}/" class="ev-card reveal">
       <div class="ev-card__img-wrap">
         ${img
           ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(e.title)}" loading="lazy">`
-          : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1408 0%,#1c1c1c 100%);display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(212,175,70,.3)" stroke-width="1"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>`
+          : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#14100a 0%,#1c1c1c 100%);display:flex;align-items:center;justify-content:center"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(212,175,70,.25)" stroke-width="1"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>`
         }
         <div class="ev-card__img-overlay"></div>
-        <div class="ev-card__date-badge">
-          <span class="day">${escapeHtml(dt.day)}</span>
-          <span class="month">${escapeHtml(dt.month)}</span>
-        </div>
-        ${statusBadge}
+        <div class="ev-card__date-badge"><span class="day">${escapeHtml(dt.day)}</span><span class="month">${escapeHtml(dt.month)}</span></div>
+        ${badge}
         <span class="ev-card__cta">Get Tickets</span>
       </div>
       <div class="ev-card__body">
         <div class="ev-card__cat">${escapeHtml(cat)}</div>
         <div class="ev-card__title">${escapeHtml(e.title)}</div>
         <div class="ev-card__meta">
-          <span style="display:flex;align-items:center;gap:4px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            ${escapeHtml(dt.full)}
-          </span>
-          ${e.city ? `<span style="display:flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${escapeHtml(e.city)}</span>` : ''}
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${escapeHtml(dt.full)}</span>
+          ${e.city ? `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${escapeHtml(e.city)}</span>` : ''}
         </div>
       </div>
       <div class="ev-card__foot">
-        <span class="ev-card__price${isFree ? ' ev-card__price--free' : ''}">${price}</span>
+        <span class="ev-card__price${isFree?' ev-card__price--free':''}">${price}</span>
         <span class="ev-card__btn">Book →</span>
       </div>
     </a>`;
   }
 
-  /* Trending */
+  // Load trending
   try {
-    const data = await Api.get('/events/trending/?page_size=4', true);
-    const grid = document.getElementById('trending-grid');
-    if (!data.results || !data.results.length) {
-      grid.innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No trending events right now.</p>';
-    } else {
-      grid.innerHTML = data.results.map(e => renderCard(e, false)).join('');
-    }
+    const d = await Api.get('/events/trending/?page_size=4', true);
+    const g = document.getElementById('trending-grid');
+    g.innerHTML = (d.results && d.results.length)
+      ? d.results.map(renderCard).join('')
+      : '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No trending events right now.</p>';
   } catch(_) {
     document.getElementById('trending-grid').innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">Unable to load events.</p>';
   }
 
-  /* Featured */
+  // Load featured
   try {
-    const data = await Api.get('/events/featured/?page_size=3', true);
-    const grid = document.getElementById('featured-grid');
-    if (!data.results || !data.results.length) {
-      grid.innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No featured events right now. Check back soon.</p>';
-    } else {
-      grid.innerHTML = data.results.map(e => renderCard(e, false)).join('');
-    }
+    const d = await Api.get('/events/featured/?page_size=3', true);
+    const g = document.getElementById('featured-grid');
+    g.innerHTML = (d.results && d.results.length)
+      ? d.results.map(renderCard).join('')
+      : '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No featured events right now.</p>';
   } catch(_) {
-    document.getElementById('featured-grid').innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">Unable to load featured events.</p>';
+    document.getElementById('featured-grid').innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">Unable to load events.</p>';
   }
+
+  // Wire reveals AFTER cards are in DOM
+  requestAnimationFrame(() => { requestAnimationFrame(wireReveal); });
 });
+
+wireReveal(); // Also wire static elements immediately
 </script>
 {% endblock %}
