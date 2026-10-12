@@ -754,6 +754,7 @@ h1, h2, h3, h4, h5 { line-height: 1.2; text-wrap: balance; }
 .badge--red   { background: rgba(217,79,79,.2);   color: #F88; }
 .badge--gold  { background: rgba(212,175,70,.15); color: var(--gold); }
 .badge--grey  { background: var(--surface-2);      color: var(--text-mute); }
+.badge--blue  { background: rgba(59,130,246,.15);  color: #60A5FA; }
 
 /* ── Table ──────────────────────────────────────────────────────────── */
 .table-wrap {

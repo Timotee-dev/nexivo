@@ -8,6 +8,7 @@ from frontend.views import (
     terms_view,
     privacy_view,
     events_list,
+    upcoming_events,
     event_detail,
     event_create,
     login_view,
@@ -52,6 +53,7 @@ urlpatterns = [
     # ── Public pages ──────────────────────────────────────────────────────
     path("",                            home,              name="home"),
     path("events/",                     events_list,       name="events_list"),
+    path("events/upcoming/",            upcoming_events,   name="upcoming_events"),
     path("events/create/",              event_create,      name="event_create"),
     path("events/<slug:slug>/",         event_detail,      name="event_detail"),
 

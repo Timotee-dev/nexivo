@@ -89,17 +89,21 @@ class TrendingEventsView(generics.ListAPIView):
 
 
 class UpcomingEventsView(generics.ListAPIView):
-    """GET /api/v1/events/upcoming/ — soonest-starting published events."""
+    """
+    GET /api/v1/events/upcoming/
+    Events in UPCOMING status — announced by host but ticket sales not yet open.
+    These are NOT shown on the home page; they live on their own /upcoming/ section.
+    """
 
     serializer_class = EventListSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
         return (
-            Event.objects.filter(status=Event.Status.PUBLISHED, start_datetime__gte=timezone.now())
+            Event.objects.filter(status=Event.Status.UPCOMING, end_datetime__gte=timezone.now())
             .select_related("host", "category")
             .prefetch_related("ticket_types")
-            .order_by("start_datetime")[:20]
+            .order_by("start_datetime")
         )
 
 
@@ -317,7 +321,10 @@ class MyEventsView(generics.ListCreateAPIView):
 
 
 class EventPublishView(APIView):
-    """POST /api/v1/events/<slug>/publish/ — host publishes a draft event."""
+    """
+    POST /api/v1/events/<slug>/publish/
+    First publish: Draft/Pending Review → Upcoming (announced, no ticket sales).
+    """
 
     permission_classes = [IsAuthenticated]
 
@@ -326,19 +333,39 @@ class EventPublishView(APIView):
         if event.host != request.user and not request.user.is_super_admin:
             raise PermissionDenied("You do not own this event.")
         if event.status not in (Event.Status.DRAFT, Event.Status.PENDING_REVIEW):
-            return Response({"detail": f"Cannot publish an event with status '{event.status}'."}, status=400)
+            return Response({"detail": f"Cannot announce an event with status '{event.status}'."}, status=400)
 
-        # Block publishing paid events if host has no bank account saved
+        event.publish()  # → UPCOMING
+        return Response(EventDetailSerializer(event, context={"request": request}).data)
+
+
+class EventGoLiveView(APIView):
+    """
+    POST /api/v1/events/<slug>/go-live/
+    Second publish: Upcoming → Published (live, tickets open, visible on home page).
+    Blocks if paid tickets exist but host has no bank account.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, slug):
+        event = generics.get_object_or_404(Event, slug=slug)
+        if event.host != request.user and not request.user.is_super_admin:
+            raise PermissionDenied("You do not own this event.")
+        if event.status != Event.Status.UPCOMING:
+            return Response({"detail": f"Only upcoming events can go live (current status: '{event.status}')."}, status=400)
+
+        # Block going live with paid tickets if host has no bank account
         has_paid_tickets = event.ticket_types.filter(is_free=False, price__gt=0).exists()
         if has_paid_tickets and not request.user.is_super_admin:
             host_profile = getattr(request.user, "host_profile", None)
             if not host_profile or not host_profile.paystack_subaccount_code:
                 return Response(
-                    {"detail": "Please save your bank account before publishing a paid event. Go to Dashboard → Bank Account."},
+                    {"detail": "Please save your bank account before going live with a paid event. Go to Dashboard → Bank Account."},
                     status=400,
                 )
 
-        event.publish()
+        event.go_live()  # → PUBLISHED
         return Response(EventDetailSerializer(event, context={"request": request}).data)
 
 

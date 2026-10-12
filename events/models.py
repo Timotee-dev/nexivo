@@ -54,6 +54,7 @@ class Event(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         PENDING_REVIEW = "pending_review", "Pending Review"
+        UPCOMING = "upcoming", "Upcoming"
         PUBLISHED = "published", "Published"
         SUSPENDED = "suspended", "Suspended"
         CANCELLED = "cancelled", "Cancelled"
@@ -209,9 +210,21 @@ class Event(models.Model):
         return self.ticket_types.exists() and self.total_tickets_remaining == 0
 
     def publish(self):
-        self.status = self.Status.PUBLISHED
+        """
+        First publish: Draft/Pending Review → Upcoming (announced, no ticket sales).
+        Upcoming events are visible on the /upcoming/ page but NOT on the home page.
+        Ticket purchase is disabled until the host calls go_live().
+        """
+        self.status = self.Status.UPCOMING
         self.published_at = timezone.now()
         self.save(update_fields=["status", "published_at"])
+
+    def go_live(self):
+        """
+        Second publish: Upcoming → Published (live, tickets open, visible on home page).
+        """
+        self.status = self.Status.PUBLISHED
+        self.save(update_fields=["status"])
 
 
 class EventGallery(models.Model):

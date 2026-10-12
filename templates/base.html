@@ -129,6 +129,7 @@
     <a href="/" class="nav__logo">Nexiv<span>o</span></a>
     <div class="nav__links">
       <a href="/events/" class="nav__link">Explore</a>
+      <a href="/events/upcoming/" class="nav__link">Upcoming</a>
       <a href="/events/?event_type=virtual" class="nav__link">Virtual</a>
       <a href="/events/?event_type=physical" class="nav__link">In-Person</a>
       <a href="/events/create/" class="nav__link">Host an Event</a>
@@ -227,6 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
     html += '<div class="mob-section">Discover</div>';
     html += '<a href="/" class="mob-link"><span class="mi">🏠</span> Home</a>';
     html += '<a href="/events/" class="mob-link"><span class="mi">🔍</span> Browse Events</a>';
+    html += '<a href="/events/upcoming/" class="mob-link"><span class="mi">🕐</span> Upcoming Events</a>';
 
     if (user && role === 'customer') {
       html += '<div class="mob-section">My Account</div>';

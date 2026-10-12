@@ -114,34 +114,58 @@ async function loadHostEvents() {
 
   try {
     const data = await Api.get('/events/mine/');
-    container.innerHTML = data.results.map(event => `
+    container.innerHTML = data.results.map(event => {
+      const safeTitle = event.title.replace(/'/g, "\\'");
+      let actionBtns = '';
+      if (event.status === 'draft' || event.status === 'pending_review') {
+        actionBtns = `<button class="btn btn--gold btn--sm" onclick="announceEvent('${event.slug}', this)">📣 Announce</button>`;
+      } else if (event.status === 'upcoming') {
+        actionBtns = `
+          <a href="/events/${event.slug}/" class="btn btn--ghost btn--sm" target="_blank">Preview</a>
+          <button class="btn btn--gold btn--sm" onclick="goLiveEvent('${event.slug}', this)" title="Go live — enable ticket sales and appear on home page">🚀 Go Live</button>`;
+      } else {
+        actionBtns = `<a href="/events/${event.slug}/" class="btn btn--ghost btn--sm" target="_blank">View</a>`;
+      }
+      return `
       <tr>
         <td><strong>${event.title}</strong><br><small class="text-muted">${new Date(event.start_datetime).toLocaleDateString()}</small></td>
-        <td><span class="badge badge--${statusBadge(event.status)}">${event.status}</span></td>
+        <td><span class="badge badge--${statusBadge(event.status)}">${statusLabel(event.status)}</span></td>
         <td>${event.tickets_sold_count}</td>
         <td><div class="flex gap-8" style="flex-wrap:wrap">
-          ${event.status === 'draft'
-            ? `<button class="btn btn--gold btn--sm" onclick="publishEvent('${event.slug}', this)">Publish</button>`
-            : `<a href="/events/${event.slug}/" class="btn btn--ghost btn--sm" target="_blank">View</a>`}
+          ${actionBtns}
           <a href="/dashboard/events/${event.slug}/affiliates/" class="btn btn--outline btn--sm">🤝 Affiliates</a>
-          <button class="btn btn--sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)" onclick="deleteEvent('${event.slug}', '${event.title.replace(/'/g,"\''")}')">Delete</button>
+          <button class="btn btn--sm" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)" onclick="deleteEvent('${event.slug}', '${safeTitle}')">Delete</button>
         </div></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   } catch { Toast.error('Failed to load your events.'); }
 }
 
-async function publishEvent(slug, btn) {
-  btn.disabled = true; btn.textContent = 'Publishing…';
+async function announceEvent(slug, btn) {
+  btn.disabled = true; btn.textContent = 'Announcing…';
   try {
     await Api.post(`/events/${slug}/publish/`);
-    Toast.success('Event published!');
+    Toast.success('Event announced! It\'s now visible in the Upcoming section. Click "Go Live" when you\'re ready to open ticket sales.');
     loadHostEvents();
   } catch(err) {
-    Toast.error(err?.detail || 'Could not publish event.');
-    btn.disabled = false; btn.textContent = 'Publish';
+    Toast.error(err?.detail || 'Could not announce event.');
+    btn.disabled = false; btn.textContent = '📣 Announce';
   }
 }
-window.publishEvent = publishEvent;
+window.announceEvent = announceEvent;
+
+async function goLiveEvent(slug, btn) {
+  btn.disabled = true; btn.textContent = 'Going Live…';
+  try {
+    await Api.post(`/events/${slug}/go-live/`);
+    Toast.success('🚀 Your event is now LIVE! Ticket sales are open and it\'s visible on the home page.');
+    loadHostEvents();
+  } catch(err) {
+    Toast.error(err?.detail || 'Could not go live. Check your bank account settings.');
+    btn.disabled = false; btn.textContent = '🚀 Go Live';
+  }
+}
+window.goLiveEvent = goLiveEvent;
 
 async function deleteEvent(slug, title) {
   // Show inline confirmation instead of browser confirm() which is blocked in artifacts
@@ -313,7 +337,11 @@ async function loadPlatformDashboard() {
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 function statusBadge(status) {
-  return { published: 'green', draft: 'grey', suspended: 'red', cancelled: 'red', completed: 'gold' }[status] || 'grey';
+  return { published: 'green', upcoming: 'blue', draft: 'grey', pending_review: 'grey', suspended: 'red', cancelled: 'red', completed: 'gold' }[status] || 'grey';
+}
+
+function statusLabel(status) {
+  return { published: 'Live', upcoming: 'Upcoming', draft: 'Draft', pending_review: 'Pending Review', suspended: 'Suspended', cancelled: 'Cancelled', completed: 'Completed' }[status] || status;
 }
 
 

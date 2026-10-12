@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Upcoming Events — Coming Soon{% endblock %}
+{% block content %}
+
+<style>
+  .upcoming-hero {
+    background: linear-gradient(135deg, #0a0a0a 0%, #0f0d1a 50%, #0a0a0a 100%);
+    border-bottom: 1px solid rgba(59,130,246,.2);
+    padding: 64px 24px 48px;
+    text-align: center;
+  }
+  .upcoming-hero__eyebrow {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #60A5FA;
+    margin-bottom: 12px;
+  }
+  .upcoming-hero__title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: #f7f5f0;
+    margin: 0 0 16px;
+    line-height: 1.15;
+  }
+  .upcoming-hero__sub {
+    font-size: 1rem;
+    color: rgba(247,245,240,.5);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .upcoming-grid-section {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+  .upcoming-grid-section__count {
+    font-size: .875rem;
+    color: rgba(247,245,240,.45);
+    margin-bottom: 28px;
+  }
+
+  .upcoming-ev-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .uev-card {
+    background: #111;
+    border: 1px solid rgba(59,130,246,.15);
+    border-radius: 16px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .2s, border-color .2s, box-shadow .2s;
+    display: block;
+  }
+  .uev-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(59,130,246,.4);
+    box-shadow: 0 12px 40px rgba(59,130,246,.12);
+  }
+  .uev-card__img {
+    position: relative;
+    height: 180px;
+    background: #1a1a2e;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+  }
+  .uev-card__img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .uev-card__badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(59,130,246,.85);
+    color: #fff;
+    font-size: .6875rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .uev-card__body {
+    padding: 18px 20px 20px;
+  }
+  .uev-card__cat {
+    font-size: .75rem;
+    color: #60A5FA;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .uev-card__title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: #f7f5f0;
+    line-height: 1.3;
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .uev-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: .8125rem;
+    color: rgba(247,245,240,.45);
+    margin-bottom: 14px;
+  }
+  .uev-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .uev-card__opening {
+    font-size: .75rem;
+    color: #60A5FA;
+    font-weight: 600;
+  }
+  .uev-card__cta {
+    font-size: .75rem;
+    font-weight: 700;
+    color: #60A5FA;
+    border: 1px solid rgba(59,130,246,.35);
+    padding: 5px 14px;
+    border-radius: 20px;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .uev-card:hover .uev-card__cta {
+    background: rgba(59,130,246,.1);
+  }
+
+  .upcoming-empty {
+    text-align: center;
+    padding: 80px 24px;
+    color: rgba(247,245,240,.35);
+  }
+  .upcoming-empty__icon { font-size: 3rem; margin-bottom: 16px; }
+  .upcoming-empty__title { font-size: 1.25rem; font-weight: 700; color: rgba(247,245,240,.6); margin-bottom: 8px; }
+  .upcoming-empty__sub { font-size: .9375rem; }
+
+  @media (max-width: 640px) {
+    .upcoming-hero { padding: 48px 16px 36px; }
+    .upcoming-grid-section { padding: 32px 16px 60px; }
+    .upcoming-ev-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  }
+  @media (max-width: 400px) {
+    .upcoming-ev-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="upcoming-hero">
+  <div class="upcoming-hero__eyebrow">🕐 Coming Soon</div>
+  <h1 class="upcoming-hero__title">Upcoming Events</h1>
+  <p class="upcoming-hero__sub">Events announced by hosts — ticket sales haven't opened yet. Stay tuned.</p>
+</div>
+
+<div class="upcoming-grid-section">
+  {% if events %}
+  <div class="upcoming-grid-section__count">{{ events|length }} event{{ events|length|pluralize }} coming soon</div>
+  <div class="upcoming-ev-grid">
+    {% for event in events %}
+    <a href="/events/{{ event.slug }}/" class="uev-card">
+      <div class="uev-card__img">
+        {% if event.banner_image %}
+        <img src="{{ event.banner_image.url }}" alt="{{ event.title }}" loading="lazy">
+        {% else %}
+        <span>{{ event.category.icon|default:"🎪" }}</span>
+        {% endif %}
+        <div class="uev-card__badge">🕐 Coming Soon</div>
+      </div>
+      <div class="uev-card__body">
+        {% if event.category %}
+        <div class="uev-card__cat">{{ event.category.icon }} {{ event.category.name }}</div>
+        {% endif %}
+        <div class="uev-card__title">{{ event.title }}</div>
+        <div class="uev-card__meta">
+          <span>📅 {{ event.start_datetime|date:"D, j M Y · P" }}</span>
+          {% if event.venue_name or event.city %}
+          <span>📍 {{ event.venue_name|default:event.city }}</span>
+          {% endif %}
+        </div>
+        <div class="uev-card__foot">
+          <span class="uev-card__opening">Tickets Opening Soon</span>
+          <span class="uev-card__cta">View Event</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="upcoming-empty">
+    <div class="upcoming-empty__icon">🕐</div>
+    <div class="upcoming-empty__title">Nothing announced yet</div>
+    <div class="upcoming-empty__sub">Check back soon — hosts are planning events right now.</div>
+    <a href="/events/" class="btn btn--gold" style="margin-top:24px;display:inline-block">Browse Live Events →</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

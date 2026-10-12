@@ -31,14 +31,31 @@ def events_list(request):
 
 
 def event_detail(request, slug):
+    # Allow both PUBLISHED and UPCOMING events to be viewed (upcoming shows info, not ticket purchase)
     event = get_object_or_404(
         Event.objects.select_related("host", "category")
         .prefetch_related("ticket_types", "gallery_images", "reviews__customer"),
         slug=slug,
-        status=Event.Status.PUBLISHED,
+        status__in=[Event.Status.PUBLISHED, Event.Status.UPCOMING],
     )
     Event.objects.filter(pk=event.pk).update(view_count=F("view_count") + 1)
     return render(request, "frontend/event_detail.html", {"event": event})
+
+
+def upcoming_events(request):
+    """Page showing all UPCOMING events — announced but ticket sales not yet open."""
+    from django.utils import timezone
+    events = (
+        Event.objects.filter(status=Event.Status.UPCOMING, end_datetime__gte=timezone.now())
+        .select_related("host", "category")
+        .prefetch_related("ticket_types")
+        .order_by("start_datetime")
+    )
+    categories = Category.objects.filter(is_active=True).order_by("display_order")
+    return render(request, "frontend/upcoming_events.html", {
+        "events": events,
+        "categories": categories,
+    })
 
 
 def event_create(request):

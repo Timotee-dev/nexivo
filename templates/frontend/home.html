@@ -373,6 +373,7 @@ body { overflow-x: hidden; }
 .ev-card__badge--featured { background: #D4AF46; color: #0a0a0a; }
 .ev-card__badge--trending { background: rgba(239,68,68,.9); color: #fff; }
 .ev-card__badge--hot { background: rgba(251,146,60,.9); color: #fff; }
+.ev-card__badge--upcoming { background: rgba(59,130,246,.85); color: #fff; }
 .ev-card__body {
   padding: 16px 18px 18px;
 }
@@ -716,6 +717,21 @@ body { overflow-x: hidden; }
 
 <hr class="home-divider">
 
+<!-- ══ UPCOMING EVENTS ══════════════════════════════════════════════════ -->
+<section class="home-section" id="upcoming-section" style="display:none">
+  <div class="section-head">
+    <div>
+      <div class="section-eyebrow">🕐 Coming Soon</div>
+      <h2 class="section-title">Upcoming Events</h2>
+      <p class="section-sub">Events announced by hosts — ticket sales opening soon.</p>
+    </div>
+    <a href="/events/upcoming/" class="view-all">View all →</a>
+  </div>
+  <div class="ev-grid" id="upcoming-grid"></div>
+</section>
+
+<hr class="home-divider" id="upcoming-divider" style="display:none">
+
 <!-- ══ CATEGORIES ════════════════════════════════════════════════════════ -->
 <section class="home-section">
   <div class="section-head">
@@ -884,8 +900,10 @@ function renderCard(e, badge) {
         ${e.city ? `<span>📍 ${esc(e.city)}</span>` : (e.venue_name ? `<span>📍 ${esc(e.venue_name)}</span>` : '')}
       </div>
       <div class="ev-card__foot">
-        ${price.label ? `<span class="ev-card__price${price.free ? ' ev-card__price--free' : ''}">${price.label}</span>` : '<span></span>'}
-        <span class="ev-card__cta">Get Tickets</span>
+        ${e.status === 'upcoming'
+          ? `<span class="ev-card__price" style="color:#60A5FA;font-size:.75rem">Tickets Opening Soon</span>`
+          : (price.label ? `<span class="ev-card__price${price.free ? ' ev-card__price--free' : ''}">${price.label}</span>` : '<span></span>')}
+        <span class="ev-card__cta">${e.status === 'upcoming' ? 'View Event' : 'Get Tickets'}</span>
       </div>
     </div>
   </a>`;
@@ -944,6 +962,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btn = document.getElementById('hero-live-btn');
     if (btn) btn.href = `/events/${liveEvent.slug}/`;
   }
+
+  // Load upcoming events (UPCOMING status — announced but tickets not open yet)
+  try {
+    const upData = await Api.get('/events/upcoming/?ordering=start_datetime&page_size=6');
+    const upEvents = (upData.results || upData || []);
+    const upGrid = document.getElementById('upcoming-grid');
+    const upSection = document.getElementById('upcoming-section');
+    const upDivider = document.getElementById('upcoming-divider');
+    if (upGrid && upEvents.length) {
+      upGrid.innerHTML = upEvents.map(e => renderCard(e, {cls:'upcoming', text:'🕐 Coming Soon'})).join('');
+      if (upSection) upSection.style.display = '';
+      if (upDivider) upDivider.style.display = '';
+    }
+  } catch(_) {}
 
   // Load categories from API
   try {
