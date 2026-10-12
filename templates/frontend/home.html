@@ -1418,39 +1418,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     </a>`;
   }
 
-  // Helper: load events from a primary endpoint, fall back to recent published events
-  async function loadEvents(primaryUrl, fallbackUrl, gridId, count) {
-    const g = document.getElementById(gridId);
-    let events = [];
-    try {
-      const d = await Api.get(primaryUrl, true);
-      if (d.results && d.results.length) events = d.results;
-    } catch(_) {}
-    // Fallback to latest published events if primary returned nothing
-    if (!events.length) {
-      try {
-        const d = await Api.get(fallbackUrl, true);
-        if (d.results && d.results.length) events = d.results.slice(0, count);
-      } catch(_) {}
-    }
-    g.innerHTML = events.length
-      ? events.map(renderCard).join('')
-      : '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No events right now — check back soon.</p>';
+  // Load ALL published events — show everything in the database
+  let allEvents = [];
+  try {
+    const d = await Api.get('/events/?ordering=-created_at&page_size=20', true);
+    allEvents = (d.results || []);
+  } catch(_) {}
+
+  // "Hot Events" — up to 8 events
+  const trendingGrid = document.getElementById('trending-grid');
+  if (trendingGrid) {
+    trendingGrid.innerHTML = allEvents.length
+      ? allEvents.slice(0, 8).map(renderCard).join('')
+      : '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No events yet — check back soon.</p>';
   }
 
-  // Load trending (fall back to 5 most recent if no trending data yet)
-  await loadEvents(
-    '/events/trending/?page_size=5',
-    '/events/?ordering=-created_at&page_size=5',
-    'trending-grid', 5
-  );
-
-  // Load featured (fall back to 5 most recent if none are marked featured)
-  await loadEvents(
-    '/events/featured/?page_size=5',
-    '/events/?ordering=-created_at&page_size=5',
-    'featured-grid', 5
-  );
+  // "Featured Events" — next batch or same events again if few
+  const featuredGrid = document.getElementById('featured-grid');
+  if (featuredGrid) {
+    // Use featured ones if any, else show all again
+    const featured = allEvents.filter(e => e.is_featured);
+    const toShow = featured.length ? featured : allEvents;
+    featuredGrid.innerHTML = toShow.length
+      ? toShow.slice(0, 5).map(renderCard).join('')
+      : '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No events yet.</p>';
+  }
 
   // Load categories from API so they always match what hosts see
   try {
