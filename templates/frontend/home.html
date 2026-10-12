@@ -5,6 +5,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600;700&display=swap">
 <style>
 /* ═══ HOME PAGE — Cinematic Dark Design ═══════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+body { overflow-x: hidden; }
 
 /* ── Hero ──────────────────────────────────────────────────────────── */
 .hero {
@@ -43,10 +45,12 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 120px 48px 80px;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 1fr 420px;
   gap: 60px;
   align-items: center;
+  min-width: 0;
 }
 .hero__eyebrow {
   display: inline-flex;
@@ -255,11 +259,11 @@
 
 /* ── Section layout ─────────────────────────────────────────────── */
 .home-section {
-  padding: 80px 0;
   max-width: 1280px;
   margin: 0 auto;
-  padding-left: 48px;
-  padding-right: 48px;
+  padding: 80px 48px;
+  box-sizing: border-box;
+  width: 100%;
 }
 .section-head {
   display: flex;
@@ -869,11 +873,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   const heroBg = document.getElementById('hero-bg');
   if (heroBg) setTimeout(() => { heroBg.style.transform = 'scale(1)'; }, 100);
 
-  // Load published events (status filter is enforced server-side, but be explicit)
+  // Load published, upcoming events only — no past, no cancelled
   let allEvents = [];
   try {
-    const d = await Api.get('/events/?ordering=-tickets_sold_count,-created_at&page_size=20');
-    allEvents = (d.results || d || []).filter(e => e.status === 'published' || !e.status);
+    const now = new Date();
+    const d = await Api.get('/events/?ordering=-tickets_sold_count,-created_at&page_size=40');
+    allEvents = (d.results || d || []).filter(e => {
+      // Must be published
+      if (e.status && e.status !== 'published') return false;
+      // Must not have ended — if end_datetime exists, must be in the future
+      if (e.end_datetime && new Date(e.end_datetime) < now) return false;
+      // If no end_datetime, check start_datetime isn't too far in the past (>30 days old)
+      if (!e.end_datetime && e.start_datetime && new Date(e.start_datetime) < new Date(now - 30*24*60*60*1000)) return false;
+      return true;
+    });
   } catch(_) {}
 
   // Trending grid

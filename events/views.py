@@ -67,8 +67,8 @@ class EventListView(generics.ListAPIView):
         if user.is_authenticated and user.is_super_admin and self.request.query_params.get("status"):
             qs = qs.filter(status=self.request.query_params["status"])
         else:
-            # Show ALL published events (upcoming and past) so the home page is never empty
-            qs = qs.filter(status=Event.Status.PUBLISHED)
+            # Only show published events that haven't ended yet
+            qs = qs.filter(status=Event.Status.PUBLISHED, end_datetime__gte=timezone.now())
 
         return qs
 
