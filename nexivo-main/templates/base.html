@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/static/img/nexivo_favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block meta_description %}Nexivo — Premium event booking platform{% endblock %}">
+  <title>{% block title %}Nexivo{% endblock %} — Premium Events</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/static/css/nexivo.css">
+  {% block extra_css %}{% endblock %}
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9944727816762967"
+     crossorigin="anonymous"></script>
+  <style>
+    /* Mobile drawer — dark/gold cinematic */
+    #mob-drawer {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #0d0d0d;
+      z-index: 99999;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    #mob-drawer.open { display: flex; }
+    .mob-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      flex-shrink: 0;
+    }
+    .mob-logo {
+      color: #F7F5F0;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    .mob-logo span { color: #D4AF46; }
+    .mob-close {
+      color: rgba(255,255,255,.5);
+      font-size: 1.25rem;
+      background: rgba(255,255,255,.06);
+      border: none;
+      cursor: pointer;
+      line-height: 1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      transition: background .2s;
+    }
+    .mob-close:hover { background: rgba(255,255,255,.12); color: #fff; }
+    .mob-section {
+      padding: 16px 20px 6px;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.3);
+    }
+    .mob-link {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 20px;
+      color: rgba(247,245,240,.75);
+      font-size: .9375rem;
+      font-weight: 500;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      transition: background .15s, color .15s;
+    }
+    .mob-link:hover, .mob-link:active {
+      background: rgba(212,175,70,.07);
+      color: #D4AF46;
+    }
+    .mob-link .mi { font-size: 1.1rem; width: 26px; flex-shrink: 0; }
+    .mob-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      margin-top: auto;
+      flex-shrink: 0;
+    }
+    .mob-signout {
+      display: block; width: 100%; padding: 13px;
+      background: rgba(255,255,255,.06);
+      color: rgba(247,245,240,.85);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      font-size: .9375rem;
+      cursor: pointer;
+      font-weight: 600;
+      text-align: center;
+      transition: background .2s;
+    }
+    .mob-signout:hover { background: rgba(255,255,255,.1); }
+    .mob-btn-primary {
+      display: block; width: 100%; padding: 13px;
+      background: #D4AF46; color: #0a0a0a;
+      border-radius: 8px; font-size: .9375rem;
+      font-weight: 700; text-align: center;
+      text-decoration: none; margin-bottom: 10px;
+    }
+    .mob-btn-outline {
+      display: block; width: 100%; padding: 13px;
+      background: transparent; color: rgba(247,245,240,.85);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 8px; font-size: .9375rem;
+      font-weight: 600; text-align: center;
+      text-decoration: none; margin-bottom: 10px;
+    }
+    .mob-user-info {
+      color: rgba(255,255,255,.4);
+      font-size: .8125rem;
+      margin-bottom: 12px;
+    }
+    .mob-user-info strong { color: rgba(247,245,240,.85); }
+    @media(max-width: 768px) {
+      #user-menu-name { display: none !important; }
+      #user-menu .btn--ghost { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav__inner">
+    <a href="/" class="nav__logo">Nexiv<span>o</span></a>
+    <div class="nav__links">
+      <a href="/events/" class="nav__link">Explore</a>
+      <a href="/events/?event_type=virtual" class="nav__link">Virtual</a>
+      <a href="/events/?event_type=physical" class="nav__link">In-Person</a>
+      <a href="/events/create/" class="nav__link">Host an Event</a>
+    </div>
+    <div class="nav__actions">
+      <button id="theme-toggle" class="btn btn--ghost btn--sm" aria-label="Toggle theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <div id="auth-links" class="flex gap-8">
+        <a href="/auth/login/" class="btn btn--outline btn--sm">Sign In</a>
+        <a href="/auth/register/" class="btn btn--primary btn--sm">Get Started</a>
+      </div>
+      <div id="user-menu" class="flex gap-8 hidden">
+        <a href="/dashboard/" class="btn btn--ghost btn--sm">Dashboard</a>
+        <a href="/dashboard/my-tickets/" class="btn btn--gold btn--sm" id="nav-tickets-btn" style="display:none">🎫 My Tickets</a>
+        <button id="logout-btn" class="btn btn--outline btn--sm">Sign Out</button>
+        <span class="text-sub fw-600" id="user-menu-name"></span>
+      </div>
+      <button class="nav__menu-btn btn btn--ghost" id="mob-open-btn" aria-label="Menu">☰</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Full-Screen Drawer -->
+<div id="mob-drawer">
+  <div class="mob-head">
+    <div class="mob-logo">Nexiv<span>o</span></div>
+    <button class="mob-close" id="mob-close-btn">✕</button>
+  </div>
+  <div id="mob-body" style="flex:1;overflow-y:auto"></div>
+  <div class="mob-footer" id="mob-footer"></div>
+</div>
+
+{% block content %}{% endblock %}
+
+<footer style="background:var(--surface);border-top:1px solid var(--border);padding:56px 0 40px;margin-top:64px">
+  <div class="container">
+    <div class="grid-4" style="margin-bottom:48px">
+      <div>
+        <div style="font-family:var(--font-display);font-size:1.375rem;font-weight:700;margin-bottom:14px;letter-spacing:-.01em">Nexiv<span style="color:var(--gold)">o</span></div>
+        <p style="font-size:.875rem;line-height:1.8;color:var(--text-mute);max-width:220px">Nigeria's premier platform for discovering and attending extraordinary events.</p>
+      </div>
+      <div>
+        <p style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mute);margin-bottom:14px">Discover</p>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:.875rem">
+          <a href="/events/?event_type=physical" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">In-Person Events</a>
+          <a href="/events/?event_type=virtual" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Virtual Events</a>
+          <a href="/events/?is_featured=true" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Featured Events</a>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mute);margin-bottom:14px">Organise</p>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:.875rem">
+          <a href="/events/create/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Create an Event</a>
+          <a href="/dashboard/host/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Host Dashboard</a>
+          <a href="/auth/register/?role=host" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Start Hosting</a>
+        </div>
+      </div>
+      <div>
+        <p style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mute);margin-bottom:14px">Support</p>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:.875rem">
+          <a href="/help/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Help Centre</a>
+          <a href="/contact/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Contact Us</a>
+          <a href="/terms/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Terms of Service</a>
+          <a href="/privacy/" style="color:var(--text-sub);transition:color .2s" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-sub)'">Privacy Policy</a>
+        </div>
+      </div>
+    </div>
+    <div class="flex-between" style="border-top:1px solid var(--border);padding-top:28px;flex-wrap:wrap;gap:12px">
+      <p style="font-size:.8125rem;color:var(--text-mute)">© 2026 Nexivo. All rights reserved.</p>
+      <p style="font-size:.8125rem;color:var(--text-mute)">Secured by Paystack · Flutterwave · Stripe</p>
+    </div>
+  </div>
+</footer>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="/static/js/nexivo.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var openBtn = document.getElementById('mob-open-btn');
+  var closeBtn = document.getElementById('mob-close-btn');
+  var drawer = document.getElementById('mob-drawer');
+  var body = document.getElementById('mob-body');
+  var footer = document.getElementById('mob-footer');
+
+  function buildMenu() {
+    var user = null;
+    try { user = JSON.parse(localStorage.getItem('nexivo_user') || 'null'); } catch(e) {}
+    var role = user ? user.role : '';
+    // Show My Tickets in desktop nav for customers
+    var ticketsBtn = document.getElementById('nav-tickets-btn');
+    if (ticketsBtn) ticketsBtn.style.display = (user && role === 'customer') ? '' : 'none';
+    var name = user ? (user.first_name || user.email || '') : '';
+    var html = '';
+
+    html += '<div class="mob-section">Discover</div>';
+    html += '<a href="/" class="mob-link"><span class="mi">🏠</span> Home</a>';
+    html += '<a href="/events/" class="mob-link"><span class="mi">🔍</span> Browse Events</a>';
+
+    if (user && role === 'customer') {
+      html += '<div class="mob-section">My Account</div>';
+      html += '<a href="/dashboard/customer/" class="mob-link"><span class="mi">📊</span> My Dashboard</a>';
+      html += '<a href="/dashboard/my-tickets/" class="mob-link"><span class="mi">🎫</span> My Tickets</a>';
+      html += '<a href="/dashboard/bookings/" class="mob-link"><span class="mi">📦</span> My Bookings</a>';
+      html += '<a href="/dashboard/favorites/" class="mob-link"><span class="mi">❤️</span> Saved Events</a>';
+      html += '<a href="/dashboard/notifications/" class="mob-link"><span class="mi">🔔</span> Notifications</a>';
+      html += '<a href="/dashboard/my-profile/" class="mob-link"><span class="mi">👤</span> Profile</a>';
+      html += '<a href="/dashboard/marketer/" class="mob-link"><span class="mi">🤝</span> Marketer Program</a>';
+    }
+
+    if (user && (role === 'host' || role === 'super_admin')) {
+      html += '<div class="mob-section">Host</div>';
+      html += '<a href="/dashboard/host/" class="mob-link"><span class="mi">📊</span> Host Dashboard</a>';
+      html += '<a href="/dashboard/events/" class="mob-link"><span class="mi">📅</span> My Events</a>';
+      html += '<a href="/events/create/" class="mob-link"><span class="mi">➕</span> Create Event</a>';
+      html += '<a href="/dashboard/tickets/" class="mob-link"><span class="mi">🎫</span> Tickets Sold</a>';
+      html += '<a href="/dashboard/earnings/" class="mob-link"><span class="mi">💰</span> Earnings</a>';
+      html += '<a href="/dashboard/scanner/" class="mob-link"><span class="mi">📷</span> QR Scanner</a>';
+      html += '<a href="/dashboard/bank-account/" class="mob-link"><span class="mi">🏦</span> Bank Account</a>';
+      html += '<a href="/dashboard/marketer/" class="mob-link"><span class="mi">🤝</span> Marketer Dashboard</a>';
+    }
+
+    body.innerHTML = html;
+
+    if (user) {
+      footer.innerHTML =
+        '<div class="mob-user-info">Signed in as <strong>' + name + '</strong></div>' +
+        '<button class="mob-signout" onclick="Auth.logout()">🚪 Sign Out</button>' +
+        '<button onclick="deleteAccountFromDrawer()" style="display:block;width:100%;padding:13px;margin-top:10px;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:8px;font-size:.9375rem;cursor:pointer;font-weight:600">🗑 Delete Account</button>';
+    } else {
+      footer.innerHTML =
+        '<a href="/auth/register/" class="mob-btn-primary">Get Started — Free</a>' +
+        '<a href="/auth/login/" class="mob-btn-outline">Sign In</a>';
+    }
+  }
+
+  function openDrawer() {
+    buildMenu();
+    drawer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  if (openBtn) openBtn.addEventListener('click', openDrawer);
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+});
+
+function deleteAccountFromDrawer() {
+  if (!confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) return;
+  fetch('/api/v1/auth/account/', {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('nexivo_access') }
+  }).then(function(r) {
+    if (r.ok || r.status === 204) {
+      localStorage.clear();
+      window.location.href = '/';
+    } else {
+      alert('Failed to delete account. Please contact support.');
+    }
+  }).catch(function() { alert('Network error. Please try again.'); });
+}
+</script>
+{% block extra_js %}{% endblock %}
+<script>
+/* ── Global scroll-reveal (runs on every page) ── */
+(function() {
+  if (!window.IntersectionObserver) return;
+  // Don't double-wire pages that do their own reveal
+  if (window.__revealWired) return;
+  window.__revealWired = true;
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  function scan() {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el => io.observe(el));
+  }
+  // Initial scan + re-scan after dynamic content
+  scan();
+  const mo = new MutationObserver(scan);
+  mo.observe(document.body, { childList: true, subtree: true });
+})();
+
+/* ── Button press ripple ── */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn');
+  if (!btn) return;
+  const r = document.createElement('span');
+  r.style.cssText = `
+    position:absolute;border-radius:50%;
+    width:120px;height:120px;
+    background:rgba(255,255,255,.07);
+    transform:scale(0);
+    animation:ripple .55s linear;
+    pointer-events:none;
+    left:${e.offsetX - 60}px;top:${e.offsetY - 60}px;
+  `;
+  if (getComputedStyle(btn).position === 'static') btn.style.position = 'relative';
+  btn.style.overflow = 'hidden';
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+});
+</script>
+<style>
+@keyframes ripple {
+  to { transform: scale(2.5); opacity: 0; }
+}
+</style>
+</body>
+</html>

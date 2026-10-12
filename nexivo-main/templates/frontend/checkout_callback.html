@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Processing…{% endblock %}
+{% block content %}
+<div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:40px 20px">
+  <div class="text-center" style="max-width:480px;width:100%">
+
+    <!-- Icon wrapper — swapped by JS -->
+    <div id="callback-icon" style="width:80px;height:80px;border-radius:50%;background:var(--surface-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 28px;font-size:2rem">
+      <div class="spinner" style="width:32px;height:32px"></div>
+    </div>
+
+    <h2 class="font-display" style="font-size:1.75rem;margin-bottom:10px" id="callback-title">Confirming your booking…</h2>
+    <p class="text-sub" style="line-height:1.7" id="callback-sub">Please wait while we verify your payment. Do not close this tab.</p>
+
+    <div id="callback-actions" style="margin-top:28px;display:none;flex-direction:column;gap:10px;align-items:center"></div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const params    = new URLSearchParams(location.search);
+  const status    = params.get('status');
+  const reference = params.get('reference');
+  const titleEl   = document.getElementById('callback-title');
+  const subEl     = document.getElementById('callback-sub');
+  const iconEl    = document.getElementById('callback-icon');
+  const actionsEl = document.getElementById('callback-actions');
+
+  function setIcon(emoji, borderColor) {
+    iconEl.innerHTML = `<span style="font-size:2rem">${emoji}</span>`;
+    iconEl.style.borderColor = borderColor;
+    iconEl.style.background  = borderColor + '22';
+  }
+
+  function showActions(html) {
+    actionsEl.innerHTML = html;
+    actionsEl.style.display = 'flex';
+  }
+
+  if (!reference) {
+    setIcon('❌', 'var(--error)');
+    titleEl.textContent = 'Missing payment reference';
+    subEl.textContent   = 'No reference found in the URL. Please check your bookings or contact support.';
+    showActions(`<a href="/dashboard/customer/" class="btn btn--gold">Go to My Bookings</a>`);
+    return;
+  }
+
+  try {
+    const token   = localStorage.getItem('nexivo_access');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res  = await fetch('/api/v1/payments/verify/', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ reference }),
+    });
+    const data = await res.json();
+
+    if (data.status === 'successful') {
+      setIcon('🎉', 'var(--gold)');
+      titleEl.textContent = 'Booking Confirmed!';
+
+      if (token) {
+        subEl.innerHTML = `Your tickets are ready. You'll be redirected in a moment.`;
+        showActions(`
+          <a href="/dashboard/my-tickets/" class="btn btn--gold" style="min-width:200px">View My Tickets →</a>
+          <a href="/events/" class="btn btn--ghost btn--sm">Browse More Events</a>
+        `);
+        setTimeout(() => location.href = '/dashboard/my-tickets/', 3500);
+      } else {
+        subEl.innerHTML = `Your QR code ticket has been sent to your email. Check your inbox! 📧`;
+        showActions(`
+          <a href="/events/" class="btn btn--gold" style="min-width:200px">Browse More Events →</a>
+        `);
+        setTimeout(() => location.href = '/', 6000);
+      }
+
+    } else if (data.status === 'pending') {
+      setIcon('⏳', 'var(--amber)');
+      titleEl.textContent = 'Payment Pending';
+      subEl.textContent   = 'Your payment is being processed. You\'ll receive a confirmation email once it clears.';
+      showActions(`<a href="${token ? '/dashboard/customer/' : '/'}" class="btn btn--outline">Back to ${token ? 'Dashboard' : 'Home'}</a>`);
+
+    } else if (data.status === 'cancelled') {
+      setIcon('❌', 'var(--error)');
+      titleEl.textContent = 'Payment Cancelled';
+      subEl.textContent   = 'The payment was cancelled. No charge was made to your account.';
+      showActions(`
+        <button onclick="history.back()" class="btn btn--gold" style="min-width:200px">Try Again</button>
+        <a href="/events/" class="btn btn--ghost btn--sm">Browse Events</a>
+      `);
+
+    } else {
+      setIcon('⚠️', 'var(--error)');
+      titleEl.textContent = 'Payment Not Completed';
+      subEl.innerHTML     = `Status: <strong>${data.status || 'unknown'}</strong>. If you were charged, please contact our support team with reference: <code style="background:var(--surface-2);padding:2px 6px;border-radius:4px;font-size:.875rem">${reference}</code>`;
+      showActions(`<a href="/contact/" class="btn btn--outline">Contact Support</a>`);
+    }
+
+  } catch (err) {
+    setIcon('⚠️', 'var(--error)');
+    titleEl.textContent = 'Verification Error';
+    subEl.innerHTML     = `We couldn't confirm your payment status. Please check your email for a ticket, or contact support with reference: <code style="background:var(--surface-2);padding:2px 6px;border-radius:4px;font-size:.875rem">${reference}</code>`;
+    showActions(`
+      <a href="/contact/" class="btn btn--gold" style="min-width:200px">Contact Support</a>
+      <a href="${localStorage.getItem('nexivo_access') ? '/dashboard/my-tickets/' : '/'}" class="btn btn--ghost btn--sm">Back to ${localStorage.getItem('nexivo_access') ? 'My Tickets' : 'Home'}</a>
+    `);
+  }
+});
+</script>
+{% endblock %}

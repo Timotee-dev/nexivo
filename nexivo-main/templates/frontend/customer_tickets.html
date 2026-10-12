@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}My Tickets{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_customer_sidebar.html" with active="tickets" %}
+  <main class="dashboard__main">
+    <div style="margin-bottom:28px">
+      <h1 class="font-display" style="font-size:1.75rem">My Tickets</h1>
+      <p class="text-muted">Your upcoming and past event tickets</p>
+    </div>
+    <div id="my-tickets"><div class="spinner" style="margin:40px auto"></div></div>
+  </main>
+</div>
+
+<!-- Transfer Modal -->
+<div class="modal-backdrop" id="transfer-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('transfer-modal')">×</button>
+    <h2 class="modal__title">Transfer Ticket</h2>
+    <p class="modal__sub">Send this ticket to another person. They have 48 hours to accept.</p>
+    <input type="hidden" id="transfer-ticket-code">
+    <div class="form-group">
+      <label class="form-label">Recipient Email *</label>
+      <input class="form-input" type="email" id="transfer-to-email" placeholder="friend@example.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message (optional)</label>
+      <input class="form-input" id="transfer-message" placeholder="Enjoy the show!">
+    </div>
+    <button class="btn btn--primary btn--full" onclick="submitTransfer()">Send Ticket</button>
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal-backdrop" id="qr-modal">
+  <div class="modal" style="position:relative;text-align:center">
+    <button class="modal__close" onclick="Modal.close('qr-modal')">×</button>
+    <h2 class="modal__title" id="qr-modal-title">Your Ticket</h2>
+    <p class="text-muted" id="qr-modal-code" style="margin-bottom:20px;font-family:monospace"></p>
+    <img id="qr-modal-img" style="width:220px;height:auto;margin:0 auto;border-radius:8px;display:block">
+    <p class="text-muted" style="font-size:.8125rem;margin-top:12px">Show this QR code at the entrance</p>
+    <a id="qr-modal-download" href="#" download class="btn btn--gold btn--sm" style="margin-top:12px;display:inline-flex">
+      Download QR Code
+    </a>
+  </div>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  await loadTickets();
+});
+
+async function loadTickets() {
+  const el = document.getElementById('my-tickets');
+  el.innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+
+  try {
+    const data = await Api.get('/tickets/mine/');
+    const tickets = data.results || [];
+
+    if (!tickets.length) {
+      el.innerHTML = `
+        <div style="text-align:center;padding:64px 20px;background:var(--surface);border-radius:var(--radius-lg)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:56px;height:56px;margin:0 auto 16px;display:block;opacity:.3"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
+          <h3 style="font-size:1.125rem;margin-bottom:6px">No tickets yet</h3>
+          <p class="text-muted" style="margin-bottom:16px">Book an event to get your first ticket</p>
+          <a href="/events/" class="btn btn--gold">Browse Events</a>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = tickets.map(t => {
+      const event = t.event || {};
+      const booking = t.booking_item?.booking || {};
+      const isUsed = t.status === 'used';
+      const isPast = event.start_datetime && new Date(event.start_datetime) < new Date();
+
+      return `
+        <div class="ticket-card" style="margin-bottom:16px;opacity:${isUsed ? '.65' : '1'}">
+          <div class="ticket-card__event">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
+              <span style="font-size:1.0625rem;font-weight:700">${event.title || 'Event'}</span>
+              <span class="badge badge--${isUsed ? 'grey' : isPast ? 'grey' : 'green'}">
+                ${isUsed ? 'Used' : isPast ? 'Past' : 'Valid'}
+              </span>
+            </div>
+            <div class="ticket-card__meta">
+              ${event.start_datetime ? '<span>' + new Date(event.start_datetime).toLocaleDateString('en-NG', {weekday:'short',day:'numeric',month:'short',year:'numeric'}) + '</span>' : ''}
+              ${event.city ? '<span>' + (event.venue_name || event.city) + '</span>' : ''}
+            </div>
+            <div style="margin-top:8px;font-size:.875rem" class="text-muted">
+              ${t.ticket_type?.name || ''}
+              &nbsp;·&nbsp;
+              <code style="background:var(--surface-2);padding:2px 8px;border-radius:4px;font-size:.8125rem">${t.ticket_code}</code>
+            </div>
+          </div>
+          ${t.qr_image ? `
+            <div class="ticket-card__qr">
+              <img src="${t.qr_image}"
+                   style="width:80px;height:80px;border-radius:8px;cursor:pointer;border:2px solid var(--border);flex-shrink:0"
+                   onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')"
+                   alt="QR Code"
+                   onerror="this.style.display='none'">
+            </div>` : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--border)">
+            ${t.qr_image ? `
+              <button class="btn btn--gold btn--sm" onclick="showQR('${t.ticket_code}', '${t.qr_image}', '${event.title || ''}')">
+                Show QR Code
+              </button>
+              <a href="/api/v1/tickets/${t.ticket_code}/download-qr/" download="nexivo-ticket-${t.ticket_code}.png" class="btn btn--outline btn--sm">
+                Download QR
+              </a>` : ''}
+            ${t.pdf_file ? `
+              <a href="${t.pdf_file}" download class="btn btn--outline btn--sm">
+                Download PDF
+              </a>` : ''}
+            ${!isUsed && !isPast ? `
+              <button class="btn btn--outline btn--sm" onclick="openTransfer('${t.ticket_code}')">
+                Transfer
+              </button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (e) {
+    el.innerHTML = '<p class="text-muted text-center" style="padding:32px">Could not load tickets. Please refresh.</p>';
+  }
+}
+
+function showQR(code, qrUrl, eventTitle) {
+  document.getElementById('qr-modal-title').textContent = eventTitle || 'Your Ticket';
+  document.getElementById('qr-modal-code').textContent = code;
+  document.getElementById('qr-modal-img').src = qrUrl;
+  const dl = document.getElementById('qr-modal-download');
+  dl.onclick = function(e) {
+    e.preventDefault();
+    downloadQR(qrUrl, 'nexivo-ticket-' + code + '.png');
+  };
+  Modal.open('qr-modal');
+}
+
+async function downloadQR(url, filename) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch(e) {
+    // Fallback - open in new tab
+    window.open(url, '_blank');
+  }
+}
+
+function openTransfer(code) {
+  document.getElementById('transfer-ticket-code').value = code;
+  document.getElementById('transfer-to-email').value = '';
+  document.getElementById('transfer-message').value = '';
+  Modal.open('transfer-modal');
+}
+
+async function submitTransfer() {
+  const code = document.getElementById('transfer-ticket-code').value;
+  const toEmail = document.getElementById('transfer-to-email').value.trim();
+  if (!toEmail) { Toast.error('Enter a recipient email'); return; }
+  try {
+    await Api.post(`/tickets/${code}/transfer/`, {
+      to_email: toEmail,
+      message: document.getElementById('transfer-message').value
+    });
+    Toast.success('Ticket transfer sent!');
+    Modal.close('transfer-modal');
+  } catch(err) {
+    Toast.error(err?.detail || 'Transfer failed. Please try again.');
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Terms of Service{% endblock %}
+{% block content %}
+<div style="max-width:760px;margin:0 auto;padding:48px 20px">
+  <h1 class="font-display" style="font-size:2rem;font-weight:800;margin-bottom:8px">Terms of Service</h1>
+  <p class="text-muted" style="margin-bottom:40px">Last updated: July 2026</p>
+
+  {% for section in sections %}
+  <div style="margin-bottom:32px">
+    <h2 style="font-size:1.125rem;font-weight:700;margin-bottom:12px">{{ forloop.counter }}. {{ section.title }}</h2>
+    <p style="color:var(--muted);line-height:1.8">{{ section.content }}</p>
+  </div>
+  {% endfor %}
+
+  <div style="background:var(--surface);border-radius:var(--radius-lg);padding:24px;margin-top:40px">
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.7">
+      By using Nexivo, you agree to these terms. If you have questions, contact us at
+      <a href="mailto:teetimo29@gmail.com" style="color:var(--gold)">teetimo29@gmail.com</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

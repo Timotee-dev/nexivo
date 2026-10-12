@@ -1,0 +1,835 @@
+{% extends "base.html" %}
+{% block title %}Discover Events — Nexivo{% endblock %}
+{% block content %}
+
+<style>
+/* ── HOME PAGE SPECIFIC ── */
+.hero-v2 {
+  position: relative;
+  min-height: 680px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #090909;
+}
+.hero-v2__bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('/static/img/hero-bg.jpg');
+  background-size: cover;
+  background-position: center top;
+  opacity: .45;
+  transform: scale(1.04);
+  transition: transform 8s ease;
+}
+.hero-v2__bg-fallback {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 120% 80% at 60% 20%, rgba(212,175,70,.18) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(180,120,30,.12) 0%, transparent 60%),
+    linear-gradient(160deg, #0e0a02 0%, #090909 40%, #0c0c0c 100%);
+}
+.hero-v2__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(9,9,9,.92) 0%,
+    rgba(9,9,9,.7) 45%,
+    rgba(9,9,9,.2) 100%
+  );
+}
+.hero-v2__overlay-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 200px;
+  background: linear-gradient(to top, #090909, transparent);
+}
+.hero-v2__content {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+.hero-v2__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.hero-v2__eyebrow::before {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: var(--gold);
+  opacity: .7;
+}
+.hero-v2__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 6.5vw, 5rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -.03em;
+  max-width: 640px;
+  margin-bottom: 22px;
+  color: #F7F5F0;
+}
+.hero-v2__title em {
+  font-style: italic;
+  color: var(--gold);
+}
+.hero-v2__sub {
+  font-size: 1.0625rem;
+  color: rgba(247,245,240,.65);
+  max-width: 480px;
+  line-height: 1.75;
+  margin-bottom: 44px;
+}
+.hero-v2__search-wrap {
+  max-width: 560px;
+}
+.hero-v2__search {
+  display: flex;
+  background: rgba(20,20,20,.9);
+  border: 1.5px solid rgba(255,255,255,.14);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+  backdrop-filter: blur(12px);
+  transition: border-color .2s;
+}
+.hero-v2__search:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 0 0 3px rgba(212,175,70,.12);
+}
+.hero-v2__search input {
+  flex: 1;
+  padding: 16px 20px;
+  font-size: .9375rem;
+  background: transparent;
+  color: #F7F5F0;
+  border: none;
+  outline: none;
+}
+.hero-v2__search input::placeholder { color: rgba(255,255,255,.3); }
+.hero-v2__search button {
+  padding: 0 28px;
+  background: var(--gold);
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: .875rem;
+  letter-spacing: .03em;
+  border: none;
+  cursor: pointer;
+  transition: background .2s;
+  white-space: nowrap;
+}
+.hero-v2__search button:hover { background: var(--gold-hi); }
+.hero-v2__chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.hero-v2__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 40px;
+  font-size: .8rem;
+  font-weight: 500;
+  color: rgba(247,245,240,.7);
+  background: rgba(255,255,255,.04);
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+}
+.hero-v2__chip:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(212,175,70,.08);
+}
+
+/* ── Event Cards v2 — with photo, date badge, overlay CTA ── */
+.ev-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  text-decoration: none;
+  display: block;
+  color: inherit;
+}
+.ev-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.7);
+  border-color: rgba(212,175,70,.4);
+}
+.ev-card__img-wrap {
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: var(--surface-2);
+  position: relative;
+}
+.ev-card__img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .5s ease;
+}
+.ev-card:hover .ev-card__img-wrap img { transform: scale(1.07); }
+.ev-card__img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(9,9,9,.8) 0%, transparent 50%);
+  transition: opacity .25s;
+}
+.ev-card:hover .ev-card__img-overlay { opacity: .6; }
+
+/* Date badge — top left */
+.ev-card__date-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(9,9,9,.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  padding: 6px 10px;
+  text-align: center;
+  line-height: 1;
+}
+.ev-card__date-badge .day {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gold);
+  font-family: var(--font-display);
+  display: block;
+}
+.ev-card__date-badge .month {
+  font-size: .625rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.6);
+  display: block;
+  margin-top: 2px;
+}
+
+/* Status badge — top right */
+.ev-card__status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.ev-card__status--featured { background: var(--gold); color: #0a0a0a; }
+.ev-card__status--trending  { background: rgba(239,68,68,.85); color: #fff; }
+.ev-card__status--free      { background: rgba(45,154,107,.85); color: #fff; }
+.ev-card__status--hot       { background: rgba(239,68,68,.85); color: #fff; }
+
+/* Get Tickets overlay — bottom of image */
+.ev-card__cta {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: var(--gold);
+  color: #0a0a0a;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 7px 14px;
+  border-radius: 6px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.ev-card:hover .ev-card__cta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card body */
+.ev-card__body {
+  padding: 18px 18px 16px;
+}
+.ev-card__cat {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 8px;
+}
+.ev-card__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ev-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: .8rem;
+  color: var(--text-mute);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.ev-card__meta svg {
+  width: 13px; height: 13px;
+  flex-shrink: 0;
+  opacity: .6;
+}
+.ev-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+}
+.ev-card__price {
+  font-size: .9375rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.ev-card__price--free { color: var(--success); }
+.ev-card__btn {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: all .18s;
+}
+.ev-card:hover .ev-card__btn {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ── Trending row — wider, shorter aspect ── */
+.ev-card--row .ev-card__img-wrap { aspect-ratio: 16/9; }
+
+/* ── Category chips section ── */
+.cats-section {
+  padding: 48px 0 8px;
+}
+.cats-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+}
+.cat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text-sub);
+  font-size: .8125rem;
+  font-weight: 500;
+  transition: all .2s;
+  text-align: center;
+}
+.cat-item:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(212,175,70,.05);
+  transform: translateY(-3px);
+}
+.cat-item__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: background .2s;
+}
+.cat-item:hover .cat-item__icon { background: rgba(212,175,70,.1); }
+
+/* ── Organizer CTA band ── */
+.host-cta {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 64px 56px;
+}
+.host-cta__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 100% 50%, rgba(212,175,70,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 0% 100%, rgba(212,175,70,.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.host-cta__img {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 45%;
+  background-image: url('/static/img/host-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  opacity: .18;
+}
+.host-cta__img::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, var(--surface) 0%, transparent 100%);
+}
+
+/* ── Why Nexivo bar ── */
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+}
+.why-item {
+  padding: 32px 28px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.why-item:last-child { border-right: none; }
+.why-item__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(212,175,70,.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.why-item__icon svg { width: 20px; height: 20px; color: var(--gold); }
+.why-item__title {
+  font-size: .9375rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.why-item__sub { font-size: .8125rem; color: var(--text-mute); line-height: 1.6; }
+
+@media (max-width: 900px) {
+  .cats-grid { grid-template-columns: repeat(4, 1fr); }
+  .why-grid { grid-template-columns: repeat(2, 1fr); }
+  .why-item:nth-child(2) { border-right: none; }
+  .why-item:nth-child(3) { border-top: 1px solid var(--border); }
+  .why-item:nth-child(4) { border-top: 1px solid var(--border); border-right: none; }
+  .host-cta { padding: 40px 28px; }
+  .host-cta__img { display: none; }
+}
+@media (max-width: 640px) {
+  .cats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .why-grid { grid-template-columns: 1fr; }
+  .why-item { border-right: none; border-bottom: 1px solid var(--border); }
+  .why-item:last-child { border-bottom: none; }
+}
+</style>
+
+<!-- ════════════════════════════════════════════════════════════════
+     HERO
+═════════════════════════════════════════════════════════════════ -->
+<section class="hero-v2">
+  <div class="hero-v2__bg-fallback"></div>
+  <div class="hero-v2__bg" id="hero-bg-img" style="display:none"></div>
+  <div class="hero-v2__overlay"></div>
+  <div class="hero-v2__overlay-bottom"></div>
+
+  <div class="hero-v2__content">
+    <div class="hero-v2__eyebrow">Nigeria's Premium Event Ticketing Platform</div>
+    <h1 class="hero-v2__title">
+      Real Events.<br>
+      <em style="background:linear-gradient(135deg,#F8E78B 0%,var(--gold) 40%,#B5892A 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block">Unforgettable<br>Moments.</em>
+    </h1>
+    <p class="hero-v2__sub">Discover, book, and attend the best events — concerts, parties, festivals, conferences, and more.</p>
+
+    <div class="hero-v2__search-wrap">
+      <div class="hero-v2__search">
+        <svg style="margin-left:18px;flex-shrink:0;opacity:.4" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search for events, artists, venues…" id="hero-search" autocomplete="off"
+               onkeydown="if(event.key==='Enter') window.location='/events/?search='+encodeURIComponent(this.value)">
+        <button onclick="window.location='/events/?search='+encodeURIComponent(document.getElementById('hero-search').value)">Search</button>
+      </div>
+
+      <div class="hero-v2__chips" id="category-chips">
+        <a href="/events/?event_type=concerts" class="hero-v2__chip">🎵 Concerts</a>
+        <a href="/events/?event_type=parties" class="hero-v2__chip">🎉 Parties</a>
+        <a href="/events/?event_type=festivals" class="hero-v2__chip">🎪 Festivals</a>
+        <a href="/events/?event_type=conferences" class="hero-v2__chip">💼 Conferences</a>
+        <a href="/events/?event_type=workshops" class="hero-v2__chip">🎓 Workshops</a>
+        <a href="/events/" class="hero-v2__chip">••• More</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+
+  <!-- ── Trending Events ── -->
+  <section style="padding-top:64px">
+    <div class="flex-between" style="margin-bottom:32px">
+      <div>
+        <p style="font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--crimson);margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:20px;height:1.5px;background:var(--crimson);border-radius:2px"></span>Right Now</p>
+        <h2 class="font-display" style="font-size:1.625rem;font-weight:700;letter-spacing:-.02em">Trending Events</h2>
+        <p class="text-sub" style="margin-top:4px;font-size:.875rem">The hottest events happening right now.</p>
+      </div>
+      <a href="/events/" class="btn btn--ghost btn--sm">View all →</a>
+    </div>
+    <div class="grid-4" id="trending-grid">
+      {% for i in "1234" %}
+      <div class="ev-card" style="pointer-events:none">
+        <div class="ev-card__img-wrap" style="background:var(--surface-2);display:flex;align-items:center;justify-content:center">
+          <div class="spinner"></div>
+        </div>
+        <div class="ev-card__body">
+          <div style="height:12px;background:var(--surface-2);border-radius:4px;width:60%;margin-bottom:10px"></div>
+          <div style="height:16px;background:var(--surface-2);border-radius:4px;margin-bottom:8px"></div>
+          <div style="height:12px;background:var(--surface-2);border-radius:4px;width:80%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ── Popular Categories ── -->
+  <section class="cats-section">
+    <div class="flex-between" style="margin-bottom:24px">
+      <h2 class="font-display" style="font-size:1.625rem;font-weight:700;letter-spacing:-.02em">Popular Categories</h2>
+      <a href="/events/" class="btn btn--ghost btn--sm">View all →</a>
+    </div>
+    <div class="cats-grid">
+      <a href="/events/?event_type=concerts" class="cat-item">
+        <div class="cat-item__icon">🎵</div>
+        <span>Concerts</span>
+      </a>
+      <a href="/events/?event_type=parties" class="cat-item">
+        <div class="cat-item__icon">🎉</div>
+        <span>Parties</span>
+      </a>
+      <a href="/events/?event_type=festivals" class="cat-item">
+        <div class="cat-item__icon">🎪</div>
+        <span>Festivals</span>
+      </a>
+      <a href="/events/?event_type=conferences" class="cat-item">
+        <div class="cat-item__icon">💼</div>
+        <span>Conferences</span>
+      </a>
+      <a href="/events/?event_type=workshops" class="cat-item">
+        <div class="cat-item__icon">🎓</div>
+        <span>Workshops</span>
+      </a>
+      <a href="/events/?event_type=sports" class="cat-item">
+        <div class="cat-item__icon">⚽</div>
+        <span>Sports</span>
+      </a>
+      <a href="/events/" class="cat-item">
+        <div class="cat-item__icon">✦</div>
+        <span>Other</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ── Featured Events ── -->
+  <section style="padding-top:64px">
+    <div class="flex-between" style="margin-bottom:32px">
+      <div>
+        <p style="font-size:.68rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--electric);margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:20px;height:1.5px;background:var(--electric);border-radius:2px"></span>Curated for You</p>
+        <h2 class="font-display" style="font-size:1.625rem;font-weight:700;letter-spacing:-.02em;font-style:italic">Featured Events</h2>
+        <p class="text-sub" style="margin-top:4px;font-size:.875rem">Handpicked experiences worth every moment.</p>
+      </div>
+      <a href="/events/?is_featured=true" class="btn btn--ghost btn--sm">View all →</a>
+    </div>
+    <div class="grid-3" id="featured-grid">
+      {% for i in "123" %}
+      <div class="ev-card" style="pointer-events:none">
+        <div class="ev-card__img-wrap" style="background:var(--surface-2)"></div>
+        <div class="ev-card__body">
+          <div style="height:12px;background:var(--surface-2);border-radius:4px;width:50%;margin-bottom:10px"></div>
+          <div style="height:18px;background:var(--surface-2);border-radius:4px;margin-bottom:8px"></div>
+          <div style="height:12px;background:var(--surface-2);border-radius:4px;width:70%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ── Planning an Event CTA ── -->
+  <section style="padding:64px 0">
+    <div class="host-cta">
+      <div class="host-cta__bg"></div>
+      <div class="host-cta__img"></div>
+
+      <div style="position:relative;z-index:1;max-width:620px">
+        <p style="font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;display:inline-flex;align-items:center;gap:8px">
+          <span style="display:block;width:24px;height:1px;background:var(--gold)"></span>
+          For Event Organizers
+        </p>
+        <h2 class="font-display" style="font-size:2.25rem;font-weight:700;line-height:1.15;margin-bottom:16px;letter-spacing:-.02em">
+          Planning an Event?
+        </h2>
+        <p class="text-sub" style="font-size:.9375rem;line-height:1.8;margin-bottom:32px;max-width:520px">
+          Sell your tickets, manage your attendees, and grow your event with Nexivo. Set up in 5 minutes. Keep <strong style="color:var(--gold)">92%</strong> of every sale.
+        </p>
+
+        <div style="display:flex;gap:40px;flex-wrap:wrap;margin-bottom:36px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:8px;background:rgba(212,175,70,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:.875rem;font-weight:600;color:var(--text)">Easy Setup</div>
+              <div style="font-size:.75rem;color:var(--text-mute)">In 5 Minutes</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:8px;background:rgba(212,175,70,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div>
+              <div style="font-size:.875rem;font-weight:600;color:var(--text)">Secure Payments</div>
+              <div style="font-size:.75rem;color:var(--text-mute)">Paystack, Flutterwave, Stripe</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:8px;background:rgba(212,175,70,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+            </div>
+            <div>
+              <div style="font-size:.875rem;font-weight:600;color:var(--text)">QR Ticketing</div>
+              <div style="font-size:.75rem;color:var(--text-mute)">& Check-In</div>
+            </div>
+          </div>
+        </div>
+
+        <a href="/auth/register/?role=host" class="btn btn--gold btn--lg">Become an Organizer →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Why Choose Nexivo ── -->
+  <section style="padding-bottom:72px">
+    <h2 class="font-display" style="font-size:1.375rem;font-weight:700;letter-spacing:-.02em;margin-bottom:24px;text-align:center;color:var(--text-sub)">Why Choose Nexivo?</h2>
+    <div class="why-grid">
+      <div class="why-item">
+        <div class="why-item__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div>
+          <div class="why-item__title">Fast &amp; Easy Booking</div>
+          <div class="why-item__sub">Get your tickets in minutes. Simple, intuitive, and fast.</div>
+        </div>
+      </div>
+      <div class="why-item">
+        <div class="why-item__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div>
+          <div class="why-item__title">Secure Payments</div>
+          <div class="why-item__sub">Paystack, Flutterwave, Stripe — your money is always safe.</div>
+        </div>
+      </div>
+      <div class="why-item">
+        <div class="why-item__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+        </div>
+        <div>
+          <div class="why-item__title">QR Ticketing</div>
+          <div class="why-item__sub">Scan and check in at the door. No paper, no hassle.</div>
+        </div>
+      </div>
+      <div class="why-item">
+        <div class="why-item__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div>
+          <div class="why-item__title">Trusted by Organizers</div>
+          <div class="why-item__sub">From small events to big festivals. Nigeria's organizers choose Nexivo.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="/static/js/events.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function fmtDate(dtStr) {
+    const d = new Date(dtStr);
+    return {
+      day:   d.toLocaleDateString('en-NG', { day: 'numeric' }),
+      month: d.toLocaleDateString('en-NG', { month: 'short' }),
+      year:  d.toLocaleDateString('en-NG', { year: 'numeric' }),
+      full:  d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }),
+      time:  d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }),
+    };
+  }
+
+  function renderCard(e, wide) {
+    const isFree = e.min_price == null || parseFloat(e.min_price) === 0;
+    const price  = isFree ? 'Free' : `From ₦${Number(e.min_price).toLocaleString()}`;
+    const dt     = fmtDate(e.start_datetime);
+    const img    = e.banner_image || '';
+    const cat    = e.category_name || e.event_type || '';
+
+    let statusBadge = '';
+    if (e.is_featured) statusBadge = '<span class="ev-card__status ev-card__status--featured">Featured</span>';
+    else if (isFree)   statusBadge = '<span class="ev-card__status ev-card__status--free">Free</span>';
+
+    return `
+    <a href="/events/${escapeHtml(e.slug)}/" class="ev-card${wide ? ' ev-card--row' : ''}">
+      <div class="ev-card__img-wrap">
+        ${img
+          ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(e.title)}" loading="lazy">`
+          : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1408 0%,#1c1c1c 100%);display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(212,175,70,.3)" stroke-width="1"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>`
+        }
+        <div class="ev-card__img-overlay"></div>
+        <div class="ev-card__date-badge">
+          <span class="day">${escapeHtml(dt.day)}</span>
+          <span class="month">${escapeHtml(dt.month)}</span>
+        </div>
+        ${statusBadge}
+        <span class="ev-card__cta">Get Tickets</span>
+      </div>
+      <div class="ev-card__body">
+        <div class="ev-card__cat">${escapeHtml(cat)}</div>
+        <div class="ev-card__title">${escapeHtml(e.title)}</div>
+        <div class="ev-card__meta">
+          <span style="display:flex;align-items:center;gap:4px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            ${escapeHtml(dt.full)}
+          </span>
+          ${e.city ? `<span style="display:flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${escapeHtml(e.city)}</span>` : ''}
+        </div>
+      </div>
+      <div class="ev-card__foot">
+        <span class="ev-card__price${isFree ? ' ev-card__price--free' : ''}">${price}</span>
+        <span class="ev-card__btn">Book →</span>
+      </div>
+    </a>`;
+  }
+
+  /* Trending */
+  try {
+    const data = await Api.get('/events/trending/?page_size=4', true);
+    const grid = document.getElementById('trending-grid');
+    if (!data.results || !data.results.length) {
+      grid.innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No trending events right now.</p>';
+    } else {
+      grid.innerHTML = data.results.map(e => renderCard(e, false)).join('');
+    }
+  } catch(_) {
+    document.getElementById('trending-grid').innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">Unable to load events.</p>';
+  }
+
+  /* Featured */
+  try {
+    const data = await Api.get('/events/featured/?page_size=3', true);
+    const grid = document.getElementById('featured-grid');
+    if (!data.results || !data.results.length) {
+      grid.innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No featured events right now. Check back soon.</p>';
+    } else {
+      grid.innerHTML = data.results.map(e => renderCard(e, false)).join('');
+    }
+  } catch(_) {
+    document.getElementById('featured-grid').innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">Unable to load featured events.</p>';
+  }
+
+  /* After cards load, wire up scroll-reveal */
+  requestAnimationFrame(wireScrollReveal);
+});
+
+// ── Scroll-reveal ──────────────────────────────────────────────────
+function wireScrollReveal() {
+  if (!window.IntersectionObserver) return;
+
+  const items = document.querySelectorAll(
+    '.ev-card, .cat-item, .why-item, .host-cta, .stat-card-v2'
+  );
+  items.forEach((el, i) => {
+    el.classList.add('reveal');
+    el.style.transitionDelay = ((i % 5) * 0.08) + 's';
+  });
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+}
+
+// ── Hero parallax on scroll ──────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const bg = document.getElementById('hero-bg-img');
+  if (!bg) return;
+  const scrolled = window.scrollY;
+  bg.style.transform = `scale(1.04) translateY(${scrolled * 0.18}px)`;
+}, { passive: true });
+
+// ── Hero background: set if image exists ─────────────────────────
+(function() {
+  const bgEl = document.getElementById('hero-bg-img');
+  if (!bgEl) return;
+  const img = new Image();
+  img.onload = () => {
+    bgEl.style.backgroundImage = `url('${img.src}')`;
+    bgEl.style.display = 'block';
+  };
+  img.src = '/static/img/hero-bg.jpg';
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+{% block title %}Create Event{% endblock %}
+{% block content %}
+
+<div class="container--narrow" style="padding:48px 24px">
+  <a href="/dashboard/host/" class="btn btn--ghost btn--sm" style="margin-bottom:20px">← Back to Dashboard</a>
+  <h1 class="font-display" style="font-size:2rem;margin-bottom:6px">Create an Event</h1>
+  <p class="text-muted" style="margin-bottom:36px">Fill in your event details, add ticket tiers, then publish when ready.</p>
+
+  <!-- Step indicators -->
+  <div style="display:flex;margin-bottom:40px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+    {% for label in steps %}
+    <div id="step-tab-{{ forloop.counter }}"
+         style="flex:1;padding:14px;text-align:center;font-size:.875rem;font-weight:600;border-right:1px solid var(--border);background:{% if forloop.counter == 1 %}var(--black){% else %}var(--surface-2){% endif %};color:{% if forloop.counter == 1 %}#fff{% else %}var(--text-sub){% endif %};transition:all .2s">
+      {{ forloop.counter }}. {{ label }}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── STEP 1: Event Details ─────────────────────────────────────── -->
+  <div id="step-1">
+    <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:20px">Event Details</h2>
+
+    <div class="form-group">
+      <label class="form-label">Event Title *</label>
+      <input class="form-input" id="f-title" placeholder="e.g. Lagos Afrobeats Night 2026" maxlength="255">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Short Description</label>
+      <input class="form-input" id="f-short-desc" maxlength="300" placeholder="One-line summary shown in listings">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Full Description *</label>
+      <textarea class="form-textarea" id="f-desc" style="min-height:140px" placeholder="Tell attendees what to expect…"></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="f-category">
+          <option value="">Select category…</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Event Type *</label>
+        <select class="form-select" id="f-type" onchange="toggleTypeFields()">
+          <option value="physical">In-Person (Physical)</option>
+          <option value="virtual">Online (Virtual)</option>
+          <option value="hybrid">Hybrid (Both)</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Start Date & Time *</label>
+        <input class="form-input" type="datetime-local" id="f-start">
+      </div>
+      <div class="form-group">
+        <label class="form-label">End Date & Time *</label>
+        <input class="form-input" type="datetime-local" id="f-end">
+      </div>
+    </div>
+
+    <div id="physical-fields">
+      <h3 style="font-weight:600;font-size:.9375rem;margin:20px 0 14px">Venue Details</h3>
+      <div class="form-group">
+        <label class="form-label">Venue Name *</label>
+        <input class="form-input" id="f-venue" placeholder="e.g. Eko Convention Centre">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input class="form-input" id="f-address" placeholder="Full street address">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label class="form-label">City *</label>
+          <input class="form-input" id="f-city" placeholder="Lagos">
+        </div>
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <input class="form-input" id="f-state" placeholder="Lagos">
+        </div>
+      </div>
+    </div>
+
+    <div id="virtual-fields" style="display:none">
+      <h3 style="font-weight:600;font-size:.9375rem;margin:20px 0 14px">Online Event Details</h3>
+      <div class="form-group">
+        <label class="form-label">Platform *</label>
+        <input class="form-input" id="f-platform" placeholder="e.g. Zoom, Google Meet, YouTube Live">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Join URL</label>
+        <input class="form-input" type="url" id="f-join-url" placeholder="https://…">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Ticket Types ──────────────────────────────────────── -->
+  <div id="step-2" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:1.25rem;font-weight:700">Ticket Types</h2>
+      <button class="btn btn--outline btn--sm" onclick="addTicket()">+ Add Ticket Type</button>
+    </div>
+    <div id="ticket-list"></div>
+    <div id="no-tickets" style="text-align:center;padding:40px;color:var(--muted)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto 12px;display:block;opacity:.6"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"/><path d="M13 5v14"/></svg>
+      <p class="fw-600" style="margin-bottom:4px">No ticket types yet</p>
+      <p style="font-size:.875rem">Click <strong>Add Ticket Type</strong> to get started</p>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Banner ───────────────────────────────────────────── -->
+  <div id="step-3" style="display:none">
+    <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:20px">Banner Image</h2>
+    <div id="banner-drop"
+         onclick="document.getElementById('banner-file').click()"
+         style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:48px;text-align:center;cursor:pointer;transition:border-color .2s">
+      <div id="banner-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto 12px;display:block;opacity:.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p style="font-weight:600">Click to upload banner image</p>
+        <p style="color:var(--muted);font-size:.875rem;margin-top:4px">JPG, PNG or WebP · Recommended 1600×900px</p>
+      </div>
+      <div id="banner-preview" style="display:none">
+        <img id="banner-img" style="max-height:220px;border-radius:8px;margin:0 auto">
+        <p style="color:var(--muted);font-size:.875rem;margin-top:10px">Click to change image</p>
+      </div>
+    </div>
+    <input type="file" id="banner-file" accept="image/*" style="display:none" onchange="previewBanner(this)">
+  </div>
+
+  <!-- ── STEP 4: Review & Publish ─────────────────────────────────── -->
+  <div id="step-4" style="display:none">
+    <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:20px">Review & Publish</h2>
+
+    <div id="review-box" style="background:var(--surface-2);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px"></div>
+
+    <div class="form-group">
+      <label class="form-label">Refund Policy</label>
+      <textarea class="form-textarea" id="f-refund" placeholder="e.g. Full refund up to 48 hours before the event, no refunds after."></textarea>
+    </div>
+
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Marketer Referral Code <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+      <input class="form-input" id="f-referral-code" type="text" placeholder="e.g. NXM2026AB" style="text-transform:uppercase" autocomplete="off">
+      <p style="font-size:.8125rem;color:var(--muted);margin-top:4px">If someone referred you to Nexivo enter their code here so they earn commission from your ticket sales</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Terms & Conditions</label>
+      <textarea class="form-textarea" id="f-terms" placeholder="Any age restrictions, dress code, prohibited items…"></textarea>
+    </div>
+
+    <div id="submit-error" style="display:none;background:#fdeaea;color:var(--error);padding:14px 16px;border-radius:var(--radius);margin-top:8px;font-size:.9rem"></div>
+  </div>
+
+  <!-- Navigation buttons -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
+    <button class="btn btn--outline" id="prev-btn" onclick="goStep(-1)" disabled>← Previous</button>
+    <button class="btn btn--gold" id="next-btn" onclick="goStep(1)">Next →</button>
+  </div>
+</div>
+
+<script src="/static/js/events.js"></script>
+<script>
+// ── State ─────────────────────────────────────────────────────────
+let currentStep = 1;
+const totalSteps = 4;
+let tickets = [];
+let bannerFile = null;
+
+// ── Init ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+
+  // Load categories
+  try {
+    const data = await Api.get('/events/categories/', true);
+    const sel = document.getElementById('f-category');
+    (data.results || []).forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.name;
+      sel.appendChild(o);
+    });
+  } catch {}
+});
+
+// ── Event type toggle ─────────────────────────────────────────────
+function toggleTypeFields() {
+  const t = document.getElementById('f-type').value;
+  document.getElementById('physical-fields').style.display = t === 'virtual' ? 'none' : '';
+  document.getElementById('virtual-fields').style.display  = t === 'physical' ? 'none' : '';
+}
+
+// ── Banner preview ────────────────────────────────────────────────
+function previewBanner(input) {
+  const file = input.files[0];
+  if (!file) return;
+  bannerFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('banner-img').src = e.target.result;
+    document.getElementById('banner-placeholder').style.display = 'none';
+    document.getElementById('banner-preview').style.display = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Ticket builder ────────────────────────────────────────────────
+function addTicket() {
+  const id = Date.now();
+  tickets.push(id);
+  document.getElementById('no-tickets').style.display = 'none';
+
+  const div = document.createElement('div');
+  div.id = `ticket-${id}`;
+  div.style.cssText = 'border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:14px;position:relative';
+  div.innerHTML = `
+    <button onclick="removeTicket(${id})"
+            style="position:absolute;top:10px;right:12px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.125rem">✕</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Name *</label>
+        <input class="form-input" id="tt-name-${id}" placeholder="VIP, Regular, Free…">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Price (₦)</label>
+        <input class="form-input" type="number" min="0" step="0.01" value="0" id="tt-price-${id}">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Quantity *</label>
+        <input class="form-input" type="number" min="1" id="tt-qty-${id}" placeholder="100">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Max Per Order</label>
+        <input class="form-input" type="number" min="1" value="10" id="tt-max-${id}">
+      </div>
+    </div>
+    <div class="form-group" style="margin:0">
+      <label class="form-label">Description</label>
+      <input class="form-input" id="tt-desc-${id}" placeholder="What's included?">
+    </div>`;
+  document.getElementById('ticket-list').appendChild(div);
+}
+
+function removeTicket(id) {
+  tickets = tickets.filter(t => t !== id);
+  document.getElementById(`ticket-${id}`).remove();
+  if (tickets.length === 0) {
+    document.getElementById('no-tickets').style.display = '';
+  }
+}
+
+function getTicketData() {
+  return tickets.map(id => ({
+    name:           document.getElementById(`tt-name-${id}`).value.trim(),
+    price:          parseFloat(document.getElementById(`tt-price-${id}`).value) || 0,
+    quantity_total: parseInt(document.getElementById(`tt-qty-${id}`).value) || 0,
+    max_per_order:  parseInt(document.getElementById(`tt-max-${id}`).value) || 10,
+    description:    document.getElementById(`tt-desc-${id}`).value.trim(),
+  }));
+}
+
+// ── Step navigation ───────────────────────────────────────────────
+function goStep(direction) {
+  if (direction === 1 && !validateStep(currentStep)) return;
+
+  const next = currentStep + direction;
+  if (next < 1 || next > totalSteps) return;
+
+  document.getElementById(`step-${currentStep}`).style.display = 'none';
+  document.getElementById(`step-${next}`).style.display = '';
+
+  // Update tab styles
+  for (let i = 1; i <= totalSteps; i++) {
+    const tab = document.getElementById(`step-tab-${i}`);
+    if (i === next) {
+      tab.style.background = 'var(--black)';
+      tab.style.color = '#fff';
+    } else if (i < next) {
+      tab.style.background = 'var(--surface-2)';
+      tab.style.color = 'var(--success)';
+    } else {
+      tab.style.background = 'var(--surface-2)';
+      tab.style.color = 'var(--text-sub)';
+    }
+  }
+
+  currentStep = next;
+  document.getElementById('prev-btn').disabled = currentStep === 1;
+  document.getElementById('next-btn').textContent =
+    currentStep === totalSteps ? '🚀 Publish Event' : 'Next →';
+  document.getElementById('next-btn').onclick =
+    currentStep === totalSteps ? submitEvent : () => goStep(1);
+
+  if (currentStep === totalSteps) buildReview();
+  window.scrollTo(0, 0);
+}
+
+// ── Validation ────────────────────────────────────────────────────
+function validateStep(step) {
+  if (step === 1) {
+    if (!document.getElementById('f-title').value.trim()) {
+      alert('Please enter an event title.'); return false;
+    }
+    if (!document.getElementById('f-desc').value.trim()) {
+      alert('Please enter a full description.'); return false;
+    }
+    if (!document.getElementById('f-start').value) {
+      alert('Please select a start date and time.'); return false;
+    }
+    if (!document.getElementById('f-end').value) {
+      alert('Please select an end date and time.'); return false;
+    }
+    if (document.getElementById('f-start').value >= document.getElementById('f-end').value) {
+      alert('End date must be after start date.'); return false;
+    }
+    const type = document.getElementById('f-type').value;
+    if (type !== 'virtual' && !document.getElementById('f-venue').value.trim()) {
+      alert('Please enter a venue name.'); return false;
+    }
+    if (type !== 'virtual' && !document.getElementById('f-city').value.trim()) {
+      alert('Please enter a city.'); return false;
+    }
+    if (type !== 'physical' && !document.getElementById('f-platform').value.trim()) {
+      alert('Please enter the online platform (e.g. Zoom).'); return false;
+    }
+  }
+  if (step === 2) {
+    if (tickets.length === 0) {
+      alert('Please add at least one ticket type.'); return false;
+    }
+    for (const id of tickets) {
+      if (!document.getElementById(`tt-name-${id}`).value.trim()) {
+        alert('Please enter a name for all ticket types.'); return false;
+      }
+      if (!document.getElementById(`tt-qty-${id}`).value || parseInt(document.getElementById(`tt-qty-${id}`).value) < 1) {
+        alert('Please enter a valid quantity for all ticket types.'); return false;
+      }
+    }
+  }
+  return true;
+}
+
+// ── Review summary ────────────────────────────────────────────────
+function buildReview() {
+  const type = document.getElementById('f-type').value;
+  const start = document.getElementById('f-start').value;
+  const location = type === 'virtual'
+    ? document.getElementById('f-platform').value
+    : `${document.getElementById('f-venue').value}, ${document.getElementById('f-city').value}`;
+
+  const ticketRows = getTicketData().map(t =>
+    `<tr><td style="padding:6px 0">${t.name}</td><td>₦${t.price.toLocaleString()}</td><td>${t.quantity_total} tickets</td></tr>`
+  ).join('');
+
+  document.getElementById('review-box').innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <tr><td style="padding:8px 0;color:var(--muted);width:140px;font-size:.875rem">Title</td><td style="font-weight:600">${document.getElementById('f-title').value}</td></tr>
+      <tr><td style="padding:8px 0;color:var(--muted);font-size:.875rem">Type</td><td style="text-transform:capitalize">${type}</td></tr>
+      <tr><td style="padding:8px 0;color:var(--muted);font-size:.875rem">Start</td><td>${start ? new Date(start).toLocaleString('en-NG') : '—'}</td></tr>
+      <tr><td style="padding:8px 0;color:var(--muted);font-size:.875rem">End</td><td>${document.getElementById('f-end').value ? new Date(document.getElementById('f-end').value).toLocaleString('en-NG') : '—'}</td></tr>
+      <tr><td style="padding:8px 0;color:var(--muted);font-size:.875rem">Location</td><td>${location}</td></tr>
+      <tr><td style="padding:8px 0;color:var(--muted);font-size:.875rem;vertical-align:top">Tickets</td>
+          <td><table style="width:100%">${ticketRows}</table></td></tr>
+    </table>`;
+}
+
+// ── Submit ────────────────────────────────────────────────────────
+async function submitEvent() {
+  const btn = document.getElementById('next-btn');
+  const errEl = document.getElementById('submit-error');
+  btn.disabled = true;
+  btn.textContent = 'Publishing…';
+  errEl.style.display = 'none';
+
+  const type = document.getElementById('f-type').value;
+
+  // Use FormData so we can include the banner image file
+  const fd = new FormData();
+  fd.append('title',            document.getElementById('f-title').value.trim());
+  fd.append('short_description', document.getElementById('f-short-desc').value.trim());
+  fd.append('description',      document.getElementById('f-desc').value.trim());
+  fd.append('event_type',       type);
+  fd.append('start_datetime',   document.getElementById('f-start').value);
+  fd.append('end_datetime',     document.getElementById('f-end').value);
+  fd.append('status',           'published');
+  fd.append('ticket_types',     JSON.stringify(getTicketData()));
+
+  const cat = document.getElementById('f-category').value;
+  if (cat) fd.append('category_id', cat);
+
+  const refund = document.getElementById('f-refund').value.trim();
+  if (refund) fd.append('refund_policy', refund);
+
+  const terms = document.getElementById('f-terms').value.trim();
+  if (terms) fd.append('terms_and_conditions', terms);
+
+  const referralCode = document.getElementById('f-referral-code').value.trim().toUpperCase();
+  if (referralCode) fd.append('marketer_referral_code', referralCode);
+
+  if (type !== 'virtual') {
+    fd.append('venue_name', document.getElementById('f-venue').value.trim());
+    fd.append('address',    document.getElementById('f-address').value.trim());
+    fd.append('city',       document.getElementById('f-city').value.trim());
+    fd.append('state',      document.getElementById('f-state').value.trim());
+  }
+  if (type !== 'physical') {
+    fd.append('virtual_platform', document.getElementById('f-platform').value.trim());
+    fd.append('virtual_join_url', document.getElementById('f-join-url').value.trim());
+  }
+
+  // Attach banner image if selected
+  if (bannerFile) fd.append('banner_image', bannerFile);
+
+  try {
+    // Refresh token first to avoid 401 errors on long forms
+    try {
+      const refresh = localStorage.getItem('nexivo_refresh');
+      if (refresh) {
+        const refreshRes = await fetch('/api/v1/auth/token/refresh/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh }),
+        });
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          if (refreshData.access) {
+            localStorage.setItem('nexivo_access', refreshData.access);
+          }
+        }
+      }
+    } catch(e) {}
+
+    // Step 1: Create the event
+    const token = Api.getToken();
+    const res = await fetch('/api/v1/events/mine/', {
+      method: 'POST',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: fd,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw err;
+    }
+    const event = await res.json();
+
+    // Step 2: Add ticket types separately
+    const ticketData = getTicketData();
+    for (const tt of ticketData) {
+      if (!tt.name) continue;
+      await fetch(`/api/v1/events/${event.slug}/ticket-types/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: tt.name,
+          price: tt.price,
+          quantity_total: tt.quantity_total,
+          quantity_remaining: tt.quantity_total,
+          max_per_order: tt.max_per_order,
+          description: tt.description,
+          is_free: tt.price === 0,
+          is_active: true,
+        }),
+      });
+    }
+
+    Toast.success('Event published! It is now live on Nexivo.');
+    setTimeout(() => window.location.href = '/dashboard/host/', 1500);
+  } catch (err) {
+    const msg = err?.detail
+      || (err?.start_datetime?.[0])
+      || (err?.end_datetime?.[0])
+      || (err?.title?.[0])
+      || (err?.non_field_errors?.[0])
+      || JSON.stringify(err)
+      || 'Failed to create event. Please check all fields and try again.';
+    errEl.textContent = msg;
+    errEl.style.display = '';
+    btn.disabled = false;
+    btn.textContent = '🚀 Publish Event';
+  }
+}
+</script>
+{% endblock %}

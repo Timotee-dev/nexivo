@@ -1,0 +1,76 @@
+<aside class="sidebar">
+  <div class="sidebar__section" style="padding-top:8px;margin-bottom:8px">
+    <a href="/" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;margin-bottom:8px">
+      <span class="font-display text-gold fw-700" style="font-size:1.25rem;letter-spacing:-.02em">Nexivo</span>
+    </a>
+    <div class="divider"></div>
+  </div>
+
+  <div class="sidebar__section">
+    <p class="sidebar__label">Overview</p>
+    <a href="/dashboard/host/" class="sidebar__link {% if active == 'overview' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/dashboard/events/" class="sidebar__link {% if active == 'events' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      My Events
+    </a>
+    <a href="/dashboard/tickets/" class="sidebar__link {% if active == 'tickets' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
+      Tickets Sold
+    </a>
+  </div>
+
+  <div class="sidebar__section">
+    <p class="sidebar__label">Finance</p>
+    <a href="/dashboard/earnings/" class="sidebar__link {% if active == 'earnings' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Earnings
+    </a>
+    <a href="/dashboard/payouts/" class="sidebar__link {% if active == 'payouts' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Payouts
+    </a>
+    <a href="/dashboard/refunds/" class="sidebar__link {% if active == 'refunds' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.32"/></svg>
+      Refunds
+    </a>
+  </div>
+
+  <div class="sidebar__section">
+    <p class="sidebar__label">Tools</p>
+    <a href="/dashboard/scanner/" class="sidebar__link {% if active == 'scanner' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 7 23 1 17 1"/><line x1="16" y1="8" x2="23" y2="1"/><polyline points="1 17 1 23 7 23"/><line x1="8" y1="16" x2="1" y2="23"/><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/></svg>
+      QR Scanner
+    </a>
+    <a href="/dashboard/coupons/" class="sidebar__link {% if active == 'coupons' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Coupons
+    </a>
+  </div>
+
+  <div class="sidebar__section">
+    <p class="sidebar__label">Account</p>
+    <a href="/dashboard/profile/" class="sidebar__link {% if active == 'profile' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </a>
+    <a href="/dashboard/verification/" class="sidebar__link {% if active == 'verification' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      Verification
+    </a>
+    <a href="/dashboard/bank-account/" class="sidebar__link {% if active == 'bank' %}sidebar__link--active{% endif %}">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Bank Account
+    </a>
+  </div>
+
+  <div class="sidebar__section" style="margin-top:auto;padding-top:16px">
+    <div class="divider"></div>
+    <a href="/events/create/" class="btn btn--gold btn--full" style="margin-top:16px;justify-content:center">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;margin-right:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Create Event
+    </a>
+  </div>
+</aside>

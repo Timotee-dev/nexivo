@@ -1,0 +1,12 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 class="h1">Payment Not Completed</h1>
+<p class="sub">Hi {{ customer_name }}, unfortunately your payment for <strong>{{ event_title }}</strong> could not be processed and your reserved tickets have been released.</p>
+<table class="detail-table">
+  <tr><td>Booking Ref</td><td>{{ booking_reference }}</td></tr>
+  <tr><td>Amount</td><td>₦{{ amount }}</td></tr>
+  <tr><td>Gateway</td><td>{{ gateway }}</td></tr>
+</table>
+<p class="sub" style="margin-top:20px">No charge has been made to your account. Please try booking again — tickets may still be available.</p>
+<a href="{{ frontend_url }}/events/" class="btn">Browse Events</a>
+{% endblock %}

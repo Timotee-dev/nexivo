@@ -1,0 +1,12 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 class="h1">⏰ Your Event Starts Tomorrow!</h1>
+<p class="sub">Hi {{ customer_name }}, this is a reminder that <strong>{{ event_title }}</strong> is happening soon. Don't forget your tickets!</p>
+<table class="detail-table">
+  <tr><td>Event</td><td>{{ event_title }}</td></tr>
+  <tr><td>Date & Time</td><td>{{ event_date }}</td></tr>
+  <tr><td>Location</td><td>{{ event_location }}</td></tr>
+  <tr><td>Your Tickets</td><td>{{ ticket_count }}</td></tr>
+</table>
+<a href="{{ frontend_url }}/dashboard/customer/" class="btn">View My Tickets</a>
+{% endblock %}

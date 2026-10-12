@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}My Bookings{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_customer_sidebar.html" with active="bookings" %}
+  <main class="dashboard__main">
+    <div style="margin-bottom:28px">
+      <h1 class="font-display" style="font-size:1.75rem">My Bookings</h1>
+      <p class="text-muted">All your event booking history</p>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Reference</th><th>Event</th><th>Tickets</th><th>Total Paid</th><th>Status</th><th>Date</th><th></th></tr></thead>
+        <tbody id="bookings-tbody"><tr><td colspan="7" class="text-center"><div class="spinner" style="margin:24px auto"></div></td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<script src="/static/js/dashboard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  const tbody = document.getElementById('bookings-tbody');
+  try {
+    const data = await Api.get('/bookings/mine/');
+    if (!data.results?.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding:48px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p style="font-weight:600;margin-bottom:6px">No bookings yet</p>
+        <a href="/events/" class="text-gold">Browse events →</a>
+      </td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.results.map(b => `
+      <tr>
+        <td><code style="font-size:.8125rem">${b.booking_reference}</code></td>
+        <td>${b.event?.title || '—'}</td>
+        <td>${b.ticket_count}</td>
+        <td class="fw-600">₦${Number(b.total_amount).toLocaleString()}</td>
+        <td><span class="badge badge--${b.status === 'confirmed' ? 'green' : b.status === 'cancelled' ? 'red' : 'grey'}">${b.status}</span></td>
+        <td style="font-size:.8125rem">${new Date(b.created_at).toLocaleDateString()}</td>
+        <td>${b.status === 'confirmed'
+          ? `<button class="btn btn--ghost btn--sm" onclick="requestRefund('${b.booking_reference}')">Request Refund</button>`
+          : ''}</td>
+      </tr>`).join('');
+  } catch { Toast.error('Failed to load bookings.'); }
+});
+
+async function requestRefund(ref) {
+  const reason = prompt('Please briefly describe your reason for requesting a refund:');
+  if (!reason) return;
+  try {
+    const booking = await Api.get(`/bookings/${ref}/`);
+    const payment = booking.payments?.[0];
+    if (!payment) { Toast.error('No payment found for this booking.'); return; }
+    await Api.post(`/payments/${payment.gateway_reference}/refund/`, { reason });
+    Toast.success('Refund request submitted. The host will review it shortly.');
+  } catch(err) { Toast.error(err?.detail || 'Failed to submit refund request.'); }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Marketer Dashboard{% endblock %}
+{% block content %}
+
+<div class="container--narrow" style="padding:40px 20px">
+  <div style="margin-bottom:24px">
+    <h1 class="font-display" style="font-size:1.75rem">Marketer Dashboard</h1>
+    <p class="text-muted">Track your commissions and earnings</p>
+  </div>
+
+  <div id="marketer-content">
+    <div class="spinner" style="margin:40px auto"></div>
+  </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div class="modal-backdrop" id="withdraw-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('withdraw-modal')">×</button>
+    <h2 class="modal__title">Withdraw Earnings</h2>
+    <p class="text-muted" style="margin-bottom:20px">Money will be sent directly to your bank account via Paystack</p>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Amount (₦)</label>
+      <input class="form-input" id="withdraw-amount" type="number" min="100" placeholder="Enter amount">
+      <p class="text-muted" style="font-size:.8125rem;margin-top:4px">Minimum: ₦100</p>
+    </div>
+    <p id="withdraw-error" style="color:var(--error);font-size:.875rem;margin-bottom:12px;display:none"></p>
+    <button class="btn btn--gold btn--full" onclick="submitWithdrawal()">Withdraw Now</button>
+  </div>
+</div>
+
+<!-- Bank Account Modal -->
+<div class="modal-backdrop" id="bank-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal__close" onclick="Modal.close('bank-modal')">×</button>
+    <h2 class="modal__title">Add Bank Account</h2>
+    <p class="text-muted" style="margin-bottom:20px">Required before you can withdraw earnings</p>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Bank</label>
+      <select class="form-input" id="bank-code-select">
+        <option value="">Select your bank...</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Account Number</label>
+      <input class="form-input" id="bank-account-number" type="text" maxlength="10" placeholder="10-digit account number">
+    </div>
+    <p id="bank-error" style="color:var(--error);font-size:.875rem;margin-bottom:12px;display:none"></p>
+    <button class="btn btn--gold btn--full" onclick="saveBankAccount()">Save Bank Account</button>
+  </div>
+</div>
+
+<script src="/static/js/nexivo.js"></script>
+<script>
+let marketerData = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  await loadMarketerDashboard();
+  await loadBanks();
+});
+
+async function loadMarketerDashboard() {
+  const el = document.getElementById('marketer-content');
+  try {
+    const data = await Api.get('/marketers/dashboard/');
+    marketerData = data;
+    renderDashboard(data);
+  } catch(err) {
+    if (err?.status === 404 || err?.detail?.includes('Not a marketer')) {
+      renderRegister();
+    } else {
+      el.innerHTML = '<p class="text-muted text-center" style="padding:32px">Could not load dashboard. Please refresh.</p>';
+    }
+  }
+}
+
+function renderRegister() {
+  document.getElementById('marketer-content').innerHTML = `
+    <div style="text-align:center;padding:56px 20px;background:var(--surface);border-radius:var(--radius-lg)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="width:56px;height:56px;margin:0 auto 20px;display:block"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <h2 class="font-display" style="font-size:1.5rem;margin-bottom:8px">Join the Nexivo Marketer Program</h2>
+      <p class="text-muted" style="margin-bottom:6px">Bring event organizers to Nexivo and earn automatically</p>
+      <p class="text-muted" style="margin-bottom:24px;font-size:.875rem">You earn <strong class="text-gold">10% of Nexivo's commission</strong> from every ticket sold at events you refer</p>
+      <div class="chart-card" style="max-width:400px;margin:0 auto 24px;text-align:left">
+        <p class="fw-600" style="margin-bottom:12px">How it works</p>
+        <p class="text-muted" style="font-size:.875rem;margin-bottom:8px">1. Register and get your unique referral code</p>
+        <p class="text-muted" style="font-size:.875rem;margin-bottom:8px">2. Share your code with event organizers</p>
+        <p class="text-muted" style="font-size:.875rem;margin-bottom:8px">3. They enter your code when creating events on Nexivo</p>
+        <p class="text-muted" style="font-size:.875rem">4. Every ticket sold credits your wallet automatically</p>
+      </div>
+      <button class="btn btn--gold" style="min-width:200px" onclick="registerAsMarketer()">Join Now — It's Free</button>
+    </div>`;
+}
+
+async function registerAsMarketer() {
+  try {
+    const data = await Api.post('/marketers/register/', {});
+    Toast.success('Welcome to the Nexivo Marketer Program!');
+    await loadMarketerDashboard();
+  } catch(err) {
+    Toast.error(err?.detail || 'Registration failed.');
+  }
+}
+
+function renderDashboard(data) {
+  const hasBank = data.bank_details?.is_set;
+  document.getElementById('marketer-content').innerHTML = `
+    <!-- Wallet Card -->
+    <div style="background:var(--surface);border:1px solid rgba(212,175,70,.2);border-radius:var(--radius-lg);padding:28px;margin-bottom:24px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-60px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(212,175,70,.05);pointer-events:none"></div>
+      <p class="text-muted" style="font-size:.875rem;margin-bottom:4px">Available Balance</p>
+      <div class="font-display text-gold" style="font-size:2.5rem;font-weight:900;letter-spacing:-.03em;margin-bottom:4px">₦${Number(data.wallet_balance).toLocaleString()}</div>
+      <p class="text-muted" style="font-size:.875rem">Total earned: ₦${Number(data.total_earned).toLocaleString()} · Withdrawn: ₦${Number(data.total_withdrawn).toLocaleString()}</p>
+
+      <div style="background:var(--surface-2);border-radius:var(--radius);padding:14px 18px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <p class="text-muted" style="font-size:.75rem;margin-bottom:2px">Your Referral Code</p>
+          <div style="font-family:monospace;font-size:1.25rem;font-weight:700;color:var(--gold);letter-spacing:.1em">${data.referral_code}</div>
+        </div>
+        <button class="btn btn--outline btn--sm" onclick="copyCode('${data.referral_code}')">Copy</button>
+      </div>
+
+      <div class="flex gap-8 mt-16">
+        <button class="btn btn--gold" style="flex:1" onclick="Modal.open('withdraw-modal')" ${!hasBank ? 'disabled title="Add bank account first"' : ''}>
+          Withdraw
+        </button>
+        <button class="btn btn--outline" style="flex:1" onclick="Modal.open('bank-modal')">
+          ${hasBank ? 'Update Bank' : 'Add Bank Account'}
+        </button>
+      </div>
+      ${!hasBank ? '<p class="text-gold mt-8" style="font-size:.8125rem;text-align:center;opacity:.8">Add your bank account to enable withdrawals</p>' : ''}
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid" style="margin-bottom:24px">
+      <div class="stat-card">
+        <div class="stat-card__label">Commissions</div>
+        <div class="stat-card__value">${data.recent_commissions.length}</div>
+      </div>
+      <div class="stat-card stat-card--gold">
+        <div class="stat-card__label">Total Earned</div>
+        <div class="stat-card__value">₦${Number(data.total_earned).toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Withdrawn</div>
+        <div class="stat-card__value">₦${Number(data.total_withdrawn).toLocaleString()}</div>
+      </div>
+    </div>
+
+    <!-- How to earn -->
+    <div class="chart-card" style="margin-bottom:24px">
+      <h3 class="fw-700" style="margin-bottom:12px">How to earn</h3>
+      <p class="text-muted" style="font-size:.875rem;line-height:1.7">
+        Share your referral code <strong class="text-gold">${data.referral_code}</strong> with event organizers.
+        When they create an event on Nexivo and enter your code, you earn 10% of Nexivo's commission from every ticket sold automatically.
+      </p>
+      <div style="margin-top:12px;background:var(--surface-2);border-radius:8px;padding:12px;font-size:.875rem" class="text-muted">
+        Example: Event sells 200 tickets at ₦2,500 → You earn <strong class="text-gold">₦2,500</strong> automatically
+      </div>
+    </div>
+
+    <!-- Recent Commissions -->
+    <div class="chart-card">
+      <div class="chart-card__title" style="margin-bottom:16px">Recent Commissions</div>
+      ${data.recent_commissions.length ? `
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Commission</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.recent_commissions.map(c => `
+            <tr>
+              <td style="font-size:.875rem">${c.event}</td>
+              <td style="font-weight:600" class="text-success">+₦${Number(c.amount).toLocaleString()}</td>
+              <td style="font-size:.8125rem" class="text-muted">${new Date(c.date).toLocaleDateString()}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : `
+      <p class="text-muted text-center" style="padding:24px">No commissions yet. Share your referral code to start earning.</p>`}
+    </div>`;
+}
+
+function copyCode(code) {
+  navigator.clipboard.writeText(code).then(() => {
+    Toast.success('Referral code copied!');
+  }).catch(() => {
+    Toast.success('Code: ' + code);
+  });
+}
+
+async function submitWithdrawal() {
+  const amount = document.getElementById('withdraw-amount').value;
+  const errEl = document.getElementById('withdraw-error');
+  errEl.style.display = 'none';
+
+  if (!amount || Number(amount) < 100) {
+    errEl.textContent = 'Minimum withdrawal is ₦100.';
+    errEl.style.display = '';
+    return;
+  }
+
+  if (Number(amount) > Number(marketerData?.wallet_balance || 0)) {
+    errEl.textContent = 'Insufficient balance.';
+    errEl.style.display = '';
+    return;
+  }
+
+  try {
+    const data = await Api.post('/marketers/withdraw/', { amount: Number(amount) });
+    Toast.success(data.detail || 'Withdrawal successful!');
+    Modal.close('withdraw-modal');
+    document.getElementById('withdraw-amount').value = '';
+    await loadMarketerDashboard();
+  } catch(err) {
+    errEl.textContent = err?.detail || 'Withdrawal failed. Please try again.';
+    errEl.style.display = '';
+  }
+}
+
+let banksLoaded = [];
+async function loadBanks() {
+  try {
+    const r = await fetch('https://api.paystack.co/bank?country=nigeria&perPage=200');
+    const data = await r.json();
+    banksLoaded = data.data || [];
+    const select = document.getElementById('bank-code-select');
+    banksLoaded.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.code;
+      opt.textContent = b.name;
+      select.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function saveBankAccount() {
+  const bankCode = document.getElementById('bank-code-select').value;
+  const accountNumber = document.getElementById('bank-account-number').value.trim();
+  const errEl = document.getElementById('bank-error');
+  errEl.style.display = 'none';
+
+  if (!bankCode) { errEl.textContent = 'Please select a bank.'; errEl.style.display = ''; return; }
+  if (!accountNumber || accountNumber.length !== 10) { errEl.textContent = 'Enter a valid 10-digit account number.'; errEl.style.display = ''; return; }
+
+  try {
+    const data = await Api.post('/marketers/bank-account/', { bank_code: bankCode, account_number: accountNumber });
+    Toast.success(`Account verified: ${data.account_name}`);
+    Modal.close('bank-modal');
+    await loadMarketerDashboard();
+  } catch(err) {
+    errEl.textContent = err?.detail || 'Could not save bank account.';
+    errEl.style.display = '';
+  }
+}
+</script>
+{% endblock %}

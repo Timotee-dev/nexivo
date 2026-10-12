@@ -1,0 +1,13 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 class="h1">💰 Payout Completed</h1>
+<p class="sub">Hi {{ host_name }}, your earnings have been transferred to your registered bank account.</p>
+<table class="detail-table">
+  <tr><td>Amount</td><td>₦{{ amount }}</td></tr>
+  <tr><td>Currency</td><td>{{ currency }}</td></tr>
+  <tr><td>Gateway</td><td>{{ gateway }}</td></tr>
+  <tr><td>Date</td><td>{{ completed_at }}</td></tr>
+</table>
+<p class="sub" style="margin-top:16px">Funds typically appear in your account within 1-3 business days. View your full earnings history on your dashboard.</p>
+<a href="{{ frontend_url }}/dashboard/host/" class="btn">View Earnings</a>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Coupons & Promo Codes{% endblock %}
+{% block content %}
+<div class="dashboard">
+  {% include "frontend/_host_sidebar.html" with active="coupons" %}
+  <main class="dashboard__main">
+    <div class="flex-between" style="margin-bottom:24px">
+      <div>
+        <h1 class="font-display" style="font-size:1.75rem">Coupons & Promo Codes</h1>
+        <p class="text-muted">Create discount codes for your events</p>
+      </div>
+      <button class="btn btn--gold" onclick="Modal.open('create-coupon-modal')">+ Create Coupon</button>
+    </div>
+
+    <div id="coupons-list"><div class="spinner" style="margin:40px auto"></div></div>
+  </main>
+</div>
+
+<!-- Create Coupon Modal -->
+<div class="modal-backdrop" id="create-coupon-modal">
+  <div class="modal" style="position:relative;max-width:500px">
+    <button class="modal__close" onclick="Modal.close('create-coupon-modal')">×</button>
+    <h2 class="modal__title">Create Promo Code</h2>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Coupon Code *</label>
+      <input class="form-input" id="c-code" type="text" placeholder="e.g. EARLYBIRD" style="text-transform:uppercase">
+      <p class="text-muted" style="font-size:.8125rem;margin-top:4px">Leave blank to auto-generate</p>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Event *</label>
+      <select class="form-input" id="c-event">
+        <option value="">Select event...</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Discount Type *</label>
+      <select class="form-input" id="c-type" onchange="toggleDiscountType()">
+        <option value="percentage">Percentage (%)</option>
+        <option value="fixed">Fixed Amount (₦)</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label" id="c-value-label">Discount Value (%) *</label>
+      <input class="form-input" id="c-value" type="number" min="1" placeholder="e.g. 20">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px" id="max-discount-group">
+      <label class="form-label">Max Discount Amount (₦) <span class="text-muted">(optional)</span></label>
+      <input class="form-input" id="c-max-discount" type="number" min="0" placeholder="e.g. 5000">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Minimum Order Amount (₦) <span class="text-muted">(optional)</span></label>
+      <input class="form-input" id="c-min-order" type="number" min="0" placeholder="e.g. 2500">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Maximum Uses <span class="text-muted">(optional — leave blank for unlimited)</span></label>
+      <input class="form-input" id="c-max-uses" type="number" min="1" placeholder="e.g. 100">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="form-group">
+        <label class="form-label">Valid From <span class="text-muted">(optional)</span></label>
+        <input class="form-input" id="c-valid-from" type="datetime-local">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valid Until <span class="text-muted">(optional)</span></label>
+        <input class="form-input" id="c-valid-until" type="datetime-local">
+      </div>
+    </div>
+
+    <p id="c-error" style="color:var(--error);font-size:.875rem;margin-bottom:12px;display:none"></p>
+    <button class="btn btn--gold btn--full" onclick="createCoupon()">Create Coupon</button>
+  </div>
+</div>
+
+<script src="/static/js/nexivo.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  Auth.requireAuth();
+  await loadEvents();
+  await loadCoupons();
+});
+
+async function loadEvents() {
+  try {
+    const data = await Api.get('/events/mine/');
+    const select = document.getElementById('c-event');
+    (data.results || []).forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = e.title;
+      select.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function loadCoupons() {
+  const el = document.getElementById('coupons-list');
+  try {
+    const data = await Api.get('/coupons/');
+    const coupons = data.results || data;
+    if (!coupons.length) {
+      el.innerHTML = `
+        <div style="text-align:center;padding:56px 20px;background:var(--surface);border-radius:var(--radius-lg)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin:0 auto 16px;display:block;opacity:.3"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <h3 style="font-size:1.125rem;font-weight:700;margin-bottom:6px">No coupons yet</h3>
+          <p class="text-muted" style="margin-bottom:20px">Create your first promo code to boost ticket sales</p>
+          <button class="btn btn--gold" onclick="Modal.open('create-coupon-modal')">Create Coupon</button>
+        </div>`;
+      return;
+    }
+    el.innerHTML = `
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Event</th>
+              <th>Discount</th>
+              <th>Uses</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${coupons.map(c => `
+              <tr>
+                <td>
+                  <span style="font-family:monospace;font-size:.9375rem;font-weight:700;color:var(--gold)">${c.code}</span>
+                </td>
+                <td style="font-size:.875rem" class="text-muted">${c.event_title || 'All Events'}</td>
+                <td style="font-size:.875rem">
+                  ${c.discount_type === 'percentage' ? c.discount_value + '%' : '₦' + Number(c.discount_value).toLocaleString()} off
+                </td>
+                <td style="font-size:.875rem">
+                  ${c.times_used}${c.max_uses ? ' / ' + c.max_uses : ''}
+                </td>
+                <td>
+                  <span class="badge badge--${c.is_active ? 'green' : 'grey'}">
+                    ${c.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
+                <td>
+                  <div class="flex gap-8">
+                    <button class="btn btn--outline btn--sm" onclick="toggleCoupon('${c.id}', ${c.is_active})">
+                      ${c.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button class="btn btn--outline btn--sm" style="color:var(--error)" onclick="deleteCoupon('${c.id}')">
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<p class="text-muted text-center" style="padding:32px">Could not load coupons.</p>';
+  }
+}
+
+function toggleDiscountType() {
+  const type = document.getElementById('c-type').value;
+  document.getElementById('c-value-label').textContent = type === 'percentage' ? 'Discount Value (%) *' : 'Discount Value (₦) *';
+  document.getElementById('max-discount-group').style.display = type === 'percentage' ? '' : 'none';
+}
+
+async function createCoupon() {
+  const code = document.getElementById('c-code').value.trim().toUpperCase();
+  const eventId = document.getElementById('c-event').value;
+  const discountType = document.getElementById('c-type').value;
+  const discountValue = document.getElementById('c-value').value;
+  const maxDiscount = document.getElementById('c-max-discount').value;
+  const minOrder = document.getElementById('c-min-order').value;
+  const maxUses = document.getElementById('c-max-uses').value;
+  const validFrom = document.getElementById('c-valid-from').value;
+  const validUntil = document.getElementById('c-valid-until').value;
+  const errEl = document.getElementById('c-error');
+
+  if (!eventId) { errEl.textContent = 'Please select an event.'; errEl.style.display = ''; return; }
+  if (!discountValue) { errEl.textContent = 'Please enter a discount value.'; errEl.style.display = ''; return; }
+  errEl.style.display = 'none';
+
+  const payload = {
+    event: eventId,
+    discount_type: discountType,
+    discount_value: discountValue,
+    is_active: true,
+  };
+  if (code) payload.code = code;
+  if (maxDiscount) payload.max_discount_amount = maxDiscount;
+  if (minOrder) payload.min_order_amount = minOrder;
+  if (maxUses) payload.max_uses = maxUses;
+  if (validFrom) payload.valid_from = new Date(validFrom).toISOString();
+  if (validUntil) payload.valid_until = new Date(validUntil).toISOString();
+
+  try {
+    await Api.post('/coupons/', payload);
+    Toast.success('Coupon created successfully!');
+    Modal.close('create-coupon-modal');
+    // Reset form
+    ['c-code','c-value','c-max-discount','c-min-order','c-max-uses','c-valid-from','c-valid-until'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    await loadCoupons();
+  } catch(err) {
+    errEl.textContent = err?.detail || err?.code?.[0] || JSON.stringify(err) || 'Failed to create coupon.';
+    errEl.style.display = '';
+  }
+}
+
+async function toggleCoupon(id, isActive) {
+  try {
+    await Api.patch(`/coupons/${id}/`, { is_active: !isActive });
+    Toast.success(isActive ? 'Coupon deactivated.' : 'Coupon activated.');
+    await loadCoupons();
+  } catch(e) {
+    Toast.error('Failed to update coupon.');
+  }
+}
+
+async function deleteCoupon(id) {
+  if (!confirm('Delete this coupon? This cannot be undone.')) return;
+  try {
+    await Api.delete(`/coupons/${id}/`);
+    Toast.success('Coupon deleted.');
+    await loadCoupons();
+  } catch(e) {
+    Toast.error('Failed to delete coupon.');
+  }
+}
+</script>
+{% endblock %}
