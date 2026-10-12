@@ -5,18 +5,53 @@
   {% include "frontend/_customer_sidebar.html" with active="overview" %}
 
   <main class="dashboard__main">
-    <div class="flex-between" style="margin-bottom:32px">
+
+    <!-- Header -->
+    <div class="flex-between" style="margin-bottom:28px;flex-wrap:wrap;gap:12px">
       <div>
-        <p class="text-sub" style="font-size:.875rem;margin-bottom:4px">Welcome back</p>
-        <h1 class="font-display" style="font-size:1.75rem" id="customer-welcome-name">My Account</h1>
-        <p class="text-muted" style="margin-top:4px">Your upcoming events and tickets</p>
+        <p class="text-sub" style="font-size:.8125rem;margin-bottom:4px;letter-spacing:.06em;text-transform:uppercase;font-weight:600">Welcome back</p>
+        <h1 class="font-display" style="font-size:1.75rem;font-weight:700" id="customer-welcome-name">My Account</h1>
+        <p style="color:var(--text-mute);font-size:.875rem;margin-top:4px">Your upcoming events and tickets</p>
       </div>
       <a href="/events/" class="btn btn--gold">Browse Events</a>
     </div>
 
-    <div id="my-tickets">
-      <div class="spinner" style="margin:40px auto"></div>
+    <!-- Quick stat cards -->
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px">
+      <div class="stat-card-v2">
+        <div class="stat-card-v2__icon">🎫</div>
+        <div class="stat-card-v2__label">My Tickets</div>
+        <div class="stat-card-v2__value" id="cust-stat-tickets">—</div>
+      </div>
+      <div class="stat-card-v2">
+        <div class="stat-card-v2__icon">📅</div>
+        <div class="stat-card-v2__label">Upcoming Events</div>
+        <div class="stat-card-v2__value" id="cust-stat-upcoming">—</div>
+      </div>
+      <div class="stat-card-v2">
+        <div class="stat-card-v2__icon">❤️</div>
+        <div class="stat-card-v2__label">Saved Events</div>
+        <div class="stat-card-v2__value" id="cust-stat-saved">—</div>
+      </div>
     </div>
+
+    <!-- Upcoming tickets -->
+    <div id="my-tickets">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:120px">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- Browse CTA if empty -->
+    <div id="my-tickets-empty" class="hidden" style="margin-top:12px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:48px 24px;text-align:center">
+        <div style="font-size:3rem;margin-bottom:16px">🎪</div>
+        <h3 style="font-family:var(--font-display);font-size:1.375rem;font-weight:700;margin-bottom:8px">No tickets yet</h3>
+        <p style="color:var(--text-mute);margin-bottom:24px">Discover amazing events happening near you</p>
+        <a href="/events/" class="btn btn--gold">Explore Events</a>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -45,7 +80,7 @@
     <button class="modal__close" onclick="Modal.close('delete-account-modal')">×</button>
     <div style="font-size:3rem;margin-bottom:16px">⚠️</div>
     <h2 class="modal__title">Delete Account</h2>
-    <p class="text-muted" style="margin-bottom:20px">This will permanently delete your account and all your data. This cannot be undone.</p>
+    <p style="color:var(--text-mute);margin-bottom:20px">This will permanently delete your account and all your data. This cannot be undone.</p>
     <div class="form-group" style="margin-bottom:20px;text-align:left">
       <label class="form-label">Type <strong>DELETE</strong> to confirm</label>
       <input class="form-input" id="delete-confirm-input" type="text" placeholder="DELETE">
@@ -61,16 +96,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const me = await Api.get('/auth/me/');
     const first = me.first_name || me.email?.split('@')[0] || 'there';
-    document.getElementById('customer-welcome-name').textContent = 'Hello, ' + first;
+    document.getElementById('customer-welcome-name').textContent = 'Hello, ' + first + ' 👋';
+  } catch {}
+
+  // Load quick stats
+  try {
+    const tickets = await Api.get('/tickets/?page_size=100');
+    const all = tickets.results || [];
+    const upcoming = all.filter(t => {
+      try { return new Date(t.event_date) > new Date(); } catch { return false; }
+    });
+    const tEl = document.getElementById('cust-stat-tickets');
+    const uEl = document.getElementById('cust-stat-upcoming');
+    if (tEl) tEl.textContent = all.length;
+    if (uEl) uEl.textContent = upcoming.length;
+  } catch {}
+
+  try {
+    const fav = await Api.get('/events/favorites/?page_size=1');
+    const sEl = document.getElementById('cust-stat-saved');
+    if (sEl) sEl.textContent = fav.count || 0;
   } catch {}
 });
 
 async function confirmDeleteAccount() {
   const input = document.getElementById('delete-confirm-input').value.trim();
-  if (input !== 'DELETE') {
-    Toast.error('Please type DELETE to confirm.');
-    return;
-  }
+  if (input !== 'DELETE') { Toast.error('Please type DELETE to confirm.'); return; }
   try {
     await Api.delete('/auth/account/');
     Toast.success('Account deleted. Goodbye!');
@@ -81,7 +132,7 @@ async function confirmDeleteAccount() {
 }
 
 async function submitTransfer() {
-  const code = document.getElementById('transfer-ticket-code').value;
+  const code    = document.getElementById('transfer-ticket-code').value;
   const toEmail = document.getElementById('transfer-to-email').value;
   const message = document.getElementById('transfer-message').value;
   if (!toEmail) { Toast.error('Please enter a recipient email'); return; }

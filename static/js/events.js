@@ -1,6 +1,9 @@
 /**
  * NEXIVO — Events browse, search, filter, detail, checkout
  */
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 /* ── Event listing page ───────────────────────────────────────────────── */
 const EventBrowse = (() => {
@@ -32,20 +35,34 @@ const EventBrowse = (() => {
       const pagination = document.getElementById('pagination');
       if (pagination) {
         pagination.innerHTML = '';
+        pagination.className = 'pagination';
         if (data.previous) {
           const btn = document.createElement('button');
-          btn.className = 'btn btn--outline btn--sm';
-          btn.textContent = '← Previous';
-          btn.onclick = () => { state.page--; load(); };
+          btn.className = 'page-btn';
+          btn.textContent = '←';
+          btn.title = 'Previous page';
+          btn.onclick = () => { state.page--; load(); window.scrollTo(0,0); };
           pagination.appendChild(btn);
+        }
+        // Page number indicator
+        if (data.count > 0) {
+          const info = document.createElement('span');
+          info.style.cssText = 'font-size:.8125rem;color:var(--text-mute);padding:0 8px';
+          const totalPages = Math.ceil(data.count / (data.results.length || 1));
+          info.textContent = `Page ${state.page}`;
+          pagination.appendChild(info);
         }
         if (data.next) {
           const btn = document.createElement('button');
-          btn.className = 'btn btn--primary btn--sm';
-          btn.textContent = 'Next →';
-          btn.onclick = () => { state.page++; load(); };
+          btn.className = 'page-btn';
+          btn.textContent = '→';
+          btn.title = 'Next page';
+          btn.onclick = () => { state.page++; load(); window.scrollTo(0,0); };
           pagination.appendChild(btn);
         }
+        // Count display
+        const countEl = document.getElementById('filter-count');
+        if (countEl) countEl.textContent = `${data.count} event${data.count !== 1 ? 's' : ''}`;
       }
     } catch(e) {
       Toast.error('Failed to load events. Please refresh.');
@@ -57,39 +74,60 @@ const EventBrowse = (() => {
   }
 
   function renderEventCard(event) {
-    const price = event.min_price != null
-      ? (parseFloat(event.min_price) === 0 ? 'Free' : `From ₦${Number(event.min_price).toLocaleString()}`)
-      : 'Free';
-    const date = new Date(event.start_datetime).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' });
-    const badge = event.is_featured ? '<span class="card__badge card__badge--featured">Featured</span>'
-                : price === 'Free' ? '<span class="card__badge card__badge--free">Free</span>'
-                : `<span class="card__badge">${event.event_type}</span>`;
+    const isFree = event.min_price == null || parseFloat(event.min_price) === 0;
+    const priceText = isFree ? 'Free' : `₦${Number(event.min_price).toLocaleString()}`;
+    const priceLabel = isFree ? '' : '<span class="ev-card__price-sub"> / ticket</span>';
+    const d = new Date(event.start_datetime);
+    const day = d.getDate();
+    const mon = d.toLocaleDateString('en', { month: 'short' }).toUpperCase();
+    const dateStr = d.toLocaleDateString('en-NG', { weekday:'short', month:'short', day:'numeric' });
+
+    let statusBadge = '';
+    if (event.is_featured) statusBadge = '<span class="ev-card__status ev-card__status--featured">Featured</span>';
+    else if (isFree)       statusBadge = '<span class="ev-card__status ev-card__status--free">Free</span>';
+    else if (event.is_trending) statusBadge = '<span class="ev-card__status ev-card__status--trending">Trending</span>';
+
+    const img = event.banner_image
+      ? `<img src="${event.banner_image}" alt="${escHtml(event.title)}" loading="lazy">`
+      : `<div class="ev-card__img-placeholder">🎭</div>`;
+
+    const cat = event.category_name || event.event_type || '';
+    const loc = event.city || event.venue_name || '';
 
     return `
-      <a href="/events/${event.slug}/" class="card" style="display:block; text-decoration:none;">
-        <div class="card__media">
-          <img src="${event.banner_image || '/static/img/event-placeholder.svg'}" alt="${event.title}" loading="lazy">
-        </div>
-        <div class="card__body">
-          ${badge}
-          <h3 class="card__title">${event.title}</h3>
-          <div class="card__meta">
-            <span>📅 ${date}</span>
-            ${event.city ? `<span>📍 ${event.city}</span>` : ''}
-            ${event.average_rating > 0 ? `<span>⭐ ${parseFloat(event.average_rating).toFixed(1)}</span>` : ''}
+      <div class="ev-card">
+        <div class="ev-card__img-wrap">
+          ${img}
+          <div class="ev-card__date-badge">
+            <span class="day">${day}</span>
+            <span class="mon">${mon}</span>
           </div>
-          <div class="card__price">${price}</div>
-        </div>
-        <div class="card__footer">
-          <div class="card__host">
-            <img class="avatar" src="/static/img/avatar-placeholder.svg" alt="${event.host.username}">
-            ${event.host.first_name || event.host.username}
+          ${statusBadge}
+          <div class="ev-card__cta">
+            <a href="/events/${event.slug}/" class="ev-card__cta-btn">Get Tickets →</a>
           </div>
-          <span class="badge ${event.tickets_sold_count > 0 ? 'badge--gold' : 'badge--grey'}">
-            ${event.tickets_sold_count} sold
-          </span>
         </div>
-      </a>`;
+        <div class="ev-card__body">
+          ${cat ? `<div class="ev-card__category">${escHtml(cat)}</div>` : ''}
+          <h3 class="ev-card__title">
+            <a href="/events/${event.slug}/" style="color:inherit;text-decoration:none">${escHtml(event.title)}</a>
+          </h3>
+          <div class="ev-card__meta">
+            <div class="ev-card__meta-row">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              ${escHtml(dateStr)}
+            </div>
+            ${loc ? `<div class="ev-card__meta-row">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${escHtml(loc)}
+            </div>` : ''}
+          </div>
+        </div>
+        <div class="ev-card__foot">
+          <div class="ev-card__price">${priceText}${priceLabel}</div>
+          <a href="/events/${event.slug}/" class="ev-card__book">Book <span>→</span></a>
+        </div>
+      </div>`;
   }
 
   function init() {

@@ -6,184 +6,722 @@
 <input type="hidden" id="event-slug" value="{{ event.slug }}">
 <input type="hidden" id="countdown-date" value="{{ event.start_datetime|date:'c' }}">
 
-<!-- Hero -->
-<div class="event-hero">
+<style>
+/* ── EVENT DETAIL PAGE ── */
+.ev-detail-hero {
+  position: relative;
+  height: 480px;
+  overflow: hidden;
+  background: #0c0c0c;
+}
+.ev-detail-hero__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: .65;
+}
+.ev-detail-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(9,9,9,.2) 0%,
+    rgba(9,9,9,.15) 40%,
+    rgba(9,9,9,.9) 100%
+  );
+}
+.ev-detail-hero__content {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 32px 0;
+}
+.ev-detail-hero__content .container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.ev-detail-date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(9,9,9,.7);
+  border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: .8125rem;
+  color: rgba(255,255,255,.8);
+  margin-bottom: 14px;
+}
+.ev-detail-date-chip strong { color: var(--gold); font-weight: 700; }
+.ev-detail-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 14px;
+  text-shadow: 0 2px 20px rgba(0,0,0,.5);
+}
+.ev-detail-hero__meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: .875rem;
+  color: rgba(255,255,255,.75);
+}
+.ev-detail-hero__meta span { display: flex; align-items: center; gap: 6px; }
+.ev-detail-hero__meta svg { width: 14px; height: 14px; opacity: .7; }
+
+/* Action buttons top-right of hero */
+.ev-detail-hero__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ev-detail-hero__action-btn {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(9,9,9,.7);
+  border: 1px solid rgba(255,255,255,.15);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.8);
+  cursor: pointer;
+  transition: all .2s;
+}
+.ev-detail-hero__action-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(212,175,70,.1);
+}
+.ev-detail-hero__action-btn svg { width: 18px; height: 18px; }
+
+/* ── Rating row ── */
+.ev-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .875rem;
+  color: rgba(255,255,255,.75);
+  margin-bottom: 14px;
+}
+.ev-rating-row .stars { color: var(--gold); font-size: .9rem; }
+.ev-rating-row .count { color: rgba(255,255,255,.45); }
+
+/* ── Layout ── */
+.ev-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  align-items: start;
+}
+.ev-detail-main { min-width: 0; }
+.ev-detail-aside { position: sticky; top: 86px; }
+
+/* ── Tabs ── */
+.ev-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 36px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ev-tabs::-webkit-scrollbar { display: none; }
+.ev-tab {
+  padding: 14px 22px;
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text-mute);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .18s, border-color .18s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.ev-tab:hover { color: var(--text-sub); }
+.ev-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--gold);
+}
+
+/* Tab panels */
+.ev-tab-panel { display: none; }
+.ev-tab-panel.active { display: block; }
+
+/* ── Checkout panel v2 ── */
+.checkout-v2 {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.checkout-v2__head {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.checkout-v2__event-mini {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.checkout-v2__event-mini img {
+  width: 56px; height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-3);
+}
+.checkout-v2__event-mini-info { min-width: 0; }
+.checkout-v2__event-mini-title {
+  font-weight: 600;
+  font-size: .875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.checkout-v2__event-mini-meta { font-size: .75rem; color: var(--text-mute); margin-top: 3px; }
+
+.checkout-v2__body { padding: 20px 24px; }
+.checkout-v2__section-label {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 12px;
+}
+
+/* Ticket row in checkout panel */
+.ticket-row-v2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.ticket-row-v2:last-of-type { border-bottom: none; }
+.ticket-row-v2__icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(212,175,70,.08);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--gold);
+}
+.ticket-row-v2__icon svg { width: 16px; height: 16px; }
+.ticket-row-v2__info { flex: 1; min-width: 0; }
+.ticket-row-v2__name { font-weight: 600; font-size: .875rem; color: var(--text); }
+.ticket-row-v2__price { font-size: .8125rem; color: var(--text-mute); margin-top: 2px; }
+.ticket-row-v2__perks { font-size: .7375rem; color: var(--text-mute); margin-top: 2px; }
+
+/* qty control */
+.qty-v2 { display: flex; align-items: center; gap: 0; flex-shrink: 0; }
+.qty-v2__btn {
+  width: 30px; height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  color: var(--text-sub);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: all .18s;
+  line-height: 1;
+  font-weight: 300;
+}
+.qty-v2__btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(212,175,70,.06); }
+.qty-v2__val {
+  min-width: 36px;
+  text-align: center;
+  font-weight: 700;
+  font-size: .9375rem;
+  color: var(--text);
+}
+
+/* Order total */
+.checkout-v2__total {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.checkout-v2__total-row {
+  display: flex; justify-content: space-between;
+  font-size: .875rem; color: var(--text-sub);
+  margin-bottom: 8px;
+}
+.checkout-v2__total-row.final {
+  font-size: 1rem; font-weight: 700; color: var(--text);
+  border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; margin-bottom: 0;
+}
+
+/* Payment method tabs */
+.pay-tabs {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.pay-tab {
+  flex: 1;
+  padding: 9px;
+  font-size: .8125rem;
+  font-weight: 600;
+  text-align: center;
+  background: transparent;
+  color: var(--text-mute);
+  cursor: pointer;
+  transition: all .18s;
+  border: none;
+  border-right: 1px solid var(--border);
+}
+.pay-tab:last-child { border-right: none; }
+.pay-tab.active { background: var(--gold); color: #0a0a0a; }
+.pay-tab:hover:not(.active) { background: var(--surface-2); color: var(--text-sub); }
+
+/* Secure badge */
+.secure-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .75rem;
+  color: var(--text-mute);
+  justify-content: center;
+  padding: 12px;
+}
+.secure-badge svg { width: 14px; height: 14px; color: var(--success); }
+
+/* ── Review card ── */
+.review-item {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.review-item:last-child { border-bottom: none; }
+.review-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.review-stars { color: var(--gold); font-size: .9rem; letter-spacing: 1px; }
+
+@media (max-width: 900px) {
+  .ev-detail-layout { grid-template-columns: 1fr; }
+  .ev-detail-aside { position: static; }
+  .ev-detail-hero { height: 320px; }
+  .ev-detail-hero__content .container { flex-direction: column; align-items: flex-start; }
+}
+</style>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<div class="ev-detail-hero">
   {% if event.banner_image %}
-  <img class="event-hero__img" src="{{ event.banner_image.url }}" alt="{{ event.title }}">
+  <img class="ev-detail-hero__img" src="{{ event.banner_image.url }}" alt="{{ event.title }}">
   {% else %}
-  <div style="background:linear-gradient(135deg,#141414 0%,#1c1c1c 50%,#242424 100%);width:100%;height:100%;display:flex;align-items:center;justify-content:center">
-    <span style="font-size:4rem;opacity:.15">🎪</span>
-  </div>
+  <div style="position:absolute;inset:0;background:linear-gradient(135deg,#1a1408 0%,#141414 50%,#0c0c0c 100%)"></div>
   {% endif %}
-  <div class="event-hero__overlay"></div>
-  <div class="event-hero__content">
-    <div class="flex gap-8" style="margin-bottom:12px">
-      <span class="badge badge--gold">{{ event.get_event_type_display }}</span>
-      {% if event.is_featured %}<span class="badge badge--gold">⭐ Featured</span>{% endif %}
-    </div>
-    <h1 class="event-hero__title">{{ event.title }}</h1>
-    <div class="flex gap-16" style="font-size:.9375rem;color:rgba(255,255,255,.8)">
-      <span>📅 {{ event.start_datetime|date:"l, N j, Y" }} at {{ event.start_datetime|date:"P" }}</span>
-      {% if event.city %}<span>📍 {{ event.venue_name|default:event.city }}</span>{% endif %}
+  <div class="ev-detail-hero__overlay"></div>
+
+  <div class="ev-detail-hero__content">
+    <div class="container">
+      <div style="flex:1;min-width:0">
+        <div class="ev-detail-date-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <strong>{{ event.start_datetime|date:"D" }}</strong>
+          {{ event.start_datetime|date:"j" }}
+          {{ event.start_datetime|date:"M" }}
+          &nbsp;·&nbsp;
+          {{ event.start_datetime|date:"P" }} – {{ event.end_datetime|date:"P"|default:"" }}
+        </div>
+
+        {% if event.average_rating %}
+        <div class="ev-rating-row">
+          <span class="stars">★ {{ event.average_rating }}</span>
+          {% if event.review_count %}<span class="count">({{ event.review_count }} reviews)</span>{% endif %}
+          &nbsp;·&nbsp;
+          <span onclick="shareEvent('{{ event.slug }}','{{ event.title }}')" style="cursor:pointer;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:5px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </span>
+        </div>
+        {% endif %}
+
+        <h1 class="ev-detail-hero__title">{{ event.title }}</h1>
+
+        <div class="ev-detail-hero__meta">
+          {% if event.venue_name or event.city %}
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {{ event.venue_name|default:event.city }}, {{ event.city }}
+          </span>
+          {% endif %}
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ event.start_datetime|date:"P" }} – {{ event.end_datetime|date:"P"|default:"—" }}
+          </span>
+          <span class="badge badge--gold">{{ event.get_event_type_display }}</span>
+          {% if event.is_featured %}<span class="badge badge--gold">⭐ Featured</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="ev-detail-hero__actions">
+        <button class="ev-detail-hero__action-btn" id="favorite-btn" title="Save event">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <button class="ev-detail-hero__action-btn" onclick="shareEvent('{{ event.slug }}','{{ event.title }}')" title="Share">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="container">
-  <div class="event-detail__grid">
-    <!-- Left: info -->
-    <div class="event-detail__info">
+<!-- ═══════════════ BODY ═══════════════ -->
+<div style="padding:36px 0 72px">
+  <div class="ev-detail-layout">
 
-      <!-- Countdown -->
-      {% if event.is_upcoming %}
-      <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:24px;text-align:center">
-        <p class="text-muted" style="font-size:.875rem;margin-bottom:12px">Event starts in</p>
-        <div id="event-countdown"></div>
+    <!-- ── LEFT: info ── -->
+    <div class="ev-detail-main">
+
+      <!-- Tabs -->
+      <div class="ev-tabs" id="ev-tabs">
+        <button class="ev-tab active" data-tab="overview">Overview</button>
+        <button class="ev-tab" data-tab="tickets">Tickets</button>
+        <button class="ev-tab" data-tab="location">Location</button>
+        <button class="ev-tab" data-tab="artist">About Artist</button>
       </div>
-      {% endif %}
 
-      <!-- Host -->
-      <div class="flex gap-16">
-        {% if event.host.avatar %}<img class="avatar" src="{{ event.host.avatar.url }}" alt="{{ event.host.username }}" style="width:48px;height:48px">{% endif %}
-        <div>
-          <p class="text-muted" style="font-size:.8125rem">Hosted by</p>
-          <p class="fw-600">{{ event.host.first_name }} {{ event.host.last_name|default:event.host.username }}</p>
+      <!-- Overview tab -->
+      <div class="ev-tab-panel active" id="tab-overview">
+
+        {% if event.is_upcoming %}
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;text-align:center;margin-bottom:28px">
+          <p class="text-muted" style="font-size:.8125rem;margin-bottom:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600">Event starts in</p>
+          <div id="event-countdown"></div>
         </div>
-        <button class="btn btn--outline btn--sm" style="margin-left:auto" id="follow-host-btn">Follow</button>
-      </div>
+        {% endif %}
 
-      <!-- About -->
-      <div>
-        <h2 class="font-display" style="font-size:1.375rem;margin-bottom:16px">About this event</h2>
-        <div class="text-sub" style="line-height:1.8">{{ event.description|linebreaks }}</div>
-      </div>
-
-      <!-- Location -->
-      {% if event.is_physical %}
-      <div>
-        <h2 class="font-display" style="font-size:1.375rem;margin-bottom:16px">Location</h2>
-        <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:20px">
-          <p class="fw-600">{{ event.venue_name }}</p>
-          <p class="text-sub">{{ event.address }}, {{ event.city }}, {{ event.state }}</p>
-          {% if event.latitude and event.longitude %}
-          <a href="https://maps.google.com/?q={{ event.latitude }},{{ event.longitude }}" target="_blank" class="btn btn--outline btn--sm" style="margin-top:12px">Open in Maps →</a>
+        <!-- Host -->
+        <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:28px">
+          {% if event.host.avatar %}
+          <img class="avatar" src="{{ event.host.avatar.url }}" alt="{{ event.host.username }}" style="width:44px;height:44px;border-radius:50%">
+          {% else %}
+          <div style="width:44px;height:44px;border-radius:50%;background:rgba(212,175,70,.15);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">🎤</div>
           {% endif %}
+          <div style="flex:1">
+            <p style="font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mute)">Hosted by</p>
+            <p style="font-weight:700;font-size:.9375rem;margin-top:2px">{{ event.host.first_name }} {{ event.host.last_name|default:event.host.username }}</p>
+          </div>
+          <button class="btn btn--outline btn--sm" id="follow-host-btn">Follow</button>
         </div>
-      </div>
-      {% endif %}
 
-      {% if event.is_virtual %}
-      <div>
-        <h2 class="font-display" style="font-size:1.375rem;margin-bottom:16px">Virtual Event</h2>
-        <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:20px">
-          <p class="fw-600">Platform: {{ event.virtual_platform }}</p>
-          {% if event.virtual_access_instructions %}
-          <p class="text-sub" style="margin-top:8px">{{ event.virtual_access_instructions }}</p>
-          {% endif %}
+        <!-- Description -->
+        <div style="margin-bottom:32px">
+          <h3 class="font-display" style="font-size:1.25rem;font-weight:700;margin-bottom:16px">About this event</h3>
+          <div class="text-sub" style="line-height:1.85;font-size:.9375rem">{{ event.description|linebreaks }}</div>
         </div>
-      </div>
-      {% endif %}
 
-      <!-- Gallery -->
-      {% if event.gallery_images.exists %}
-      <div>
-        <h2 class="font-display" style="font-size:1.375rem;margin-bottom:16px">Gallery</h2>
-        <div class="grid-3" style="gap:12px">
-          {% for img in event.gallery_images.all|slice:":6" %}
-          <div class="card__media" style="border-radius:var(--radius)"><img src="{{ img.image.url }}" alt="{{ img.caption }}" loading="lazy"></div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- Reviews -->
-      <div>
-        <div class="flex-between" style="margin-bottom:16px">
-          <h2 class="font-display" style="font-size:1.375rem">Reviews {% if event.review_count %}<span class="text-muted" style="font-size:1rem">({{ event.review_count }})</span>{% endif %}</h2>
-          {% if event.average_rating %}<span class="text-gold fw-600">⭐ {{ event.average_rating }}</span>{% endif %}
-        </div>
-        <div id="reviews-list">
-          {% for review in event.reviews.all %}
-          {% if review.moderation_status == 'approved' %}
-          <div style="border-bottom:1px solid var(--border);padding:16px 0">
-            <div class="flex-between" style="margin-bottom:8px">
-              <span class="fw-600">{{ review.customer.first_name|default:review.customer.username }}</span>
-              <span class="text-gold">{% for i in "12345"|make_list %}{% if forloop.counter <= review.rating %}⭐{% endif %}{% endfor %}</span>
-            </div>
-            <p class="text-sub">{{ review.comment }}</p>
-            {% if review.host_response %}<div style="background:var(--surface-2);padding:12px;border-radius:8px;margin-top:10px;font-size:.875rem"><span class="fw-600">Host reply: </span>{{ review.host_response }}</div>{% endif %}
+        <!-- Key info chips -->
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px">
+          {% if event.age_restriction %}
+          <div style="padding:8px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:.8125rem;color:var(--text-sub);display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Age: {{ event.age_restriction }}+
           </div>
           {% endif %}
-          {% empty %}
-          <p class="text-muted">No reviews yet. Be the first!</p>
-          {% endfor %}
+          {% if not event.is_refundable %}
+          <div style="padding:8px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:.8125rem;color:var(--text-sub);display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            No refunds (see policy)
+          </div>
+          {% endif %}
+          <div style="padding:8px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:.8125rem;color:var(--text-sub);display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Doors open: {{ event.start_datetime|date:"P" }}
+          </div>
+        </div>
+
+        <!-- Gallery -->
+        {% if event.gallery_images.exists %}
+        <div style="margin-bottom:32px">
+          <h3 class="font-display" style="font-size:1.25rem;font-weight:700;margin-bottom:16px">Gallery</h3>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-radius:var(--radius-lg);overflow:hidden">
+            {% for img in event.gallery_images.all|slice:":3" %}
+            <div style="aspect-ratio:1;overflow:hidden;background:var(--surface-2)"><img src="{{ img.image.url }}" alt="{{ img.caption }}" loading="lazy" style="width:100%;height:100%;object-fit:cover"></div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Reviews -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <h3 class="font-display" style="font-size:1.25rem;font-weight:700">
+              Reviews
+              {% if event.review_count %}<span style="font-size:.875rem;color:var(--text-mute);font-style:normal">({{ event.review_count }})</span>{% endif %}
+            </h3>
+            {% if event.average_rating %}<span style="color:var(--gold);font-weight:700">★ {{ event.average_rating }}</span>{% endif %}
+          </div>
+
+          <div id="reviews-list">
+            {% for review in event.reviews.all %}
+            {% if review.moderation_status == 'approved' %}
+            <div class="review-item">
+              <div class="review-meta">
+                <span style="font-weight:600;font-size:.9375rem">{{ review.customer.first_name|default:review.customer.username }}</span>
+                <span class="review-stars">{% for i in "12345"|make_list %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+              </div>
+              <p class="text-sub" style="font-size:.875rem;line-height:1.7">{{ review.comment }}</p>
+              {% if review.host_response %}
+              <div style="background:var(--surface-2);padding:12px 14px;border-radius:8px;margin-top:10px;font-size:.8125rem;border-left:2px solid var(--gold)">
+                <span style="font-weight:700;color:var(--gold)">Host reply:</span> {{ review.host_response }}
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% empty %}
+            <p class="text-muted" style="padding:24px 0">No reviews yet. Be the first after you attend!</p>
+            {% endfor %}
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Right: checkout panel -->
-    <div>
-      <div class="checkout-panel">
-        <div class="flex-between" style="margin-bottom:20px">
-          <h3 class="font-display" style="font-size:1.25rem">Book Tickets</h3>
-          <button id="favorite-btn" class="btn btn--ghost btn--sm">🤍</button>
-        </div>
-
-        {% if event.is_sold_out %}
-        <div class="scan-result scan-result--error">Sold out</div>
-        {% elif event.is_past %}
-        <div class="scan-result scan-result--error">This event has ended</div>
-        {% else %}
-
+      <!-- Tickets tab -->
+      <div class="ev-tab-panel" id="tab-tickets">
+        <h3 class="font-display" style="font-size:1.25rem;font-weight:700;margin-bottom:24px">Select Tickets</h3>
         {% for tt in event.ticket_types.all %}
         {% if tt.is_active %}
-        <div class="ticket-row" data-ticket-type-id="{{ tt.id }}" data-price="{{ tt.price }}" data-max="{{ tt.max_per_order }}">
-          <div>
-            <div class="ticket-row__name">{{ tt.name }}</div>
-            <div class="ticket-row__price">{% if tt.is_free %}Free{% else %}₦{{ tt.price|floatformat:0 }}{% endif %}</div>
-            {% if tt.perks %}<div class="text-muted" style="font-size:.75rem;margin-top:2px">{{ tt.perks|join:", " }}</div>{% endif %}
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:1rem;margin-bottom:4px">{{ tt.name }}</div>
+            {% if tt.perks %}<div style="font-size:.8rem;color:var(--text-mute);margin-bottom:6px">{{ tt.perks|join:" · " }}</div>{% endif %}
+            <div style="font-size:1.125rem;font-weight:700;color:var(--gold)">{% if tt.is_free %}Free{% else %}₦{{ tt.price|floatformat:0 }}{% endif %}</div>
           </div>
-          <div class="qty-control">
-            <button class="qty-btn" data-dir="down">−</button>
-            <span class="qty-display fw-600">0</span>
-            <button class="qty-btn" data-dir="up">+</button>
+          <div style="display:flex;align-items:center;gap:0">
+            <button class="qty-v2__btn qty-btn" data-dir="down" style="border-radius:6px 0 0 6px;border-right:none">−</button>
+            <span class="qty-v2__val qty-display fw-600" style="border:1px solid var(--border);padding:0 4px;height:30px;display:flex;align-items:center;justify-content:center">0</span>
+            <button class="qty-v2__btn qty-btn" data-dir="up" style="border-radius:0 6px 6px 0;border-left:none">+</button>
           </div>
         </div>
         {% endif %}
         {% endfor %}
+      </div>
 
-        <div class="checkout-total">
-          <div class="checkout-total__row"><span class="text-sub">Subtotal</span><span id="checkout-subtotal">₦0</span></div>
-          <div id="coupon-row" class="hidden checkout-total__row"><span class="text-sub">Discount</span><span id="coupon-discount" class="text-success"></span></div>
-          <div class="checkout-total__row checkout-total__final"><span>Total</span><span id="checkout-final">₦0</span></div>
+      <!-- Location tab -->
+      <div class="ev-tab-panel" id="tab-location">
+        {% if event.is_physical %}
+        <h3 class="font-display" style="font-size:1.25rem;font-weight:700;margin-bottom:20px">Venue</h3>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:16px">
+          <p style="font-weight:700;font-size:1rem;margin-bottom:6px">{{ event.venue_name }}</p>
+          <p class="text-sub">{{ event.address }}, {{ event.city }}, {{ event.state }}</p>
+          {% if event.latitude and event.longitude %}
+          <a href="https://maps.google.com/?q={{ event.latitude }},{{ event.longitude }}" target="_blank" class="btn btn--outline btn--sm" style="margin-top:14px">
+            Open in Google Maps →
+          </a>
+          {% endif %}
         </div>
-
-        <!-- Coupon -->
-        <div class="flex gap-8 mt-16">
-          <input class="form-input" id="coupon-input" placeholder="Coupon code" style="flex:1">
-          <button class="btn btn--outline btn--sm" id="apply-coupon-btn">Apply</button>
+        {% elif event.is_virtual %}
+        <h3 class="font-display" style="font-size:1.25rem;font-weight:700;margin-bottom:20px">Virtual Event</h3>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px">
+          <p style="font-weight:700;font-size:1rem;margin-bottom:6px">Platform: {{ event.virtual_platform }}</p>
+          {% if event.virtual_access_instructions %}
+          <p class="text-sub" style="margin-top:8px">{{ event.virtual_access_instructions }}</p>
+          {% endif %}
         </div>
+        {% else %}
+        <p class="text-muted">Location details will be shared with ticket holders.</p>
+        {% endif %}
+      </div>
 
-        <!-- Gateway -->
-        <div style="margin:16px 0">
-          <p class="text-muted" style="font-size:.8125rem;margin-bottom:8px">Pay with</p>
-          <div class="flex gap-12">
-            <label class="flex gap-6" style="cursor:pointer;font-size:.875rem"><input type="radio" name="gateway" value="paystack" checked> Paystack</label>
-            <label class="flex gap-6" style="cursor:pointer;font-size:.875rem"><input type="radio" name="gateway" value="flutterwave"> Flutterwave</label>
-            <label class="flex gap-6" style="cursor:pointer;font-size:.875rem"><input type="radio" name="gateway" value="stripe"> Stripe</label>
+      <!-- About Artist tab -->
+      <div class="ev-tab-panel" id="tab-artist">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+          {% if event.host.avatar %}
+          <img src="{{ event.host.avatar.url }}" alt="{{ event.host.username }}" style="width:72px;height:72px;border-radius:50%;object-fit:cover">
+          {% else %}
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(212,175,70,.1);display:flex;align-items:center;justify-content:center;font-size:1.75rem;flex-shrink:0">🎤</div>
+          {% endif %}
+          <div>
+            <h3 class="font-display" style="font-size:1.375rem;font-weight:700">{{ event.host.first_name }} {{ event.host.last_name|default:event.host.username }}</h3>
+            <p class="text-sub" style="font-size:.875rem">Event Organizer</p>
+          </div>
+        </div>
+        {% if event.host.bio %}
+        <p class="text-sub" style="line-height:1.85">{{ event.host.bio }}</p>
+        {% else %}
+        <p class="text-muted">No bio available for this organizer.</p>
+        {% endif %}
+        <button class="btn btn--outline" id="follow-host-btn-tab" style="margin-top:20px">Follow Organizer</button>
+      </div>
+
+    </div><!-- /ev-detail-main -->
+
+    <!-- ── RIGHT: checkout panel ── -->
+    <div class="ev-detail-aside">
+      <div class="checkout-v2">
+
+        <!-- Mini event preview -->
+        <div class="checkout-v2__event-mini">
+          {% if event.banner_image %}
+          <img src="{{ event.banner_image.url }}" alt="">
+          {% else %}
+          <div style="width:56px;height:44px;border-radius:6px;background:rgba(212,175,70,.08);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🎪</div>
+          {% endif %}
+          <div class="checkout-v2__event-mini-info">
+            <div class="checkout-v2__event-mini-title">{{ event.title }}</div>
+            <div class="checkout-v2__event-mini-meta">{{ event.start_datetime|date:"D, j M Y" }} · {{ event.start_datetime|date:"P" }}</div>
+            {% if event.venue_name or event.city %}<div class="checkout-v2__event-mini-meta">{{ event.venue_name|default:event.city }}</div>{% endif %}
           </div>
         </div>
 
-        <button class="btn btn--gold btn--full btn--lg" id="checkout-btn">Book Now</button>
-        <p class="text-muted text-center mt-8" style="font-size:.75rem">🔒 Secure checkout</p>
+        <!-- Head: steps indicator -->
+        <div class="checkout-v2__head">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:#0a0a0a;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center">1</span>
+            <span style="font-size:.8rem;font-weight:600;color:var(--text)">Tickets</span>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-mute)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--surface-3);color:var(--text-mute);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">2</span>
+            <span style="font-size:.8rem;font-weight:600;color:var(--text-mute)">Payment</span>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-mute)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--surface-3);color:var(--text-mute);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">3</span>
+            <span style="font-size:.8rem;font-weight:600;color:var(--text-mute)">Confirm</span>
+          </div>
+        </div>
+
+        {% if event.is_sold_out %}
+        <div style="padding:24px;text-align:center;color:var(--error);font-weight:600">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 10px;display:block;opacity:.6"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Sold Out
+        </div>
+        {% elif event.is_past %}
+        <div style="padding:24px;text-align:center;color:var(--text-mute)">This event has ended.</div>
+        {% else %}
+
+        <!-- Ticket rows -->
+        <div class="checkout-v2__body">
+          <div class="checkout-v2__section-label">Select Tickets</div>
+
+          {% for tt in event.ticket_types.all %}
+          {% if tt.is_active %}
+          <div class="ticket-row ticket-row-v2" data-ticket-type-id="{{ tt.id }}" data-price="{{ tt.price }}" data-max="{{ tt.max_per_order }}">
+            <div class="ticket-row-v2__icon">
+              {% if tt.name|lower == "vip" or tt.name|lower == "vvip" %}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              {% else %}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7"/><path d="M14 12a2 2 0 0 1-4 0V5h4v7z"/><path d="M2 7h20v5H2z"/></svg>
+              {% endif %}
+            </div>
+            <div class="ticket-row-v2__info">
+              <div class="ticket-row-v2__name">{{ tt.name }}</div>
+              <div class="ticket-row-v2__price">{% if tt.is_free %}Free{% else %}₦{{ tt.price|floatformat:0 }}{% endif %}</div>
+              {% if tt.perks %}<div class="ticket-row-v2__perks">{{ tt.perks|join:" · " }}</div>{% endif %}
+            </div>
+            <div class="qty-control qty-v2" style="display:flex;align-items:center;gap:0">
+              <button class="qty-v2__btn qty-btn" data-dir="down" style="border-radius:6px 0 0 6px;border-right:none">−</button>
+              <span class="qty-v2__val qty-display fw-600" style="border:1px solid var(--border);padding:0 4px;height:30px;min-width:32px;display:flex;align-items:center;justify-content:center;font-size:.9375rem">0</span>
+              <button class="qty-v2__btn qty-btn" data-dir="up" style="border-radius:0 6px 6px 0;border-left:none">+</button>
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+
+          <!-- Coupon -->
+          <div style="display:flex;gap:8px;margin-top:16px;margin-bottom:4px">
+            <input class="form-input" id="coupon-input" placeholder="Coupon code" style="flex:1;height:38px;font-size:.8375rem">
+            <button class="btn btn--outline btn--sm" id="apply-coupon-btn">Apply</button>
+          </div>
+        </div>
+
+        <!-- Order total -->
+        <div class="checkout-v2__total">
+          <div class="checkout-v2__total-row"><span>Subtotal</span><span id="checkout-subtotal">₦0</span></div>
+          <div id="coupon-row" class="hidden checkout-v2__total-row"><span>Discount</span><span id="coupon-discount" class="text-success"></span></div>
+          <div class="checkout-v2__total-row final"><span>Total</span><span id="checkout-final">₦0</span></div>
+        </div>
+
+        <!-- Payment gateway tabs -->
+        <div style="padding:16px 24px">
+          <div class="checkout-v2__section-label" style="margin-bottom:10px">Pay with</div>
+          <div class="pay-tabs" style="margin-bottom:16px">
+            <button class="pay-tab active" data-gw="paystack">Paystack</button>
+            <button class="pay-tab" data-gw="flutterwave">Flutterwave</button>
+            <button class="pay-tab" data-gw="stripe">Stripe</button>
+          </div>
+          <!-- hidden radios for JS compatibility -->
+          <div style="display:none">
+            <input type="radio" name="gateway" value="paystack" id="gw-paystack" checked>
+            <input type="radio" name="gateway" value="flutterwave" id="gw-flutterwave">
+            <input type="radio" name="gateway" value="stripe" id="gw-stripe">
+          </div>
+          <button class="btn btn--gold btn--full btn--lg" id="checkout-btn" style="font-size:1rem;font-weight:800;letter-spacing:.02em">Get Tickets →</button>
+        </div>
+
+        <!-- Secure badge -->
+        <div class="secure-badge" style="border-top:1px solid var(--border)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Secure Checkout — Your payment is secured by Paystack, Flutterwave and Stripe.
+        </div>
+
+        <div style="display:flex;justify-content:center;gap:12px;padding:12px 24px 20px;border-top:1px solid var(--border)">
+          <span style="font-size:.75rem;font-weight:700;color:var(--text-mute);padding:4px 8px;border:1px solid var(--border);border-radius:4px">paystack</span>
+          <span style="font-size:.75rem;font-weight:700;color:var(--text-mute);padding:4px 8px;border:1px solid var(--border);border-radius:4px">flutterwave</span>
+          <span style="font-size:.75rem;font-weight:700;color:var(--text-mute);padding:4px 8px;border:1px solid var(--border);border-radius:4px">stripe</span>
+        </div>
+
         {% endif %}
       </div>
-    </div>
-  </div>
+    </div><!-- /aside -->
+
+  </div><!-- /ev-detail-layout -->
 </div>
 
 <script src="/static/js/events.js"></script>
 <script>
+// ── Tab switching ──
+document.querySelectorAll('.ev-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ev-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ev-tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    const target = document.getElementById('tab-' + tab.dataset.tab);
+    if (target) target.classList.add('active');
+  });
+});
+
+// ── Payment gateway tab switching ──
+document.querySelectorAll('.pay-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pay-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const radio = document.getElementById('gw-' + btn.dataset.gw);
+    if (radio) radio.checked = true;
+  });
+});
+
+// ── Share ──
 function shareEvent(slug, title) {
   const url = window.location.origin + '/events/' + slug + '/';
   if (navigator.share) {
@@ -194,7 +732,7 @@ function shareEvent(slug, title) {
 }
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(() => {
-    Toast.success('Event link copied to clipboard!');
+    Toast.success('Event link copied!');
   }).catch(() => {
     const el = document.createElement('textarea');
     el.value = text;
