@@ -355,14 +355,18 @@ const EventDetail = (() => {
     document.querySelectorAll('.qty-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const row = btn.closest('.ticket-row');
+        if (!row) return; // safety guard
         const id = row.dataset.ticketTypeId;
-        const price = parseFloat(row.dataset.price);
-        const display = row.querySelector('.qty-display');
+        if (!id) return;
+        const price = parseFloat(row.dataset.price) || 0;
+        const maxRaw = parseInt(row.dataset.max);
+        const max = (!maxRaw || maxRaw <= 0) ? 10 : maxRaw;
         if (!selections[id]) selections[id] = { price, qty: 0 };
         const delta = btn.dataset.dir === 'up' ? 1 : -1;
-        const max = parseInt(row.dataset.max || 10);
         selections[id].qty = Math.max(0, Math.min(max, selections[id].qty + delta));
-        if (display) display.textContent = selections[id].qty;
+        // Sync ALL displays for this ticket type across both panels
+        document.querySelectorAll(`.ticket-row[data-ticket-type-id="${id}"] .qty-display`)
+          .forEach(d => { d.textContent = selections[id].qty; });
         updateTotal();
       });
     });
