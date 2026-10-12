@@ -94,26 +94,31 @@
   border: 1px solid rgba(255,255,255,.14);
   border-radius: 12px;
   overflow: hidden;
+  width: 100%;
   max-width: 540px;
   backdrop-filter: blur(12px);
+  box-sizing: border-box;
 }
 .hero__search input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
   padding: 16px 20px;
   color: #F7F5F0;
   font-size: .9375rem;
+  box-sizing: border-box;
 }
 .hero__search input::placeholder { color: rgba(247,245,240,.4); }
 .hero__search button {
+  flex-shrink: 0;
   background: #D4AF46;
   border: none;
   color: #0a0a0a;
   font-weight: 700;
   font-size: .875rem;
-  padding: 0 28px;
+  padding: 0 24px;
   cursor: pointer;
   transition: background .2s;
   white-space: nowrap;
@@ -705,32 +710,6 @@
 
 <hr class="home-divider">
 
-<!-- ══ FEATURED EVENTS ════════════════════════════════════════════════ -->
-<section class="home-section">
-  <div class="section-head">
-    <div>
-      <div class="section-eyebrow">⭐ Curated For You</div>
-      <h2 class="section-title" style="font-style:italic">Featured Events</h2>
-      <p class="section-sub">Handpicked experiences worth every moment.</p>
-    </div>
-    <a href="/events/?is_featured=true" class="view-all">View all →</a>
-  </div>
-  <div class="ev-grid" id="featured-grid">
-    {% for i in "12345" %}
-    <div class="ev-card" style="pointer-events:none">
-      <div class="ev-card__img-wrap ev-card__skeleton" style="height:190px"></div>
-      <div class="ev-card__body">
-        <div class="ev-card__skeleton" style="height:9px;border-radius:4px;width:40%;margin-bottom:10px"></div>
-        <div class="ev-card__skeleton" style="height:16px;border-radius:4px;margin-bottom:8px"></div>
-        <div class="ev-card__skeleton" style="height:9px;border-radius:4px;width:65%"></div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</section>
-
-<hr class="home-divider">
-
 <!-- ══ HOST CTA ════════════════════════════════════════════════════════ -->
 <section class="home-section">
   <div class="host-cta-block">
@@ -820,11 +799,15 @@ function fmtDate(iso) {
 }
 function fmtPrice(e) {
   const tt = (e.ticket_types || []);
-  if (!tt.length) return { label: 'Free', free: true };
-  const prices = tt.map(t => parseFloat(t.price || 0)).filter(p => p > 0);
-  if (!prices.length) return { label: 'Free', free: true };
-  const min = Math.min(...prices);
-  return { label: 'From ₦' + min.toLocaleString('en-NG'), free: false };
+  // If no ticket_types data came back, don't assume free — show nothing misleading
+  if (!tt.length) return { label: null, free: false };
+  const freeTiers = tt.filter(t => t.is_free || parseFloat(t.price || 0) === 0);
+  const paidTiers = tt.filter(t => !t.is_free && parseFloat(t.price || 0) > 0);
+  if (!paidTiers.length && freeTiers.length) return { label: 'Free', free: true };
+  if (!paidTiers.length) return { label: null, free: false };
+  const min = Math.min(...paidTiers.map(t => parseFloat(t.price)));
+  const hasFree = freeTiers.length > 0;
+  return { label: (hasFree ? 'Free – ₦' : 'From ₦') + min.toLocaleString('en-NG'), free: false };
 }
 function categoryIcon(name) {
   const n = (name || '').toLowerCase();
@@ -872,7 +855,7 @@ function renderCard(e, badge) {
         ${e.city ? `<span>📍 ${esc(e.city)}</span>` : (e.venue_name ? `<span>📍 ${esc(e.venue_name)}</span>` : '')}
       </div>
       <div class="ev-card__foot">
-        <span class="ev-card__price${price.free ? ' ev-card__price--free' : ''}">${price.label}</span>
+        ${price.label ? `<span class="ev-card__price${price.free ? ' ev-card__price--free' : ''}">${price.label}</span>` : '<span></span>'}
         <span class="ev-card__cta">Get Tickets</span>
       </div>
     </div>
@@ -886,11 +869,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const heroBg = document.getElementById('hero-bg');
   if (heroBg) setTimeout(() => { heroBg.style.transform = 'scale(1)'; }, 100);
 
-  // Load ALL published events
+  // Load published events (status filter is enforced server-side, but be explicit)
   let allEvents = [];
   try {
-    const d = await Api.get('/events/?ordering=-created_at&page_size=20', true);
-    allEvents = d.results || d || [];
+    const d = await Api.get('/events/?ordering=-tickets_sold_count,-created_at&page_size=20');
+    allEvents = (d.results || d || []).filter(e => e.status === 'published' || !e.status);
   } catch(_) {}
 
   // Trending grid
@@ -899,16 +882,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     tGrid.innerHTML = allEvents.length
       ? allEvents.slice(0, 8).map((e, i) => renderCard(e, i < 2 ? {cls:'trending', text:'🔥 Trending'} : null)).join('')
       : '<p style="grid-column:1/-1;text-align:center;padding:40px;color:rgba(247,245,240,.4)">No events right now — check back soon.</p>';
-  }
-
-  // Featured grid — prioritise is_featured, fallback to all
-  const fGrid = document.getElementById('featured-grid');
-  if (fGrid) {
-    const featured = allEvents.filter(e => e.is_featured);
-    const toShow = featured.length ? featured : allEvents;
-    fGrid.innerHTML = toShow.length
-      ? toShow.slice(0, 5).map(e => renderCard(e, e.is_featured ? {cls:'featured', text:'⭐ Featured'} : null)).join('')
-      : '<p style="grid-column:1/-1;text-align:center;padding:40px;color:rgba(247,245,240,.4)">No featured events yet.</p>';
   }
 
   // Hero live card — show latest upcoming event
@@ -936,7 +909,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load categories from API
   try {
-    const cats = await Api.get('/events/categories/', true);
+    const cats = await Api.get('/events/categories/');
     const catList = (cats.results || cats || []).filter(c => c.is_active !== false);
     if (catList.length) {
       const iconMap = (name, icon) => icon || categoryIcon(name);
