@@ -1064,7 +1064,7 @@
       <a href="/events/" class="btn btn--ghost btn--sm">View all →</a>
     </div>
     <div class="grid-4" id="trending-grid">
-      {% for i in "1234" %}
+      {% for i in "12345" %}
       <div class="ev-card reveal" style="pointer-events:none">
         <div class="ev-card__img-wrap" style="display:flex;align-items:center;justify-content:center">
           <div class="spinner"></div>
@@ -1124,7 +1124,7 @@
       <a href="/events/?is_featured=true" class="btn btn--ghost btn--sm">View all →</a>
     </div>
     <div class="grid-3" id="featured-grid">
-      {% for i in "123" %}
+      {% for i in "12345" %}
       <div class="ev-card reveal" style="pointer-events:none">
         <div class="ev-card__img-wrap"></div>
         <div class="ev-card__body">
@@ -1418,27 +1418,80 @@ document.addEventListener('DOMContentLoaded', async () => {
     </a>`;
   }
 
-  // Load trending
-  try {
-    const d = await Api.get('/events/trending/?page_size=4', true);
-    const g = document.getElementById('trending-grid');
-    g.innerHTML = (d.results && d.results.length)
-      ? d.results.map(renderCard).join('')
-      : '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No trending events right now.</p>';
-  } catch(_) {
-    document.getElementById('trending-grid').innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">Unable to load events.</p>';
+  // Helper: load events from a primary endpoint, fall back to recent published events
+  async function loadEvents(primaryUrl, fallbackUrl, gridId, count) {
+    const g = document.getElementById(gridId);
+    let events = [];
+    try {
+      const d = await Api.get(primaryUrl, true);
+      if (d.results && d.results.length) events = d.results;
+    } catch(_) {}
+    // Fallback to latest published events if primary returned nothing
+    if (!events.length) {
+      try {
+        const d = await Api.get(fallbackUrl, true);
+        if (d.results && d.results.length) events = d.results.slice(0, count);
+      } catch(_) {}
+    }
+    g.innerHTML = events.length
+      ? events.map(renderCard).join('')
+      : '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No events right now — check back soon.</p>';
   }
 
-  // Load featured
+  // Load trending (fall back to 5 most recent if no trending data yet)
+  await loadEvents(
+    '/events/trending/?page_size=5',
+    '/events/?ordering=-created_at&page_size=5',
+    'trending-grid', 5
+  );
+
+  // Load featured (fall back to 5 most recent if none are marked featured)
+  await loadEvents(
+    '/events/featured/?page_size=5',
+    '/events/?ordering=-created_at&page_size=5',
+    'featured-grid', 5
+  );
+
+  // Load categories from API so they always match what hosts see
   try {
-    const d = await Api.get('/events/featured/?page_size=3', true);
-    const g = document.getElementById('featured-grid');
-    g.innerHTML = (d.results && d.results.length)
-      ? d.results.map(renderCard).join('')
-      : '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">No featured events right now.</p>';
-  } catch(_) {
-    document.getElementById('featured-grid').innerHTML = '<p class="text-muted" style="padding:32px 0;grid-column:1/-1">Unable to load events.</p>';
-  }
+    const cats = await Api.get('/events/categories/', true);
+    const catList = (cats.results || cats || []).filter(c => c.is_active !== false);
+    if (catList.length) {
+      const iconMap = {
+        music:'🎵', concert:'🎵', concerts:'🎵',
+        party:'🎉', parties:'🎉',
+        festival:'🎪', festivals:'🎪',
+        conference:'💼', conferences:'💼',
+        workshop:'🎓', workshops:'🎓',
+        sport:'⚽', sports:'⚽',
+        comedy:'🎤',
+        art:'🎨', arts:'🎨',
+        food:'🍽️',
+        tech:'💻', technology:'💻',
+        fashion:'👗',
+        networking:'🤝',
+        wedding:'💍',
+        religious:'⛪', church:'⛪',
+        health:'💪', fitness:'💪',
+      };
+      const getIcon = (name, icon) => {
+        if (icon) return icon;
+        const key = name.toLowerCase().replace(/[^a-z]/g,'');
+        return Object.entries(iconMap).find(([k]) => key.includes(k))?.[1] || '✦';
+      };
+      const catGrid = document.querySelector('.cats-grid');
+      if (catGrid) {
+        catGrid.innerHTML = catList.map(c => `
+          <a href="/events/?category=${c.slug}" class="cat-item reveal">
+            <div class="cat-item__icon">${getIcon(c.name, c.icon)}</div>
+            <span>${c.name}</span>
+          </a>`).join('') +
+          `<a href="/events/" class="cat-item reveal">
+            <div class="cat-item__icon">✦</div><span>More</span>
+          </a>`;
+      }
+    }
+  } catch(_) { /* keep static categories as fallback */ }
 
   // Wire reveals AFTER cards are in DOM
   requestAnimationFrame(() => { requestAnimationFrame(wireReveal); });
