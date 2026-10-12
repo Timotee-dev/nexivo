@@ -173,75 +173,120 @@ document.addEventListener('DOMContentLoaded', async () => {
   const dateEl = document.getElementById('host-welcome-date');
   if (dateEl) dateEl.textContent = now.toLocaleDateString('en-NG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-  // Revenue chart (uses dashboard.js data via window.revenueData if set, else draws placeholder)
-  setTimeout(() => {
-    const canvas = document.getElementById('revenue-chart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const data = window.hostRevenueData || {
-      labels: generateLast30Days(),
-      datasets: [{
-        data: generateSampleData(30),
-        borderColor: '#D4AF46',
-        backgroundColor: 'rgba(212,175,70,.08)',
-        borderWidth: 2,
-        tension: 0.4,
-        fill: true,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-      }]
-    };
-    new Chart(ctx, {
-      type: 'line',
-      data,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#1C1C1C',
-            borderColor: 'rgba(212,175,70,.3)',
-            borderWidth: 1,
-            titleColor: '#A6A29A',
-            bodyColor: '#F7F5F0',
-            callbacks: {
-              label: ctx => '₦' + Number(ctx.raw).toLocaleString()
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: { color: 'rgba(255,255,255,.04)' },
-            ticks: { color: '#6B6760', font: { size: 10 }, maxTicksLimit: 6 }
-          },
-          y: {
-            grid: { color: 'rgba(255,255,255,.04)' },
-            ticks: {
-              color: '#6B6760',
-              font: { size: 10 },
-              callback: v => '₦' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v)
-            }
-          }
-        }
-      }
-    });
-  }, 200);
-});
-
-function generateLast30Days() {
-  const labels = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    labels.push(d.toLocaleDateString('en', { month: 'short', day: 'numeric' }));
+  // ── Load REAL analytics from API ──────────────────────
+  let stats = null;
+  try {
+    stats = await Api.get('/analytics/');
+  } catch(e) {
+    console.warn('Analytics API error:', e);
   }
-  return labels;
-}
 
-function generateSampleData(n) {
-  // Placeholder — real data comes from dashboard.js via /analytics/host/ endpoint
-  return Array.from({length: n}, () => Math.floor(Math.random() * 80000 + 10000));
-}
+  if (stats) {
+    // Stat cards
+    const fmt = n => Number(n).toLocaleString('en-NG');
+    const fmtNaira = n => '₦' + fmt(Math.round(Number(n)));
+
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('stat-events',      stats.total_events ?? '—');
+    setEl('stat-tickets',     fmt(stats.total_tickets_sold ?? 0));
+    setEl('stat-revenue',     fmtNaira(stats.total_revenue ?? 0));
+    setEl('stat-revenue-30d', fmtNaira(stats.revenue_last_30_days ?? 0));
+
+    const rating = parseFloat(stats.average_rating ?? 0);
+    setEl('stat-rating', rating > 0 ? rating.toFixed(1) + ' ★' : '—');
+
+    // Revenue chart — real revenue_by_day data
+    const canvas = document.getElementById('revenue-chart');
+    if (canvas) {
+      // Build a full 30-day array, filling gaps with 0
+      const dayMap = {};
+      (stats.revenue_by_day || []).forEach(r => { dayMap[r.day] = Number(r.revenue); });
+
+      const labels = [], values = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        labels.push(d.toLocaleDateString('en', { month: 'short', day: 'numeric' }));
+        values.push(dayMap[key] || 0);
+      }
+
+      const hasData = values.some(v => v > 0);
+      if (!hasData) {
+        canvas.closest('.chart-wrap').innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-mute);font-size:.875rem">No revenue data yet — your sales will appear here.</div>';
+      } else {
+        new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              data: values,
+              borderColor: '#D4AF46',
+              backgroundColor: 'rgba(212,175,70,.08)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#1C1C1C',
+                borderColor: 'rgba(212,175,70,.3)',
+                borderWidth: 1,
+                titleColor: '#A6A29A',
+                bodyColor: '#F7F5F0',
+                callbacks: { label: ctx => '₦' + Number(ctx.raw).toLocaleString() }
+              }
+            },
+            scales: {
+              x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#6B6760', font: { size: 10 }, maxTicksLimit: 6 } },
+              y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#6B6760', font: { size: 10 }, callback: v => '₦' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }, beginAtZero: true }
+            }
+          }
+        });
+      }
+    }
+
+    // Top events table — real data
+    const topList = document.getElementById('top-events-list');
+    if (topList) {
+      if (!stats.top_events || stats.top_events.length === 0) {
+        topList.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-mute);padding:20px">No events yet.</td></tr>';
+      } else {
+        topList.innerHTML = stats.top_events.map(e => {
+          const rev = Number(e.revenue || 0);
+          const date = e.date ? new Date(e.date).toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' }) : '—';
+          const statusColor = new Date(e.date) > new Date() ? 'var(--success)' : 'var(--text-mute)';
+          const statusText = new Date(e.date) > new Date() ? 'Upcoming' : 'Past';
+          return `<tr>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.title}">${e.title}</td>
+            <td>${Number(e.tickets_sold || 0).toLocaleString()}</td>
+            <td style="color:var(--gold);font-weight:600">₦${rev.toLocaleString()}</td>
+            <td><span style="color:${statusColor};font-size:.75rem;font-weight:600">${statusText}</span></td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+  } else {
+    // API failed — show empty state, not fake numbers
+    ['stat-events','stat-tickets','stat-revenue','stat-revenue-30d','stat-rating'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+    const canvas = document.getElementById('revenue-chart');
+    if (canvas) canvas.closest('.chart-wrap').innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-mute);font-size:.875rem">Could not load data. Try refreshing.</div>';
+    const topList = document.getElementById('top-events-list');
+    if (topList) topList.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-mute);padding:20px">Could not load.</td></tr>';
+  }
+});
 
 function exportRevenue() {
   Toast.gold('Export feature coming soon');
