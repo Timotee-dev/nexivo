@@ -34,8 +34,10 @@ urlpatterns = [
     path("api/docs/",      SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/redoc/",     SpectacularRedocView.as_view(url_name="schema"),   name="redoc"),
 
-    # ── ads.txt (Google AdSense) ───────────────────────────────────────────
-    path("ads.txt", serve, {"document_root": os.path.join(settings.BASE_DIR, "static"), "path": "ads.txt"}),
+    # ── PWA + ads.txt ─────────────────────────────────────────────────────
+    path("ads.txt",      serve, {"document_root": os.path.join(settings.BASE_DIR, "static"), "path": "ads.txt"}),
+    path("sw.js",        serve, {"document_root": os.path.join(settings.BASE_DIR, "static"), "path": "sw.js"}),
+    path("manifest.json",serve, {"document_root": os.path.join(settings.BASE_DIR, "static"), "path": "manifest.json"}),
 
     # ── Frontend (server-rendered pages) ──────────────────────────────────
     path("", include("frontend.urls")),

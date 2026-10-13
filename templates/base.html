@@ -6,6 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{% block meta_description %}Nexivo — Premium event booking platform{% endblock %}">
   <title>{% block title %}Nexivo{% endblock %} — Premium Events</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#D4AF46">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Nexivo">
+  <link rel="apple-touch-icon" href="/static/img/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="/static/css/nexivo.css">
   {% block extra_css %}{% endblock %}
@@ -349,5 +358,56 @@ document.addEventListener('click', function(e) {
   to { transform: scale(2.5); opacity: 0; }
 }
 </style>
+
+<script>
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/static/sw.js')
+      .catch(() => {});
+  });
+}
+
+// PWA install prompt
+let _deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  // Show install banner after 30s if not dismissed
+  setTimeout(() => {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner && _deferredPrompt) banner.style.display = 'flex';
+  }, 30000);
+});
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.addEventListener('click', () => {
+    if (!_deferredPrompt) return;
+    _deferredPrompt.prompt();
+    _deferredPrompt.userChoice.then(() => {
+      _deferredPrompt = null;
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+    });
+  });
+  const dismiss = document.getElementById('pwa-dismiss-btn');
+  if (dismiss) dismiss.addEventListener('click', () => {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+    _deferredPrompt = null;
+  });
+});
+</script>
+
+<!-- PWA Install Banner -->
+<div id="pwa-install-banner" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;background:#1a1a1a;border:1px solid rgba(212,175,70,.35);border-radius:14px;padding:14px 16px;z-index:99998;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+  <span style="font-size:1.5rem">📱</span>
+  <div style="flex:1;min-width:0">
+    <div style="color:#F7F5F0;font-weight:700;font-size:.9rem">Add Nexivo to Home Screen</div>
+    <div style="color:rgba(247,245,240,.5);font-size:.775rem">Get the app experience — no Play Store needed</div>
+  </div>
+  <button id="pwa-install-btn" style="background:#D4AF46;color:#0a0a0a;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:.8rem;cursor:pointer;white-space:nowrap">Install</button>
+  <button id="pwa-dismiss-btn" style="background:none;border:none;color:rgba(247,245,240,.4);font-size:1.1rem;cursor:pointer;padding:4px">✕</button>
+</div>
 </body>
 </html>
