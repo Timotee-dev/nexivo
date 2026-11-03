@@ -21,24 +21,17 @@ PAYSTACK_PERCENT = Decimal("1.5")
 PAYSTACK_FIXED = Decimal("100")
 PAYSTACK_CAP = Decimal("2000")
 
-# Nexivo's service fee charged to customer
-NEXIVO_SERVICE_FEE_PERCENT = Decimal("2")
-
 
 def calculate_processing_fee(subtotal: Decimal) -> Decimal:
     """
     Total fee added to customer's bill:
     - Paystack fee: 1.5% + ₦100 (capped at ₦2000)
-    - Nexivo service fee: 2% of subtotal
-    This ensures host gets their full amount and Paystack gets theirs,
-    all funded by the customer.
+    Nexivo's 5% commission is taken from the organizer's payout — not charged to the customer.
     """
     paystack_fee = (subtotal * PAYSTACK_PERCENT / Decimal("100")) + PAYSTACK_FIXED
     paystack_fee = min(paystack_fee, PAYSTACK_CAP)
 
-    nexivo_service_fee = subtotal * NEXIVO_SERVICE_FEE_PERCENT / Decimal("100")
-
-    return (paystack_fee + nexivo_service_fee).quantize(Decimal("0.01"))
+    return paystack_fee.quantize(Decimal("0.01"))
 
 
 def apply_coupon(coupon, subtotal: Decimal) -> Decimal:
