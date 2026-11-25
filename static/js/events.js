@@ -183,6 +183,58 @@ const EventBrowse = (() => {
 const EventDetail = (() => {
   let selections = {};
 
+  /**
+   * Pull a human-readable message out of whatever the API layer threw.
+   * DRF speaks in several shapes depending on where the error came from:
+   *   "Sold out."                                  (plain string)
+   *   ["General Admission is sold out."]           (ValidationError list)
+   *   {detail: "..."}                              (APIException)
+   *   {non_field_errors: ["..."]}                  (serializer, non-field)
+   *   {event_id: ["This field is required."]}      (serializer, per-field)
+   * Showing the real text matters: a generic "Validation failed" hides
+   * exactly the information needed to tell a sold-out event from a bad form.
+   */
+  function errorMessage(err) {
+    const FALLBACK = 'Checkout failed. Please try again.';
+    const seen = new Set();
+
+    function dig(value, depth) {
+      if (value == null || depth > 4) return null;
+      if (typeof value === 'string') {
+        const text = value.trim();
+        return text || null;
+      }
+      if (typeof value !== 'object') return null;
+      if (seen.has(value)) return null;
+      seen.add(value);
+
+      if (Array.isArray(value)) {
+        for (const entry of value) {
+          const found = dig(entry, depth + 1);
+          if (found) return found;
+        }
+        return null;
+      }
+
+      // Most specific keys first, then any remaining field errors.
+      const ordered = ['detail', 'message', 'non_field_errors', 'errors', 'data', 'body', 'response'];
+      for (const key of ordered) {
+        if (key in value) {
+          const found = dig(value[key], depth + 1);
+          if (found) return found;
+        }
+      }
+      for (const key of Object.keys(value)) {
+        if (ordered.includes(key) || key === 'status' || key === 'stack') continue;
+        const found = dig(value[key], depth + 1);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    return dig(err, 0) || FALLBACK;
+  }
+
   function initCountdown(targetDateStr) {
     const target = new Date(targetDateStr);
     const el = document.getElementById('event-countdown');
@@ -306,10 +358,15 @@ const EventDetail = (() => {
     const couponCode = document.getElementById('coupon-input')?.value || '';
     const eventId = document.getElementById('event-id')?.value;
 
+    // Guest checkout runs from the modal button; the page button isn't on
+    // screen then (and vice versa). Guard both so a missing element can never
+    // throw and masquerade as a server-side failure.
     const btn = document.getElementById('checkout-btn');
     const guestBtn = document.getElementById('guest-proceed-btn');
+    const errEl = document.getElementById('guest-error');
     if (btn) { btn.disabled = true; btn.textContent = 'Processing…'; }
     if (guestBtn) { guestBtn.disabled = true; guestBtn.textContent = 'Processing…'; }
+    if (errEl) errEl.style.display = 'none';
 
     try {
       const payload = {
@@ -330,8 +387,10 @@ const EventDetail = (() => {
         setTimeout(() => window.location.href = '/dashboard/tickets/', 1500);
       }
     } catch (err) {
-      const msg = err?.detail || err?.errors?.non_field_errors?.[0] || 'Checkout failed. Please try again.';
+      const msg = errorMessage(err);
       Toast.error(msg);
+      // The guest modal covers the page, so the toast alone can go unseen.
+      if (errEl) { errEl.textContent = msg; errEl.style.display = ''; }
       if (btn) { btn.disabled = false; btn.textContent = 'Book Now'; }
       if (guestBtn) { guestBtn.disabled = false; guestBtn.textContent = 'Continue to Payment 🔒'; }
     }
@@ -396,7 +455,7 @@ const EventDetail = (() => {
         document.getElementById('coupon-discount').textContent = `-₦${Number(data.discount_amount).toLocaleString()}`;
         document.getElementById('checkout-final').textContent = `₦${Number(data.discounted_subtotal).toLocaleString()}`;
       } catch (err) {
-        Toast.error(err?.detail || 'Invalid coupon code');
+        Toast.error(errorMessage(err) || 'Invalid coupon code');
       }
     });
   }

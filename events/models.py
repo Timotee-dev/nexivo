@@ -54,7 +54,6 @@ class Event(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         PENDING_REVIEW = "pending_review", "Pending Review"
-        UPCOMING = "upcoming", "Upcoming"
         PUBLISHED = "published", "Published"
         SUSPENDED = "suspended", "Suspended"
         CANCELLED = "cancelled", "Cancelled"
@@ -210,21 +209,9 @@ class Event(models.Model):
         return self.ticket_types.exists() and self.total_tickets_remaining == 0
 
     def publish(self):
-        """
-        First publish: Draft/Pending Review → Upcoming (announced, no ticket sales).
-        Upcoming events are visible on the /upcoming/ page but NOT on the home page.
-        Ticket purchase is disabled until the host calls go_live().
-        """
-        self.status = self.Status.UPCOMING
+        self.status = self.Status.PUBLISHED
         self.published_at = timezone.now()
         self.save(update_fields=["status", "published_at"])
-
-    def go_live(self):
-        """
-        Second publish: Upcoming → Published (live, tickets open, visible on home page).
-        """
-        self.status = self.Status.PUBLISHED
-        self.save(update_fields=["status"])
 
 
 class EventGallery(models.Model):
@@ -344,6 +331,22 @@ class TicketType(models.Model):
         self.save(update_fields=["quantity_remaining"])
 
     def release(self, count=1):
-        """Returns reserved inventory back to the pool (e.g. on cancelled/expired booking)."""
-        self.quantity_remaining = models.F("quantity_remaining") + count
-        self.save(update_fields=["quantity_remaining"])
+        """
+        Returns reserved inventory back to the pool (e.g. on cancelled/expired
+        booking), clamped so remaining can never exceed quantity_total.
+
+        The clamp matters: without it, a double-release (a booking expired and
+        later cancelled, a replayed webhook, a manual admin fix) would inflate
+        remaining past the real stock and let the event oversell.
+        """
+        type(self).objects.filter(pk=self.pk).update(
+            quantity_remaining=models.Case(
+                models.When(
+                    quantity_remaining__gt=models.F("quantity_total") - count,
+                    then=models.F("quantity_total"),
+                ),
+                default=models.F("quantity_remaining") + count,
+                output_field=models.PositiveIntegerField(),
+            )
+        )
+        self.refresh_from_db(fields=["quantity_remaining"])

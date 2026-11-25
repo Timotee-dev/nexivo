@@ -4,6 +4,7 @@ can be reused by the API, admin actions, and (later) background tasks for
 expiring stale reservations.
 """
 
+import logging
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -13,6 +14,8 @@ from django.utils import timezone
 from bookings.models import Booking, BookingItem
 from core.models import PlatformSettings
 from events.models import Event, TicketType
+
+logger = logging.getLogger("nexivo")
 
 RESERVATION_WINDOW_MINUTES = 15
 
@@ -57,6 +60,23 @@ def create_booking(*, customer, event_id, items, coupon_code=None, affiliate_cod
     releases the reservation.
     """
 
+    # Self-heal inventory before validating stock.
+    #
+    # Every PENDING booking holds its tickets for RESERVATION_WINDOW_MINUTES.
+    # expire_stale_bookings() is meant to run on a schedule to give those
+    # tickets back when the customer never pays — but on a host with no
+    # always-on worker that task may never fire, and abandoned checkouts then
+    # hold inventory forever until the event looks sold out and nobody can buy.
+    # Running it here, on the checkout path, keeps inventory honest without
+    # depending on any background process. It is cheap: once the backlog is
+    # cleared the query matches nothing.
+    try:
+        released = expire_stale_bookings()
+        if released:
+            logger.info("Checkout self-heal released %s stale booking(s).", released)
+    except Exception as exc:  # never let cleanup break a real purchase
+        logger.error("expire_stale_bookings during checkout failed: %s", exc)
+
     if not items:
         raise ValidationError("At least one ticket item is required.")
 
@@ -82,8 +102,14 @@ def create_booking(*, customer, event_id, items, coupon_code=None, affiliate_cod
             raise ValidationError(
                 f"Maximum {ticket_type.max_per_order} tickets allowed per order for {ticket_type.name}."
             )
-        if not ticket_type.is_on_sale:
-            raise ValidationError(f"{ticket_type.name} is not currently on sale.")
+        if not ticket_type.is_active:
+            raise ValidationError(f"{ticket_type.name} is no longer available.")
+        if ticket_type.sales_start and timezone.now() < ticket_type.sales_start:
+            raise ValidationError(f"Sales for {ticket_type.name} have not opened yet.")
+        if ticket_type.sales_end and timezone.now() > ticket_type.sales_end:
+            raise ValidationError(f"Sales for {ticket_type.name} have closed.")
+        if ticket_type.quantity_remaining <= 0:
+            raise ValidationError(f"{ticket_type.name} is sold out.")
         if quantity > ticket_type.quantity_remaining:
             raise ValidationError(
                 f"Only {ticket_type.quantity_remaining} {ticket_type.name} ticket(s) remaining."
@@ -134,15 +160,25 @@ def create_booking(*, customer, event_id, items, coupon_code=None, affiliate_cod
 
 
 @transaction.atomic
-def confirm_booking(booking: Booking):
+def confirm_booking(booking: Booking, force_resend: bool = False):
     """
     Called once payment is verified successful. Generates individual Ticket
     rows (one per unit purchased) and marks the booking confirmed. Idempotent:
     safe to call more than once for the same booking (e.g. webhook retries).
+
+    force_resend=True re-sends the confirmation email for a booking that is
+    already confirmed, without touching counters or re-issuing tickets. Used by
+    the admin "resend ticket email" action.
     """
     from tickets.services_ticketing import generate_tickets_for_booking
 
     if booking.status == Booking.Status.CONFIRMED:
+        if force_resend:
+            try:
+                from notifications.services import notify_booking_confirmed
+                notify_booking_confirmed(booking)
+            except Exception as e:
+                logger.error("Failed to resend booking confirmation email: %s", e)
         return booking
 
     booking.status = Booking.Status.CONFIRMED
@@ -162,8 +198,7 @@ def confirm_booking(booking: Booking):
         from notifications.services import notify_booking_confirmed
         notify_booking_confirmed(booking)
     except Exception as e:
-        import logging
-        logging.getLogger("nexivo").error("Failed to send booking confirmation email: %s", e)
+        logger.error("Failed to send booking confirmation email: %s", e)
 
     # Credit marketer commission if event was referred
     try:
@@ -172,8 +207,7 @@ def confirm_booking(booking: Booking):
         nexivo_cut = booking.subtotal * Decimal('0.08')
         credit_marketer_commission(booking, nexivo_cut)
     except Exception as e:
-        import logging
-        logging.getLogger("nexivo").error("Marketer commission failed: %s", e)
+        logger.error("Marketer commission failed: %s", e)
 
     # Credit affiliate commission if booking came via affiliate link
     try:
@@ -182,8 +216,7 @@ def confirm_booking(booking: Booking):
             from affiliates.services import credit_affiliate_commission
             credit_affiliate_commission(booking, affiliate_code)
     except Exception as e:
-        import logging
-        logging.getLogger("nexivo").error("Affiliate commission failed: %s", e)
+        logger.error("Affiliate commission failed: %s", e)
 
     return booking
 
@@ -207,8 +240,15 @@ def cancel_booking(booking: Booking, reason: str = ""):
 def expire_stale_bookings():
     """
     Releases inventory for PENDING bookings whose reservation window has
-    lapsed without payment. Intended to run periodically via a scheduled
-    task/cron (e.g. every minute).
+    lapsed without payment, and marks them EXPIRED.
+
+    Called automatically at the start of every checkout (see create_booking)
+    so inventory stays correct even with no background worker running. Also
+    safe to call from a cron/scheduled task or the Django admin.
+
+    Only PENDING bookings are touched, and each one flips to EXPIRED inside the
+    same transaction that releases its tickets, so inventory can never be
+    released twice for the same booking.
     """
     stale = Booking.objects.filter(
         status=Booking.Status.PENDING, reserved_until__lt=timezone.now()
@@ -216,9 +256,17 @@ def expire_stale_bookings():
     count = 0
     for booking in stale:
         with transaction.atomic():
-            for item in booking.items.select_related("ticket_type").select_for_update():
+            # Re-read under lock so a concurrent payment confirmation can't race us.
+            locked = (
+                Booking.objects.select_for_update()
+                .filter(pk=booking.pk, status=Booking.Status.PENDING)
+                .first()
+            )
+            if locked is None:
+                continue
+            for item in locked.items.select_related("ticket_type").select_for_update():
                 item.ticket_type.release(item.quantity)
-            booking.status = Booking.Status.EXPIRED
-            booking.save(update_fields=["status"])
+            locked.status = Booking.Status.EXPIRED
+            locked.save(update_fields=["status"])
             count += 1
     return count
