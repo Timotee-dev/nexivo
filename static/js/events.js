@@ -295,15 +295,10 @@ const EventDetail = (() => {
       return;
     }
 
-    const btn = document.getElementById('guest-proceed-btn');
-    btn.disabled = true; btn.textContent = 'Processing…';
-
     const modal = document.getElementById('guest-checkout-modal');
     const items = modal._items;
 
     await processCheckout(items, { first_name: firstName, last_name: lastName, email });
-
-    btn.disabled = false; btn.textContent = 'Continue to Payment 🔒';
   }
 
   async function processCheckout(items, guestDetails = null) {
@@ -312,7 +307,9 @@ const EventDetail = (() => {
     const eventId = document.getElementById('event-id')?.value;
 
     const btn = document.getElementById('checkout-btn');
-    btn.disabled = true; btn.textContent = 'Processing…';
+    const guestBtn = document.getElementById('guest-proceed-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing…'; }
+    if (guestBtn) { guestBtn.disabled = true; guestBtn.textContent = 'Processing…'; }
 
     try {
       const payload = {
@@ -335,7 +332,8 @@ const EventDetail = (() => {
     } catch (err) {
       const msg = err?.detail || err?.errors?.non_field_errors?.[0] || 'Checkout failed. Please try again.';
       Toast.error(msg);
-      btn.disabled = false; btn.textContent = 'Book Now';
+      if (btn) { btn.disabled = false; btn.textContent = 'Book Now'; }
+      if (guestBtn) { guestBtn.disabled = false; guestBtn.textContent = 'Continue to Payment 🔒'; }
     }
   }
 
@@ -355,18 +353,14 @@ const EventDetail = (() => {
     document.querySelectorAll('.qty-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const row = btn.closest('.ticket-row');
-        if (!row) return; // safety guard
         const id = row.dataset.ticketTypeId;
-        if (!id) return;
-        const price = parseFloat(row.dataset.price) || 0;
-        const maxRaw = parseInt(row.dataset.max);
-        const max = (!maxRaw || maxRaw <= 0) ? 10 : maxRaw;
+        const price = parseFloat(row.dataset.price);
+        const display = row.querySelector('.qty-display');
         if (!selections[id]) selections[id] = { price, qty: 0 };
         const delta = btn.dataset.dir === 'up' ? 1 : -1;
+        const max = parseInt(row.dataset.max || 10);
         selections[id].qty = Math.max(0, Math.min(max, selections[id].qty + delta));
-        // Sync ALL displays for this ticket type across both panels
-        document.querySelectorAll(`.ticket-row[data-ticket-type-id="${id}"] .qty-display`)
-          .forEach(d => { d.textContent = selections[id].qty; });
+        if (display) display.textContent = selections[id].qty;
         updateTotal();
       });
     });
