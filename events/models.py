@@ -333,17 +333,20 @@ class TicketType(models.Model):
     def release(self, count=1):
         """
         Returns reserved inventory back to the pool (e.g. on cancelled/expired
-        booking), then clamps so remaining can never exceed quantity_total.
+        booking), clamped so remaining can never exceed quantity_total.
 
-        The clamp matters: without it a double-release (a booking expired and
+        The clamp matters: without it, a double-release (a booking expired and
         later cancelled, a replayed webhook, a manual admin fix) would inflate
-        remaining past the real stock and let the event oversell. It is a
-        second plain UPDATE rather than a conditional expression so the SQL
-        stays trivial on every database backend.
+        remaining past the real stock and let the event oversell.
         """
-        rows = type(self).objects.filter(pk=self.pk)
-        rows.update(quantity_remaining=models.F("quantity_remaining") + count)
-        rows.filter(quantity_remaining__gt=models.F("quantity_total")).update(
-            quantity_remaining=models.F("quantity_total")
+        type(self).objects.filter(pk=self.pk).update(
+            quantity_remaining=models.Case(
+                models.When(
+                    quantity_remaining__gt=models.F("quantity_total") - count,
+                    then=models.F("quantity_total"),
+                ),
+                default=models.F("quantity_remaining") + count,
+                output_field=models.PositiveIntegerField(),
+            )
         )
         self.refresh_from_db(fields=["quantity_remaining"])

@@ -8,7 +8,7 @@ import logging
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db import connection, transaction
+from django.db import transaction
 from django.utils import timezone
 
 from bookings.models import Booking, BookingItem
@@ -48,56 +48,10 @@ def apply_coupon(coupon, subtotal: Decimal) -> Decimal:
     return min(discount, subtotal)
 
 
-def _reclaim_abandoned_inventory():
-    """
-    Best-effort inventory cleanup run just before a checkout.
-
-    Every PENDING booking holds its tickets for RESERVATION_WINDOW_MINUTES.
-    expire_stale_bookings() is meant to hand those tickets back when the
-    customer never pays, but on a host with no always-on worker that scheduled
-    task may never fire — abandoned checkouts then hold stock forever until the
-    event reports itself sold out and nobody can buy.
-
-    Two rules keep this from ever harming a real purchase:
-      * It only runs when we are NOT already inside a transaction, so the
-        cleanup commits or rolls back entirely on its own. Swallowing a
-        database error inside someone else's atomic block would leave that
-        transaction unusable and turn a recoverable hiccup into a 500.
-      * Any failure is logged and ignored. Cleanup is an optimisation; the
-        purchase must go through regardless.
-    """
-    if connection.in_atomic_block:
-        return
-
-    try:
-        released = expire_stale_bookings()
-        if released:
-            logger.info("Checkout reclaimed %s abandoned reservation(s).", released)
-    except Exception:
-        logger.exception("Inventory reclaim before checkout failed; continuing with checkout.")
-
-
+@transaction.atomic
 def create_booking(*, customer, event_id, items, coupon_code=None, affiliate_code=None, **kwargs):
     """
     items: list of {"ticket_type_id": <uuid>, "quantity": <int>}
-
-    Frees inventory held by abandoned checkouts, then creates the booking
-    itself inside a single transaction (see _create_booking_atomic).
-    """
-    _reclaim_abandoned_inventory()
-    return _create_booking_atomic(
-        customer=customer,
-        event_id=event_id,
-        items=items,
-        coupon_code=coupon_code,
-        affiliate_code=affiliate_code,
-        **kwargs,
-    )
-
-
-@transaction.atomic
-def _create_booking_atomic(*, customer, event_id, items, coupon_code=None, affiliate_code=None, **kwargs):
-    """
     Locks each TicketType row (select_for_update) to prevent oversell under
     concurrent checkouts, validates sales windows/limits, computes fees, and
     creates a PENDING booking with inventory provisionally reserved.
@@ -105,6 +59,24 @@ def _create_booking_atomic(*, customer, event_id, items, coupon_code=None, affil
     immediately after; if payment never completes, expire_stale_bookings()
     releases the reservation.
     """
+
+    # Self-heal inventory before validating stock.
+    #
+    # Every PENDING booking holds its tickets for RESERVATION_WINDOW_MINUTES.
+    # expire_stale_bookings() is meant to run on a schedule to give those
+    # tickets back when the customer never pays — but on a host with no
+    # always-on worker that task may never fire, and abandoned checkouts then
+    # hold inventory forever until the event looks sold out and nobody can buy.
+    # Running it here, on the checkout path, keeps inventory honest without
+    # depending on any background process. It is cheap: once the backlog is
+    # cleared the query matches nothing.
+    try:
+        released = expire_stale_bookings()
+        if released:
+            logger.info("Checkout self-heal released %s stale booking(s).", released)
+    except Exception as exc:  # never let cleanup break a real purchase
+        logger.error("expire_stale_bookings during checkout failed: %s", exc)
+
     if not items:
         raise ValidationError("At least one ticket item is required.")
 
@@ -114,7 +86,6 @@ def _create_booking_atomic(*, customer, event_id, items, coupon_code=None, affil
     if event.is_past:
         raise ValidationError("This event has already ended.")
 
-    now = timezone.now()
     subtotal = Decimal("0")
     booking_items_data = []
 
@@ -125,9 +96,6 @@ def _create_booking_atomic(*, customer, event_id, items, coupon_code=None, affil
         )
         quantity = int(item["quantity"])
 
-        # Each check raises its own message so the customer is told what is
-        # actually wrong — "sold out" and "sales have closed" need different
-        # responses from them and from the host.
         if quantity < 1:
             raise ValidationError(f"Invalid quantity for {ticket_type.name}.")
         if quantity > ticket_type.max_per_order:
@@ -136,9 +104,9 @@ def _create_booking_atomic(*, customer, event_id, items, coupon_code=None, affil
             )
         if not ticket_type.is_active:
             raise ValidationError(f"{ticket_type.name} is no longer available.")
-        if ticket_type.sales_start and now < ticket_type.sales_start:
+        if ticket_type.sales_start and timezone.now() < ticket_type.sales_start:
             raise ValidationError(f"Sales for {ticket_type.name} have not opened yet.")
-        if ticket_type.sales_end and now > ticket_type.sales_end:
+        if ticket_type.sales_end and timezone.now() > ticket_type.sales_end:
             raise ValidationError(f"Sales for {ticket_type.name} have closed.")
         if ticket_type.quantity_remaining <= 0:
             raise ValidationError(f"{ticket_type.name} is sold out.")
@@ -199,8 +167,8 @@ def confirm_booking(booking: Booking, force_resend: bool = False):
     safe to call more than once for the same booking (e.g. webhook retries).
 
     force_resend=True re-sends the confirmation email for a booking that is
-    already confirmed, without re-issuing tickets or double-counting the sale.
-    Used by the admin "force confirm" action so it doubles as a resend button.
+    already confirmed, without touching counters or re-issuing tickets. Used by
+    the admin "resend ticket email" action.
     """
     from tickets.services_ticketing import generate_tickets_for_booking
 
@@ -259,7 +227,7 @@ def cancel_booking(booking: Booking, reason: str = ""):
     if booking.status in (Booking.Status.CANCELLED, Booking.Status.REFUNDED):
         return booking
 
-    for item in booking.items.select_related("ticket_type"):
+    for item in booking.items.select_related("ticket_type").select_for_update():
         item.ticket_type.release(item.quantity)
 
     booking.status = Booking.Status.CANCELLED
@@ -272,42 +240,33 @@ def cancel_booking(booking: Booking, reason: str = ""):
 def expire_stale_bookings():
     """
     Releases inventory for PENDING bookings whose reservation window has
-    lapsed without payment, and marks them EXPIRED. Returns how many were
-    released.
+    lapsed without payment, and marks them EXPIRED.
 
-    Each booking is handled in its own transaction, and the booking row is
-    re-read under lock inside it, so a payment confirming at the same moment
-    cannot have its tickets taken away. A booking that fails is logged and
-    skipped — one bad row must not stop the rest from being freed, and because
-    the try sits outside the atomic block, the failed savepoint rolls back
-    cleanly and the connection stays usable.
+    Called automatically at the start of every checkout (see create_booking)
+    so inventory stays correct even with no background worker running. Also
+    safe to call from a cron/scheduled task or the Django admin.
+
+    Only PENDING bookings are touched, and each one flips to EXPIRED inside the
+    same transaction that releases its tickets, so inventory can never be
+    released twice for the same booking.
     """
-    stale_ids = list(
-        Booking.objects.filter(
-            status=Booking.Status.PENDING, reserved_until__lt=timezone.now()
-        ).values_list("pk", flat=True)
+    stale = Booking.objects.filter(
+        status=Booking.Status.PENDING, reserved_until__lt=timezone.now()
     )
-
     count = 0
-    for booking_id in stale_ids:
-        try:
-            with transaction.atomic():
-                locked = (
-                    Booking.objects.select_for_update()
-                    .filter(pk=booking_id, status=Booking.Status.PENDING)
-                    .first()
-                )
-                if locked is None:
-                    continue  # paid, cancelled, or already expired since we listed it
-
-                for item in BookingItem.objects.filter(booking=locked).select_related("ticket_type"):
-                    if item.ticket_type_id:
-                        item.ticket_type.release(item.quantity)
-
-                locked.status = Booking.Status.EXPIRED
-                locked.save(update_fields=["status"])
-                count += 1
-        except Exception:
-            logger.exception("Could not expire stale booking %s; skipping.", booking_id)
-
+    for booking in stale:
+        with transaction.atomic():
+            # Re-read under lock so a concurrent payment confirmation can't race us.
+            locked = (
+                Booking.objects.select_for_update()
+                .filter(pk=booking.pk, status=Booking.Status.PENDING)
+                .first()
+            )
+            if locked is None:
+                continue
+            for item in locked.items.select_related("ticket_type").select_for_update():
+                item.ticket_type.release(item.quantity)
+            locked.status = Booking.Status.EXPIRED
+            locked.save(update_fields=["status"])
+            count += 1
     return count
