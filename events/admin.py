@@ -1,6 +1,7 @@
 import base64
 import logging
 import re
+import time
 import urllib.request
 import zlib
 
@@ -56,7 +57,16 @@ class CategoryAdmin(admin.ModelAdmin):
 
 CODE_LINE = re.compile(r"Ticket:\s*(NXV[0-9A-F]+)", re.IGNORECASE)
 TICKET_PDF_PREFIX = "ticket_pdf/"
-BATCH_LIMIT = 20  # keep each run inside the web request timeout
+
+# A web request gets killed by the server long before 66 PDFs can be fetched,
+# so each run takes a small bite and stops. The wall-clock budget is the real
+# guard — BATCH_LIMIT alone is not enough, because a slow network makes even a
+# few downloads overrun. Each recovered ticket records the Cloudinary file it
+# came from, so later runs skip it WITHOUT downloading it again; that is what
+# lets repeated runs make progress instead of redoing the same work.
+BATCH_LIMIT = 8
+TIME_BUDGET_SECONDS = 20
+DOWNLOAD_TIMEOUT_SECONDS = 8
 
 _PDF_STREAM = re.compile(rb"stream\r?\n(.*?)endstream", re.DOTALL)
 _PDF_SHOW_TEXT = re.compile(rb"\((?:[^()\\]|\\.)*\)\s*Tj")
@@ -306,6 +316,13 @@ class EventAdmin(admin.ModelAdmin):
         existing = set(
             Ticket.objects.filter(ticket_code__isnull=False).values_list("ticket_code", flat=True)
         )
+        # Cloudinary files already turned into tickets by an earlier run. Each
+        # recovered ticket stores the public_id it came from, so we can skip it
+        # here for free instead of paying for the download to find out.
+        already_done = {
+            name for name in Ticket.objects.exclude(pdf_file="").exclude(pdf_file__isnull=True)
+            .values_list("pdf_file", flat=True) if name
+        }
 
         recovered = 0
         skipped_existing = 0
@@ -317,17 +334,29 @@ class EventAdmin(admin.ModelAdmin):
         # to reach, which is exactly the wrong thing during an incident.
         first_error = None
         empty_text = 0
+        skipped_done = 0
+        ran_out_of_time = False
+        started = time.monotonic()
 
         for resource in resources:
             if recovered >= BATCH_LIMIT:
+                break
+            if time.monotonic() - started > TIME_BUDGET_SECONDS:
+                ran_out_of_time = True
                 break
 
             url = resource.get("secure_url") or resource.get("url")
             if not url:
                 continue
 
+            public_id = resource.get("public_id") or ""
+            stored_name = f"{public_id}.{resource['format']}" if resource.get("format") else public_id
+            if public_id in already_done or stored_name in already_done:
+                skipped_done += 1
+                continue
+
             try:
-                with urllib.request.urlopen(url, timeout=20) as response:
+                with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS) as response:
                     pdf_bytes = response.read()
                 lines = _extract_pdf_lines(pdf_bytes)
             except Exception as exc:
@@ -363,10 +392,16 @@ class EventAdmin(admin.ModelAdmin):
                 skipped_existing += 1
                 continue
 
+            # Ticket.holder cannot be null, so a name we can't match to an
+            # account would otherwise block the ticket from being restored at
+            # all. A ticket parked on the host with the real name preserved
+            # still scans green at the door, which is the thing that matters;
+            # the owner can be corrected afterwards. Every fallback is reported.
             user = _find_user(holder_name)
-            if user is None:
-                unmatched_user.append(f"{code} ({holder_name or 'no name on PDF'})")
-                continue
+            orphaned = user is None
+            if orphaned:
+                user = event.host
+                unmatched_user.append(f"{holder_name or 'no name on PDF'} ({code})")
 
             ticket_type = type_by_name.get((ticket_type_name or "").lower(), default_type)
 
@@ -383,8 +418,8 @@ class EventAdmin(admin.ModelAdmin):
                         confirmed_at=timezone.now(),
                         reserved_until=timezone.now(),
                         customer_name=holder_name or f"{user.first_name} {user.last_name}".strip(),
-                        customer_email=user.email,
-                        customer_phone=getattr(user, "phone_number", "") or "",
+                        customer_email="" if orphaned else user.email,
+                        customer_phone="" if orphaned else (getattr(user, "phone_number", "") or ""),
                     )
                     item = BookingItem.objects.create(
                         booking=booking,
@@ -399,11 +434,16 @@ class EventAdmin(admin.ModelAdmin):
                         ticket_type=ticket_type,
                         holder=user,
                         holder_name=holder_name or f"{user.first_name} {user.last_name}".strip(),
-                        holder_email=user.email,
+                        holder_email="" if orphaned else user.email,
                         ticket_code=code,          # the original — this is what makes the old QR work
                         status=Ticket.Status.VALID,
+                        # Remember which Cloudinary file this came from: it gives
+                        # the ticket its original PDF back AND marks the file as
+                        # done so later runs don't re-download it.
+                        pdf_file=stored_name,
                     )
                 existing.add(code)
+                already_done.add(stored_name)
                 recovered += 1
             except Exception as exc:
                 failures += 1
@@ -418,6 +458,8 @@ class EventAdmin(admin.ModelAdmin):
                 f"✅ Recovered {recovered} ticket(s) with their ORIGINAL codes — "
                 "the QR already in those customers' inboxes will now scan green.",
             )
+        if skipped_done:
+            self.message_user(request, f"↷ {skipped_done} already recovered by an earlier run.")
         if skipped_existing:
             self.message_user(request, f"↷ {skipped_existing} already present, left alone.")
         if other_events:
@@ -425,9 +467,10 @@ class EventAdmin(admin.ModelAdmin):
         if unmatched_user:
             self.message_user(
                 request,
-                "⚠️ No matching user account for: " + ", ".join(unmatched_user[:15])
+                "⚠️ Recovered but parked on the host — no matching account for: "
+                + ", ".join(unmatched_user[:15])
                 + ("…" if len(unmatched_user) > 15 else "")
-                + " — create the user, then run this again.",
+                + ". These tickets DO scan green; reassign the holder when you have time.",
                 level="warning",
             )
         if empty_text:
@@ -441,14 +484,16 @@ class EventAdmin(admin.ModelAdmin):
         if first_error:
             # The actual reason, on screen, rather than a pointer to the logs.
             self.message_user(request, f"First error was — {first_error}", level="warning")
-        if recovered >= BATCH_LIMIT:
+        if recovered >= BATCH_LIMIT or ran_out_of_time:
+            reason = "hit the batch limit" if recovered >= BATCH_LIMIT else "ran out of time"
             self.message_user(
                 request,
-                f"Stopped at {BATCH_LIMIT} to stay inside the request timeout. "
-                "Run the action again to continue.",
+                f"⏱ Stopped early ({reason}) so the request wouldn't be killed. "
+                f"{len(resources) - skipped_done - recovered} file(s) still to check — "
+                "RUN THIS ACTION AGAIN. It picks up where it left off.",
                 level="warning",
             )
-        if not any([recovered, skipped_existing, unmatched_user, failures, empty_text]):
+        if not any([recovered, skipped_existing, skipped_done, unmatched_user, failures, empty_text]):
             self.message_user(
                 request,
                 f"No ticket PDFs under '{TICKET_PDF_PREFIX}' matched '{event.title}' in Cloudinary.",
