@@ -1,10 +1,14 @@
-import io
+import base64
+import logging
 import re
 import urllib.request
+import zlib
 
 from django.contrib import admin
 from django.db import transaction
 from django.utils import timezone
+
+logger = logging.getLogger("nexivo")
 
 from events.models import Category, Event, EventGallery, TicketType
 
@@ -44,19 +48,98 @@ class CategoryAdmin(admin.ModelAdmin):
 # a Ticket row with the original code and the QR already in their inbox
 # validates again. No re-issuing, no new emails.
 #
-# Requires `pypdf` in requirements.txt.
+# No third-party PDF library is needed. ReportLab writes each visible string as
+# a `(text) Tj` operator inside a content stream filtered through
+# /ASCII85Decode then /FlateDecode, so the standard library can undo both and
+# read the strings directly. That keeps the recovery working on a deploy where
+# an extra requirement has not been installed.
 
 CODE_LINE = re.compile(r"Ticket:\s*(NXV[0-9A-F]+)", re.IGNORECASE)
 TICKET_PDF_PREFIX = "ticket_pdf/"
 BATCH_LIMIT = 20  # keep each run inside the web request timeout
 
+_PDF_STREAM = re.compile(rb"stream\r?\n(.*?)endstream", re.DOTALL)
+_PDF_SHOW_TEXT = re.compile(rb"\((?:[^()\\]|\\.)*\)\s*Tj")
+_PDF_ESCAPES = {
+    b"n": b"\n", b"r": b"\r", b"t": b"\t", b"b": b"\b", b"f": b"\f",
+    b"(": b"(", b")": b")", b"\\": b"\\",
+}
+
+
+def _unescape_pdf_string(raw):
+    """Resolve the backslash escapes a PDF literal string may contain."""
+    out = bytearray()
+    i = 0
+    while i < len(raw):
+        ch = raw[i:i + 1]
+        if ch == b"\\" and i + 1 < len(raw):
+            nxt = raw[i + 1:i + 2]
+            if nxt in _PDF_ESCAPES:
+                out += _PDF_ESCAPES[nxt]
+                i += 2
+                continue
+            if nxt.isdigit():  # octal escape, e.g. \251
+                digits = raw[i + 1:i + 4]
+                try:
+                    out.append(int(digits, 8) & 0xFF)
+                    i += 1 + len(digits)
+                    continue
+                except ValueError:
+                    pass
+            out += nxt
+            i += 2
+            continue
+        out += ch
+        i += 1
+    return bytes(out)
+
+
+def _decoded_stream_candidates(raw):
+    """
+    Yield each plausible decoding of a content stream.
+
+    We do not parse the /Filter entry — we simply try the pipelines ReportLab
+    and other writers use and let the caller keep whichever one actually
+    contains text operators. Cheap, and it tolerates files written by a
+    different version than the one running now.
+    """
+    raw = raw.strip()
+    yield raw
+
+    ascii85 = None
+    try:
+        payload = raw if raw.startswith(b"<~") else b"<~" + raw
+        ascii85 = base64.a85decode(payload, adobe=True)
+        yield ascii85
+    except Exception:
+        pass
+
+    for blob in (ascii85, raw):
+        if blob is None:
+            continue
+        try:
+            yield zlib.decompress(blob)
+        except zlib.error:
+            try:
+                yield zlib.decompressobj().decompress(blob)
+            except zlib.error:
+                pass
+
 
 def _extract_pdf_lines(pdf_bytes):
-    from pypdf import PdfReader
-
-    reader = PdfReader(io.BytesIO(pdf_bytes))
-    text = "\n".join((page.extract_text() or "") for page in reader.pages)
-    return [line.strip() for line in text.splitlines() if line.strip()]
+    """Every visible string in the PDF, in the order it was drawn."""
+    pieces = []
+    for raw in _PDF_STREAM.findall(pdf_bytes):
+        for blob in _decoded_stream_candidates(raw):
+            hits = list(_PDF_SHOW_TEXT.finditer(blob))
+            if not hits:
+                continue
+            for match in hits:
+                token = match.group(0)
+                inner = token[token.index(b"(") + 1: token.rindex(b")")]
+                pieces.append(_unescape_pdf_string(inner).decode("latin-1").strip())
+            break  # this decoding worked; don't try the others
+    return [piece for piece in pieces if piece]
 
 
 def _parse_ticket_pdf(lines, ticket_type_names):
@@ -229,6 +312,11 @@ class EventAdmin(admin.ModelAdmin):
         unmatched_user = []
         other_events = 0
         failures = 0
+        # Keep the first real error so the admin page can show WHAT went wrong.
+        # A bare "could not be read" count sends you to logs you may not be able
+        # to reach, which is exactly the wrong thing during an incident.
+        first_error = None
+        empty_text = 0
 
         for resource in resources:
             if recovered >= BATCH_LIMIT:
@@ -242,8 +330,17 @@ class EventAdmin(admin.ModelAdmin):
                 with urllib.request.urlopen(url, timeout=20) as response:
                     pdf_bytes = response.read()
                 lines = _extract_pdf_lines(pdf_bytes)
-            except Exception:
+            except Exception as exc:
                 failures += 1
+                if first_error is None:
+                    first_error = f"{type(exc).__name__}: {exc}"
+                logger.exception("Ticket recovery could not read %s", url)
+                continue
+
+            if not lines:
+                empty_text += 1
+                if first_error is None:
+                    first_error = f"no text found in {url.rsplit('/', 1)[-1]}"
                 continue
 
             # Only touch PDFs belonging to this event. The title is drawn
@@ -256,6 +353,9 @@ class EventAdmin(admin.ModelAdmin):
             parsed = _parse_ticket_pdf(lines, [t.name for t in ticket_types])
             if not parsed:
                 failures += 1
+                if first_error is None:
+                    first_error = f"no 'Ticket: NXV…' line in {url.rsplit('/', 1)[-1]}"
+                logger.warning("Ticket recovery found no code in %s; lines=%r", url, lines[:12])
                 continue
 
             code, holder_name, ticket_type_name = parsed
@@ -307,6 +407,9 @@ class EventAdmin(admin.ModelAdmin):
                 recovered += 1
             except Exception as exc:
                 failures += 1
+                if first_error is None:
+                    first_error = f"{type(exc).__name__}: {exc}"
+                logger.exception("Ticket recovery could not save %s", code)
                 self.message_user(request, f"{code}: {exc}", level="error")
 
         if recovered:
@@ -327,8 +430,17 @@ class EventAdmin(admin.ModelAdmin):
                 + " — create the user, then run this again.",
                 level="warning",
             )
+        if empty_text:
+            self.message_user(
+                request,
+                f"⚠️ {empty_text} PDF(s) held no readable text.",
+                level="warning",
+            )
         if failures:
-            self.message_user(request, f"⚠️ {failures} PDF(s) could not be read — check logs.", level="warning")
+            self.message_user(request, f"⚠️ {failures} PDF(s) failed.", level="warning")
+        if first_error:
+            # The actual reason, on screen, rather than a pointer to the logs.
+            self.message_user(request, f"First error was — {first_error}", level="warning")
         if recovered >= BATCH_LIMIT:
             self.message_user(
                 request,
@@ -336,8 +448,12 @@ class EventAdmin(admin.ModelAdmin):
                 "Run the action again to continue.",
                 level="warning",
             )
-        if not any([recovered, skipped_existing, unmatched_user, failures]):
-            self.message_user(request, "No matching ticket PDFs found in Cloudinary.", level="warning")
+        if not any([recovered, skipped_existing, unmatched_user, failures, empty_text]):
+            self.message_user(
+                request,
+                f"No ticket PDFs under '{TICKET_PDF_PREFIX}' matched '{event.title}' in Cloudinary.",
+                level="warning",
+            )
 
 
 @admin.register(TicketType)
